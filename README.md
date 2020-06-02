@@ -17,6 +17,6 @@ Dependencies include python 3.7 and the following packages:
 # Cite our work!
 
 ### License
-
+This project is released under a BSD 2-Clause Licence (see LICENCE file)
 ### Contributions
 
