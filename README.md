@@ -1,4 +1,5 @@
-![HypnosPy Logo](/docs/HypnosPy.pdf)
+
+<img src ="docs/HypnosPy.png" width = "750" class ="center" >
 
 # HypnosPy :sleeping_bed:
 A Device-Agnostic, Open-Source Python Software for Wearable Circadian Rhythm and Sleep Analysis and Visualization
