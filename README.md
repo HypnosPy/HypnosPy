@@ -5,22 +5,22 @@
 A Device-Agnostic, Open-Source Python Software for Wearable Circadian Rhythm and Sleep Analysis and Visualization
 
 
-# Installation
+# Installation :computer:
 
 Dependencies include python 3.7 and the following packages:
 
 
-# Usage
+# Usage :bulb:
 
-# Under the hood
+# Under the hood :mag_right:
 
-# Cite our work!
+# Cite our work! :memo::pencil:
 
-### License
+### License :clipboard:
 This project is released under a BSD 2-Clause Licence (see LICENCE file)
-### Contributions
+### Contributions :man_technologist: :woman_technologist:
 
-# Research that uses HypnosPy
+# Research that uses HypnosPy :rocket:
 
 * 
 
