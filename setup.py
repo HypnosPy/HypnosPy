@@ -8,7 +8,7 @@ requirements = [
     "pandas >= 1.0.1",
     "numpy >= 1.0.0",
     "scipy >= 1.1.0",
-    #"matplotlib >= 1.5",
+    "matplotlib >= 1.5",
     #"seaborn >= 0.10.1",
 ]
 
@@ -20,7 +20,7 @@ setup(name='hypnospy',
         install_requires=requirements,
         packages=['hypnospy'],
         #package_dir = {'': '.'},
-        url='https://github.com/joaopalotti/hypnospy',
+        url='',
         description='A Device-Agnostic, Open-Source Python Software for Wearable Circadian Rhythm and Sleep Analysis and Visualization',
         long_description=open('README.md').read()
 )
