@@ -7,6 +7,12 @@ A Device-Agnostic, Open-Source Python Software for Wearable Circadian Rhythm and
 
 # Installation :computer:
 
+You can install HypnosPy with pip:
+
+```
+pip install hypnospy
+```
+
 Dependencies include python 3.7 and the following packages:
 
 
