@@ -20,3 +20,9 @@ Dependencies include python 3.7 and the following packages:
 This project is released under a BSD 2-Clause Licence (see LICENCE file)
 ### Contributions
 
+# Research that uses HypnosPy
+
+* 
+
+* 
+
