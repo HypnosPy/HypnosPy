@@ -16,6 +16,29 @@ class CircadianAnalysis(object):
     def run_PSD():
         #apply power spectral density analysis
         pass
+   
+## Simpler Implementation prhaps?
+    def run_LIDS(timestamp, ENMO):
+        """
+        [1] Winnebeck, E. C., Fischer, D., Leise, T., & Roenneberg, T. (2018).
+        Dynamics and Ultradian Structure of Human Sleep in Real Life.
+        Current Biology, 28(1), 49–59.e5. http://doi.org/10.1016/j.cub.2017.11.063
+        """
+        -------------
+        # Read data 
+        #df = pd.concat((timestamp, pd.Series(ENMO)), axis=1)
+        #df.columns = ['timestamp','ENMO']
+        #df.set_index('timestamp', inplace=True)
+
+        # Set threshold
+        df['ENMO_thresh'] = np.where(ENMO < 0.02, 0, ENMO-0.02) # assuming ENMO is in g
+        # 10-minute rolling sum
+        ENMO_sub_smooth = df['ENMO_thresh'].rolling('10m').sum()
+        df['LIDS_unfiltered'] = 100.0 / (ENMO_sub_smooth + 1.0)
+        # 30-minute rolling average
+        LIDS = df['LIDS_unfiltered'].rolling('30m').mean().values
+        return LIDS
+    
     ## FOUND THE FOLLOWING FUNCTION ONLINE FROM ANOTHER PAPER (Really intersting but potentially an overkill)
     ## Will delete after as its not mine, good for now to check the structure  
 
