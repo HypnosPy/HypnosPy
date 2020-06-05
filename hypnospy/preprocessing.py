@@ -75,6 +75,69 @@ class RawProcessing(object):
         # run this if class isn't count based 
         # returns something that can be then summarized
         pass
+    
+    ### Activity Index (counts- from another repo- modify)
+    def extract_activity_index(self):
+        """
+        Calculates the activity index feature on each 24 hour day.
+        """
+        try:
+            os.mkdir(self.sub_dst + "/activity_index_days")  # set up output directory
+        except OSError:
+            pass
+        count = 0
+
+        # get days
+        days = sorted(
+            [
+                self.sub_dst + "/raw_days/" + i
+                for i in os.listdir(self.sub_dst + "/raw_days/")
+                if ".DS_Store" not in i
+            ]
+        )
+        for day in days:
+            count += 1
+
+            # load data
+            df = pd.read_hdf(day)
+            activity = []
+            header = ["Time", "activity_index"]
+            idx = 0
+            window = int(self.window_size * self.fs)
+            incrementer = int(self.window_size * self.fs)
+
+            # iterate through windows
+            while idx < len(df) - incrementer:
+                # preprocessing: BP Filter
+                temp = df[["X", "Y", "Z"]].iloc[idx : idx + window]
+                start_time = temp.index[0]
+                temp.index = range(len(temp.index))  # reset index
+                temp = band_pass_filter(
+                    temp, self.fs, bp_cutoff=self.band_pass_cutoff, order=3
+                )
+
+                # activity index extraction
+                bp_channels = [
+                    i for i in temp.columns.values[1:] if "bp" in i
+                ]  # band pass filtered channels
+                activity.append(
+                    [
+                        start_time,
+                        activity_index(temp, channels=bp_channels).values[0][0],
+                    ]
+                )
+                idx += incrementer
+
+            # save data
+            activity = pd.DataFrame(activity)
+            activity.columns = header
+            activity.set_index("Time", inplace=True)
+            dst = "/activity_index_days/{}_activity_index_day_{}.h5".format(
+                self.src_name, str(count).zfill(2)
+            )
+            activity.to_hdf(
+                self.sub_dst + dst, key="activity_index_data_24hr", mode="w"
+            )
   
   class dataReader():
         r""" Reads processed raw files 
