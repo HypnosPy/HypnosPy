@@ -1,4 +1,6 @@
 from hypnospy import Wearable
+from scipy import signal
+from scipy.stats import entropy
 
 class CircadianAnalysis(object):
 
@@ -15,9 +17,19 @@ class CircadianAnalysis(object):
         
     def run_PSD():
         #apply power spectral density analysis
+        
+        df['PSD'] = PSD
         pass
+    
+    def run_entropy(df, bins=20):
+        bins = int(bins)
+        hist, bin_edges = np.histogram(df, bins=bins)
+        p = hist/float(hist.sum())
+        ent = entropy(p)
+        df['ent'] = ent
+        return ent 
    
-## Simpler Implementation prhaps?
+## Simpler Implementation perhaps?
     def run_LIDS(timestamp, ENMO):
         """
         [1] Winnebeck, E. C., Fischer, D., Leise, T., & Roenneberg, T. (2018).
