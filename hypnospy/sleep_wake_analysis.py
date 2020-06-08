@@ -15,7 +15,7 @@ class SleepWakeAnalysis(object):
         # if no annotations look for diaries
         
         # if no diaries apply Van Hees heuristic method
-    pass
+        pass
     
     # Include all Heuristic Traditional Algorithms Here
     def run_sadeh():
