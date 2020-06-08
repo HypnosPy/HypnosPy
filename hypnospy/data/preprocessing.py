@@ -1,14 +1,13 @@
 import pandas as pd
-import h5py
 
-class PreProcessing(object):
+class RawProcessing(object):
 
     def __init__(self, filename=None,
                  collection_name=None,
                  device_location=None,
                  additional_data=None):
-        """
 
+        """
         :param filename: input filepath
         :param device_location: where this device was located (options are: "bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all")
         :param additional_data:
@@ -18,7 +17,6 @@ class PreProcessing(object):
 
         if filename is not None:
             self.load_file(filename, collection_name, device_location, additional_data)
-
 
     def load_file(self,
                   filename,
@@ -128,10 +126,113 @@ class PreProcessing(object):
         # returns something that can be then summarized
         pass
 
+
+    ### Activity Index (counts- from another repo- modify)
+    def extract_activity_index(self):
+        """
+        Calculates the activity index feature on each 24 hour day.
+        """
+        try:
+            os.mkdir(self.sub_dst + "/activity_index_days")  # set up output directory
+        except OSError:
+            pass
+
+        count = 0
+
+        # get days
+        days = sorted(
+            [
+                self.sub_dst + "/raw_days/" + i
+                for i in os.listdir(self.sub_dst + "/raw_days/")
+                if ".DS_Store" not in i
+            ]
+        )
+        for day in days:
+            count += 1
+
+            # load data
+            df = pd.read_hdf(day)
+            activity = []
+            header = ["Time", "activity_index"]
+            idx = 0
+            window = int(self.window_size * self.fs)
+            incrementer = int(self.window_size * self.fs)
+
+            # iterate through windows
+            while idx < len(df) - incrementer:
+                # preprocessing: BP Filter
+                temp = df[["X", "Y", "Z"]].iloc[idx : idx + window]
+                start_time = temp.index[0]
+                temp.index = range(len(temp.index))  # reset index
+                temp = band_pass_filter(
+                    temp, self.fs, bp_cutoff=self.band_pass_cutoff, order=3
+                )
+
+                # activity index extraction
+                bp_channels = [
+                    i for i in temp.columns.values[1:] if "bp" in i
+                ]  # band pass filtered channels
+                activity.append(
+                    [
+                        start_time,
+                        activity_index(temp, channels=bp_channels).values[0][0],
+                    ]
+                )
+                idx += incrementer
+
+            # save data
+            activity = pd.DataFrame(activity)
+            activity.columns = header
+            activity.set_index("Time", inplace=True)
+            dst = "/activity_index_days/{}_activity_index_day_{}.h5".format(
+                self.src_name, str(count).zfill(2)
+            )
+            activity.to_hdf(
+                self.sub_dst + dst, key="activity_index_data_24hr", mode="w"
+            )
+
+    def find_sleepwin():
+        # Apply our method based on HR here
+        # if no HR look for expert annotations _anno
+        # if no annotations look for diaries
+        # if no diaries apply Van Hees heuristic method
+        pass
+
     def obtain_data():
         """ Here we will define epochperiod, columns to be included, and generate
         the new .hpy file
         """
         pass
+
+
+class DataReader():
+    r""" Reads processed raw files and files obtained that are already proceessed"
+
+    Params
+    ---------
+
+    """
+
+    def __init__(self, wearable_type, datareader=[]):
+
+        #store wearable type
+        self.__wearable_type = wearable_type
+
+        # store list of data reader
+        self.__datareader = datareader
+
+    @property
+    def wearable_type(self):
+        r""" This function will take in the type of reader"""
+        #1. Check file type from above processing
+        #2,.
+        return
+
+    @property
+    def datareader(self):
+        r""" This function will """
+        #1. Check file type
+        #2. Determine
+        return
 
 

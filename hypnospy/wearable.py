@@ -1,4 +1,4 @@
-from .preprocessing import PreProcessing
+from .data.preprocessing import RawProcessing
 import pandas as pd
 import h5py
 
@@ -15,7 +15,8 @@ class Wearable(object):
             # Reads a hypnosys file from disk
             self.__read_hypnospy(input)
 
-        elif type(input) == PreProcessing:
+        elif type(input) == RawProcessing:
+            print("Loaded a raw preprocessing object")
             self.__read_preprocessing_obj(input)
 
     def __read_preprocessing_obj(self, input):
