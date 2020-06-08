@@ -1,6 +1,6 @@
 from hypnospy import Wearable
 from hypnospy.data import RawProcessing
-#from hypnospy.analysis import TimeSeriesProcessing, SleepWakeAnalysis
+from hypnospy.analysis import SleepWakeAnalysis
 
 if __name__ == "__main__":
 
@@ -16,8 +16,12 @@ if __name__ == "__main__":
     w2 = Wearable("my_data.hyp")
 
     assert (w1.data.line == w2.data.line).all()
-    #print(w.data)
 
+    swa = SleepWakeAnalysis(w1)
+    r = swa.oakley_algorithm("activity")
+
+    print(r)
+    #print(w.data)
 
     #if trixial→ collapse ENMO to (15’’,30’’)
     #Determine sampling rate (15’’, 30’’, 1’) → if not, ERROR (‘Device sampling rate not supported’)
