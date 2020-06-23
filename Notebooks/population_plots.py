@@ -13,12 +13,12 @@ import numpy as np
 from scipy import stats as sps
 import matplotlib.pyplot as plt
 
-def plot_basic(d):
+def plot_basic(d,frequency='H'):
     fig, ax1 = plt.subplots(len(d.keys()), 1, figsize= (14, 15))
     #ax1.set_title("Physical activity and sedentary time per hour")                        
     for idx in d.keys():
         #Resampling: hourly
-        df2_h = d[idx].data.resample('H').sum()
+        df2_h = d[idx].data.resample(frequency).sum()
         ax1[idx].tick_params(axis='x', which='both',bottom=False,top=False, labelbottom=True, rotation=10)
         ax1[idx].set_xlabel('Time, sleep windows shaded grey')
         ax1[idx].set_ylim(0,max(df2_h['MET_MVPA']))
@@ -32,3 +32,5 @@ def plot_basic(d):
         #Add grey windows for sleep
         for i in range(len(d[idx].sleep_rec)):
             ax1[idx].axvspan(d[idx].sleep_rec['sleep_onset'][i],d[idx].sleep_rec['sleep_offset'][i],facecolor='grey',alpha=0.4)
+        for j in range(len(d[idx].crespo_on)):
+            ax1[idx].axvspan(d[idx].crespo_on[j],d[idx].crespo_off[j],facecolor='blue', alpha=0.3)
