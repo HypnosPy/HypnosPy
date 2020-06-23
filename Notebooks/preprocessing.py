@@ -131,4 +131,4 @@ class Subject:
     from sleep_analysis import get_sleep, get_SRI
     from circadian_analysis import get_IV_IS, get_cosinor, get_SSA,get_SSA_par
     from nonlinear_analysis import get_nonlinear, get_nonlin_params
-    #from crespo_analysis import Crespo, Crespo_AoT
+    from crespo_analysis import Crespo
