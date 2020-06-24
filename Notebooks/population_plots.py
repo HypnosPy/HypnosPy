@@ -62,6 +62,7 @@ def plot_daily(d,i):
         ax1[idx].fill_between(df2_h.index, 0, df2_h['min_LPA']*100,facecolor ='lightgreen',alpha=0.7, label='LPA',edgecolor='lightgreen')
         ax1[idx].fill_between(df2_h.index, 0, (df2_h['MET_Sed'])*100,facecolor ='palegoldenrod',alpha=0.6,label='sedentary',edgecolor='palegoldenrod')
         ax1[idx].fill_between(df2_h.index, 0, -(df2_h['sleep_window_0.4']-2)*100,facecolor ='royalblue',alpha=1,label='sleep')
+        ax1[idx].fill_between(df2_h.index, 0, (df2_h['wake_window_0.4'])*150,facecolor ='cyan',alpha=1,label='wake')
         #ax1[idx].fill_between(df2_h.index, 0, (1-df2_h['crespo'])*10,facecolor ='cyan',alpha=0.1,label='crespo_rest')
         
         #ax1[idx].xaxis.set_minor_locator(dates.HourLocator(interval=4))   # every 4 hours
@@ -84,5 +85,5 @@ def plot_daily(d,i):
 
     handles, labels = ax1[-1].get_legend_handles_labels()
     handles2, labels2 = ax2.get_legend_handles_labels()
-    fig.legend(handles+handles2, labels+labels2, loc='lower center',ncol=7)
+    fig.legend(handles+handles2, labels+labels2, loc='lower center',ncol=4)
     return fig
