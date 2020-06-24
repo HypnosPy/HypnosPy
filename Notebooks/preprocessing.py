@@ -50,6 +50,8 @@ class Subject:
             #WHO recommendations would count moderate PA as >6 METs
             self.data['MET_VigPA'] = self.data['stdMET_highIC_Branch'].apply(lambda x : x if x > vig-1 else 0)
             self.data['min_VigPA'] = self.data['stdMET_highIC_Branch'].apply(lambda x : 1 if x > vig-1 else 0)
+            #LPA
+            self.data['min_LPA'] = self.data['stdMET_highIC_Branch'].apply(lambda x : 1 if ((x >= sed-1) and (x < MVPA-1)) else 0)
         else:
             print("No METs column in data!")
         return self
@@ -132,3 +134,14 @@ class Subject:
     from circadian_analysis import get_IV_IS, get_cosinor, get_SSA,get_SSA_par
     from nonlinear_analysis import get_nonlinear, get_nonlin_params
     from crespo_analysis import Crespo
+
+    def get_windows(self):
+        df_copy = self.data.copy()
+        df_copy['sleep_cumsum'] = (df_copy['sleep_window_0.4']-1).cumsum()
+
+        df_night = pd.DataFrame(df_copy.loc[lambda df_copy: df_copy['sleep_cumsum'].diff() == 0])
+        df_day = pd.DataFrame(df_copy.loc[lambda df_copy: df_copy['sleep_cumsum'].diff() == 1])
+
+        self.sleep_windows = [pd.DataFrame(group[1]) for group in df_night.groupby(df_night['sleep_cumsum'])]
+        self.wake_windows = [pd.DataFrame(group[1]) for group in df_day.groupby(df_day['timepoint']//1440)]
+        return self
