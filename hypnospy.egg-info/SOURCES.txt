@@ -1,0 +1,7 @@
+README.md
+setup.py
+hypnospy.egg-info/PKG-INFO
+hypnospy.egg-info/SOURCES.txt
+hypnospy.egg-info/dependency_links.txt
+hypnospy.egg-info/requires.txt
+hypnospy.egg-info/top_level.txt
