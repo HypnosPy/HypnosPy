@@ -124,10 +124,12 @@ class Subject:
         self.MVPAmins_std = day_rd['min_MVPA'].std()
         self.VigPAmins_mean = day_rd['min_VigPA'].mean()
         self.VigPAmins_std = day_rd['min_VigPA'].std()
+        self.LPAmins_mean = day_rd['min_LPA'].mean()
+        self.LPAmins_std = day_rd['min_LPA'].std()
         self.Sed_mean = day_rd['MET_Sed'].mean()
         self.Sed_std = day_rd['MET_Sed'].std()
         self.VigPA_dcount = np.count_nonzero(day_rd['MET_VigPA'])
-        self.pa_rec = day_rd[['ENMO','MET_Sed','MET_MVPA','MET_VigPA','min_MVPA','min_VigPA']]
+        self.pa_rec = day_rd[['ENMO','MET_Sed','MET_MVPA','MET_VigPA','min_MVPA','min_VigPA','min_LPA']]
         return self
     
     from sleep_analysis import get_sleep, get_SRI
@@ -144,4 +146,59 @@ class Subject:
 
         self.sleep_windows = [pd.DataFrame(group[1]) for group in df_night.groupby(df_night['sleep_cumsum'])]
         self.wake_windows = [pd.DataFrame(group[1]) for group in df_day.groupby(df_day['timepoint']//1440)]
+        
+        for idx in range(len(self.sleep_windows)):
+            self.sleep_windows[idx]['length'] = len(self.sleep_windows[idx])
+        for idx in range(len(self.wake_windows)):
+            self.wake_windows[idx]['length'] = len(self.wake_windows[idx])
+        return self
+    
+    def get_daily_stats(self):
+        sleep_rec = self.sleep_rec.copy()
+        pa_rec = self.pa_rec.copy()
+        ssa = self.ssa.copy()
+    
+        nonlin_cols = ['dfa_ENMO_sleep','dfa_ENMO_wake','dfa_HR_sleep','dfa_HR_wake','dfa_HRV_sleep','dfa_HRV_wake',
+                       'se_ENMO_sleep','se_ENMO_wake','se_HR_sleep','se_HR_wake','se_HRV_sleep','se_HRV_wake']
+        nonlinear = pd.DataFrame(columns=nonlin_cols,index=range(len(self.nonlinear['hrv_ms']['wake'].keys())))
+        #nonlinear = pd.DataFrame(columns=nonlin_cols,index=self.pa_rec.index)
+
+        for idx in self.nonlinear['ENMO']['sleep'].keys():
+            nonlinear.loc[idx,'dfa_ENMO_sleep'] = self.nonlinear['ENMO']['sleep'][idx]['DFA']
+            nonlinear.loc[idx,'dfa_HR_sleep'] = self.nonlinear['mean_hr']['sleep'][idx]['DFA']
+            nonlinear.loc[idx,'dfa_HRV_sleep'] = self.nonlinear['hrv_ms']['sleep'][idx]['DFA']
+            nonlinear.loc[idx,'se_ENMO_sleep'] = self.nonlinear['ENMO']['sleep'][idx]['SampEn']
+            nonlinear.loc[idx,'se_HR_sleep'] = self.nonlinear['mean_hr']['sleep'][idx]['SampEn']
+            nonlinear.loc[idx,'se_HRV_sleep'] = self.nonlinear['hrv_ms']['sleep'][idx]['SampEn']
+   
+        for jdx in self.nonlinear['hrv_ms']['wake'].keys():
+            nonlinear.loc[jdx,'dfa_ENMO_wake'] = self.nonlinear['ENMO']['wake'][jdx]['DFA']
+            nonlinear.loc[jdx,'dfa_HR_wake'] = self.nonlinear['mean_hr']['wake'][jdx]['DFA']
+            nonlinear.loc[jdx,'dfa_HRV_wake'] = self.nonlinear['hrv_ms']['wake'][jdx]['DFA']
+            nonlinear.loc[jdx,'se_ENMO_wake'] = self.nonlinear['ENMO']['wake'][jdx]['SampEn']
+            nonlinear.loc[jdx,'se_HR_wake'] = self.nonlinear['mean_hr']['wake'][jdx]['SampEn']
+            nonlinear.loc[jdx,'se_HRV_wake'] = self.nonlinear['hrv_ms']['wake'][jdx]['SampEn']
+            
+       
+        nonlinear = nonlinear.set_index(pa_rec.index)
+        #print(nonlinear)
+        wake_lengths = pd.DataFrame(columns = ['w_length'],index = pa_rec.index)
+        for idx in range(len(self.wake_windows)):
+            wake_lengths.iloc[idx]['w_length'] = self.wake_windows[idx]['length'][0]
+        sleep_lengths = pd.DataFrame(columns = ['s_length'],index = self.pa_rec.index)
+        for idx in range(len(self.sleep_windows)):
+            sleep_lengths.iloc[idx]['s_length'] = self.sleep_windows[idx]['length'][0]
+
+        sleep_rec.index = pd.to_datetime(self.sleep_rec.index.values) - timedelta(hours=20)
+        #print(df.sleep_rec)
+        daily = pd.concat([pa_rec,sleep_rec, wake_lengths,sleep_lengths,nonlinear],axis=1)
+
+        daily['ENMO_SSA_phi'] = self.ssa['ENMO']['acrophase']
+        daily['mean_hr_SSA_phi'] = self.ssa['mean_hr']['acrophase']
+        daily['ENMO_SSA_per'] = self.ssa['ENMO']['period']
+        daily['mean_hr_SSA_per'] = self.ssa['mean_hr']['period']
+        daily['ENMO_phisleep_delay'] = daily['sleep_onset'] - daily['ENMO_SSA_phi']
+        daily['mean_hr_phisleep_delay'] = daily['sleep_onset'] - daily['mean_hr_SSA_phi']
+
+        self.daily_stats = daily
         return self
