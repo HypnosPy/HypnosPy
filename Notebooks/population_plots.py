@@ -57,12 +57,12 @@ def plot_daily(d,i):
 
         ax1[idx].plot(df2_h.index, df2_h['ENMO']/10,label='ENMO', linewidth=1, color ='black',alpha=1)
         ax1[idx].fill_between(df2_h.index, 0, df2_h['min_VigPA']*100,facecolor ='darkgreen',alpha=0.7, label='VPA',edgecolor='darkgreen')
-        ax1[idx].fill_between(df2_h.index, 0, df2_h['min_MVPA']*100,facecolor ='forestgreen',alpha=0.7, label='MVPA',edgecolor='forestgreen')
+        ax1[idx].fill_between(df2_h.index, 0, df2_h['min_MVPA']*100,facecolor ='limegreen',alpha=0.7, label='MVPA',edgecolor='forestgreen')
         
-        ax1[idx].fill_between(df2_h.index, 0, df2_h['min_LPA']*100,facecolor ='lightgreen',alpha=0.7, label='LPA',edgecolor='lightgreen')
+        ax1[idx].fill_between(df2_h.index, 0, df2_h['min_LPA']*100,facecolor ='palegreen',alpha=0.7, label='LPA',edgecolor='lightgreen')
         ax1[idx].fill_between(df2_h.index, 0, (df2_h['MET_Sed'])*100,facecolor ='palegoldenrod',alpha=0.6,label='sedentary',edgecolor='palegoldenrod')
-        ax1[idx].fill_between(df2_h.index, 0, -(df2_h['sleep_window_0.4']-2)*100,facecolor ='royalblue',alpha=1,label='sleep')
-        ax1[idx].fill_between(df2_h.index, 0, (df2_h['wake_window_0.4'])*150,facecolor ='cyan',alpha=1,label='wake')
+        ax1[idx].fill_between(df2_h.index, 0, -(df2_h['sleep_window_0.4']-2)*100,facecolor ='cornflowerblue',alpha=1,label='sleep')
+        ax1[idx].fill_between(df2_h.index, 0, (df2_h['wake_window_0.4'])*150,facecolor ='lightcyan',alpha=1,label='wake')
         #ax1[idx].fill_between(df2_h.index, 0, (1-df2_h['crespo'])*10,facecolor ='cyan',alpha=0.1,label='crespo_rest')
         
         #ax1[idx].xaxis.set_minor_locator(dates.HourLocator(interval=4))   # every 4 hours
