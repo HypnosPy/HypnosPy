@@ -147,3 +147,69 @@ def plot_circ(d,nonlinear_na):
     fig.legend(bbox_to_anchor=(0.4,0.8), ncol=2)
     #plt.tight_layout()
     return fig
+
+def plot_circ2(d):
+
+    fig, ax1 = plt.subplots(2, 2, figsize= (20, 14))
+    sns.set_palette(sns.light_palette("green"))
+    cmap = sns.light_palette("green")
+    
+    ax1[0,0].plot(d[0].data.index,np.transpose(d[0].ssa['ENMO']['gk'])[0]+np.transpose(d[0].ssa['ENMO']['gk'])[1], color='red',label='ENMO SSA')
+    ax1[0,0].plot(d[0].data.index, d[0].data['ENMO']/5,color='blue',alpha=0.4,label='ENMO')
+    ax1[0,0].set_ylim(0,max(d[0].data['ENMO']/5))
+    ax1[0,0].set_ylabel('ENMO (scaled)')
+    ax1[0,0].set_xlim('2005-07-11','2005-07-14')
+    ax1[0,0].set_xticks([])
+    ax1[0,0].set_yticks([])
+
+    for i in range(len(d[0].ssa['ENMO']['acrophase'])):
+        ax1[0,0].axvline(x=d[0].ssa['ENMO']['acrophase'][i],color='orange')
+
+    ax1[1,0].plot(d[0].data.index, d[0].data['mean_hr'],color='green',alpha=0.4,label='HR')
+    ax1[1,0].plot(d[0].data.index,np.transpose(d[0].ssa['mean_hr']['gk'])[0]+np.transpose(d[0].ssa['mean_hr']['gk'])[1],color='red',label='HR SSA')
+    ax1[1,0].set_ylim(40,max(d[0].data['mean_hr']))
+    ax1[1,0].set_ylabel('HR')
+    ax1[1,0].set_yticks(ax1[1,0].get_yticks()[::2])
+    ax1[1,0].xaxis.set_minor_locator(dates.HourLocator(interval=8)) 
+    ax1[1,0].xaxis.set_minor_formatter(dates.DateFormatter('%H'))
+    ax1[1,0].xaxis.set_major_locator(dates.DayLocator(interval=1))    # every day
+    ax1[1,0].xaxis.set_major_formatter(dates.DateFormatter('\n%A'))
+    ax1[1,0].set_xlim('2005-07-11','2005-07-14')
+
+    for i in range(len(d[0].ssa['mean_hr']['acrophase'])):
+        ax1[1,0].axvline(x=d[0].ssa['mean_hr']['acrophase'][i],color='orange')
+    
+    for idx in range(2):
+        for i in range(len(d[0].sleep_rec)):
+            ax1[idx,0].axvspan(d[0].sleep_rec['sleep_onset'][i],d[0].sleep_rec['sleep_offset'][i],facecolor='grey',alpha=0.2)
+    
+    #ax1[0,1].scatter(d_pop_t['ARI'],d_pop_t['SRI'])
+    s1 = sns.scatterplot(d_pop_t['ARI'],d_pop_t['SRI'],hue = d_pop_t['VO2max'],
+                    cmap=cmap,ax=ax1[0,1])
+    #s1.legend_.remove()
+    ax1[0,1].tick_params(axis='x', which='both',bottom=False,top=False, labelbottom=True, rotation=0)
+    ax1[0,1].set_yticks(ax1[0,1].get_yticks()[::2])
+    ax1[0,1].set_xticks(ax1[0,1].get_xticks()[::2])
+    ax1[0,1].set_xlabel('ARI')
+    ax1[0,1].set_ylabel('SRI')
+
+    #ax1[1,1].scatter(d_pop_t['ENMO_phisleep_delay'].astype('timedelta64[s]')//60,d_pop_t['ENMO_SSA_per'])
+    s2 = sns.scatterplot(d_pop_t['ENMO_phisleep_delay'].astype('timedelta64[s]')//60,d_pop_t['ENMO_SSA_per'],
+                    ax=ax1[1,1], cmap=cmap, hue=d_pop_t['VO2max'])
+    s2.legend_.remove()
+    ax1[1,1].tick_params(axis='x', which='both',bottom=False,top=False, labelbottom=True, rotation=0)
+    ax1[1,1].set_yticks(ax1[1,1].get_yticks()[::2])
+    ax1[1,1].set_xticks(ax1[1,1].get_xticks()[::2])
+    ax1[1,1].set_xlabel('Peak PA - sleep onset delay (min)')
+    ax1[1,1].set_ylabel('Peak PA period (min)')
+
+    ax1[0,0].title.set_text('Circadian analysis - ENMO')
+    ax1[1,0].title.set_text('Circadian analysis - HR')
+    ax1[0,1].title.set_text('Activity - Sleep regularity distribution')
+    ax1[1,1].title.set_text('Sleep and activity periods')
+
+    handles, labels = ax1[0,0].get_legend_handles_labels()
+    handles2, labels2 = ax1[1,0].get_legend_handles_labels()
+    fig.legend(handles+handles2, labels+labels2, bbox_to_anchor=(0.4,0.8),ncol=2)
+    #plt.tight_layout()
+    return fig
