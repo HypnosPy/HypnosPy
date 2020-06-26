@@ -213,3 +213,71 @@ def plot_circ2(d):
     fig.legend(handles+handles2, labels+labels2, bbox_to_anchor=(0.4,0.8),ncol=2)
     #plt.tight_layout()
     return fig
+
+def plot_hr(d):
+    fig, ax1 = plt.subplots(2, 2, figsize= (20, 14))
+    #Stack means and stds for HR and HRV over all subjects
+    l_hr_all = []
+    l_hrv_all = []
+    for jdx in range(len(d.keys())-1):
+        for idx in range(len(d[jdx].sleep_windows)):
+            l_hr_all.append(d[jdx].sleep_windows[idx]['mean_hr'].values)
+            l_hrv_all.append(d[jdx].sleep_windows[idx]['hrv_ms'].values)
+    def stack_padding(l):
+        return np.column_stack((itertools.zip_longest(*l, fillvalue=np.nan)))
+    hr_stack = stack_padding(l_hr_all)
+    hrv_stack = stack_padding(l_hrv_all)
+    hr_mean_all = np.nanmean(hr_stack,axis=0)
+    hrv_mean_all = np.nanmean(hrv_stack,axis=0)
+    hr_std_all = np.nanstd(hr_stack,axis=0)
+    hrv_std_all = np.nanstd(hrv_stack,axis=0)
+    
+    for idx in range(len(d.keys())-3):
+        for jdx in range(len(d[idx].sleep_windows)):
+            ax1[0,0].plot(range(len(d[idx].sleep_windows[jdx])), d[idx].sleep_windows[jdx]['mean_hr'])
+    ax1[0,0].plot(range(len(hr_mean_all)), hr_mean_all, color='black', label='population mean')
+    ax1[0,0].fill_between(range(len(hr_mean_all)), hr_mean_all-1.96*(hr_std_all), hr_mean_all+1.96*(hr_std_all),
+                          facecolor ='grey',alpha=0.5)#, label='LPA',edgecolor='lightgreen')
+    
+    for idx in range(len(d.keys())-3):
+        for jdx in range(len(d[idx].sleep_windows)):
+            ax1[1,0].plot(range(len(d[idx].sleep_windows[jdx])), d[idx].sleep_windows[jdx]['hrv_ms'])
+    ax1[1,0].plot(range(len(hrv_mean_all)), hrv_mean_all, color='black')
+    ax1[1,0].fill_between(range(len(hrv_mean_all)), hrv_mean_all-1.96*(hrv_std_all), hrv_mean_all+1.96*(hrv_std_all),
+                          facecolor ='grey',alpha=0.5)
+    
+    ax1[0,0].set_ylim(40,120)
+    ax1[0,0].set_ylabel('HR (bpm)')
+    ax1[1,0].set_ylim(100,2000)
+    ax1[1,0].set_ylabel('HRV (ms)')
+    ax1[1,0].set_xlabel('Time from sleep onset (min)')
+    ax1[0,0].set_yticks(ax1[0,0].get_yticks()[::2])
+    ax1[1,0].set_yticks(ax1[1,0].get_yticks()[::2])
+    ax1[0,0].set_xticks([])
+            
+    dfa_cols = ['dfa_ENMO_sleep','dfa_ENMO_wake','dfa_HR_sleep','dfa_HR_wake','dfa_HRV_sleep','dfa_HRV_wake']
+    sampen_cols = ['se_ENMO_sleep','se_ENMO_wake','se_HR_sleep','se_HR_wake','se_HRV_sleep','se_HRV_wake']
+    dfa_labels = ['ENMO_s','ENMO_w','HR_s','HR_w','HRV_s','HRV_w']
+    sampen_labels = ['ENMO_s','ENMO_w','HR_s','HR_w','HRV_s','HRV_w']
+    dfa = d_pop_t[dfa_cols]
+    dfa_t = np.transpose(dfa)
+    sampen = d_pop_t[sampen_cols]
+    sampen_t = np.transpose(sampen)
+    ax1[0,1].boxplot(dfa_t, labels= dfa_labels)
+    ax1[0,1].tick_params(axis='x', which='both',bottom=False,top=False, labelbottom=True, rotation=0)
+    ax1[0,1].set_yticks(ax1[0,1].get_yticks()[::2])
+    ax1[0,1].set_xticks([])
+
+    ax1[1,1].boxplot(sampen_t, labels = sampen_labels)
+    ax1[1,1].tick_params(axis='x', which='both',bottom=False,top=False, labelbottom=True, rotation=0)
+    ax1[1,1].set_yticks(ax1[1,1].get_yticks()[::2])
+    ax1[1,1].set_ylim(0,2)
+
+    ax1[0,0].title.set_text('HR')
+    ax1[1,0].title.set_text('HRV')
+    ax1[0,1].title.set_text('DFA')
+    ax1[1,1].title.set_text('Sample entropy')
+
+    fig.legend(bbox_to_anchor=(0.4,0.8), ncol=2)
+    #plt.tight_layout()
+    return fig
