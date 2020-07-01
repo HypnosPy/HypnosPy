@@ -8,7 +8,10 @@ if __name__ == "__main__":
     pp = RawProcessing()
     pp.load_file("./data/examples_mesa/mesa-sample.csv",
                  collection_name="mesa",
-                 device_location="dw")
+                 col_for_datatime="linetime",
+                 device_location="dw",
+                 start_of_week="dayofweek",
+                 col_for_pid="mesaid")
 
     pp.export_hypnospy("my_data.hyp")
 
@@ -20,7 +23,10 @@ if __name__ == "__main__":
     swa = SleepWakeAnalysis(w1)
     r = swa.oakley_algorithm("activity")
 
-    print(r)
+    
+
+
+    #print(r)
     #print(w.data)
 
     #if trixial→ collapse ENMO to (15’’,30’’)

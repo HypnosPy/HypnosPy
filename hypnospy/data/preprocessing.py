@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 class RawProcessing(object):
 
@@ -22,7 +23,15 @@ class RawProcessing(object):
                   filename,
                   collection_name,
                   device_location,
-                  additional_data=None):
+                  additional_data=None,
+                  # Datatime parameters
+                  col_for_datatime="time",
+                  start_of_week=None,
+                  strftime=None,
+                  # PID parameters
+                  col_for_pid=None,
+                  pid=-1,
+                  ):
 
         self.filename = filename
         if device_location not in self.possible_locations:
@@ -36,7 +45,79 @@ class RawProcessing(object):
         self.additional_data = additional_data
         self.collection_name = collection_name
 
-        self.data = self.__get_wearable_type(self.filename)
+        self.data = self.__load_wearable_data(self.filename)
+        self.__configure_datatime(col_for_datatime, strftime, start_of_week)
+        self.__configure_pid(col_for_pid, pid)
+
+
+    def __configure_pid(self, col_for_pid:str, pid:int):
+        if col_for_pid is None and pid == -1:
+            raise ValueError("Either pid or col_for_pid need to have a valid value.")
+
+        if pid != -1:
+            self.pid = pid
+
+        elif col_for_pid is not None:
+            if col_for_pid not in self.data.keys():
+                raise ValueError("Column %s is not in the dataframe." % (col_for_pid))
+
+            pid = self.data.iloc[0][col_for_pid]
+            self.pid = pid
+
+    def __configure_datatime(self, col_for_datatime, strftime, start_of_week):
+        if strftime is None and start_of_week is None:
+            raise ValueError("Either strftime or start_of_week need to have a valid value.")
+
+        if strftime is None or (strftime is not None and strftime.find("%d") == -1): # Could not find a day
+            # Check if we can extract the start_of_week:
+            starting_day_of_week = 1
+            if type(start_of_week) == str:  # ColName from which we will extract the start_of_week
+                if start_of_week not in self.data:
+                    raise ValueError("%s is not a column in the dataframe" % (start_of_week))
+
+                starting_day_of_week = self.data.iloc[0][start_of_week]
+
+            elif type(start_of_week) == int:
+                starting_day_of_week = start_of_week
+
+            self.__datatime_without_date(col_for_datatime, starting_day_of_week)
+
+
+    def __datatime_without_date(self, col_for_datatime, starting_day_of_week):
+        """
+        If we blindly use something like
+
+            df["linetime"] = pd.to_datetime(df["linetime"])
+
+        we will have all the days in the dataset set as the current day.
+        That is not what we want.
+
+        Instead, we pick a starting day (January 1, 2017 - *Sunday*) and modify the
+        rest of the data according to the day of th week the experiment started.
+
+        This way, if an experiment started on a Tuesday (day=3), the actigraphy
+        data for this person would start on January 3, 2017.
+
+        :param col_for_datatime: col name in the dataframe for the datetime
+        :param starting_day_of_week: 0 = Sunday, 1 = Monday, ... 6 = Saturday
+        """
+
+        # TODO: this procedure to find the freq might be too specific and work only for mesa and latinos
+        freq = abs(int(self.data[col_for_datatime].iloc[1][-2:]) - int(self.data[col_for_datatime].iloc[0][-2:]))
+        ndays = int(np.ceil(self.data.shape[0] / (24 * (60 / freq) * 60)))
+        firstTime, lastTime = self.data.iloc[0][col_for_datatime], self.data.iloc[-1][col_for_datatime]
+
+        for n in range(-1, 2):
+            times = pd.date_range(start="1-%d-2017 %s" % (starting_day_of_week, firstTime),
+                                  end="1-%d-2017 %s" % (starting_day_of_week + ndays + n, lastTime),
+                                  freq="{}s".format(freq))
+
+            if times.shape[0] == self.data.shape[0]:
+                self.data[col_for_datatime] = times
+                break
+        else:
+            raise ValueError("Could not find correct range for dataframe. "
+                             "Please check if parameter ``datatime_col'' is correct.")
 
 
     def export_hypnospy(self, filename):
@@ -70,7 +151,7 @@ class RawProcessing(object):
         print("Saved file %s." % (filename))
 
 
-    def __get_wearable_type(self, filename):
+    def __load_wearable_data(self, filename):
         """ Obtain device type
         Used to decide which way to parse the data from input file
 
