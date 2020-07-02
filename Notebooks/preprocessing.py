@@ -132,7 +132,21 @@ class Subject:
         self.pa_rec = day_rd[['ENMO','MET_Sed','MET_MVPA','MET_VigPA','min_MVPA','min_VigPA','min_LPA']]
         return self
     
-    from sleep_analysis import get_sleep, get_SRI
+    #Function to get the sleep regularity index
+    def get_ARI(self, q_sleep = 0.4):
+        act_col = 'min_MVPA'
+        sri_delta = np.zeros(len(self.data[self.data.index[0]:self.data.shift(periods=-1,freq='D').index[-1]]))
+        for i in range(len(self.data[self.data.index[0]:self.data.shift(periods=-1,freq='D').index[-1]])):
+            if self.data[act_col][self.data.index[i]] == self.data[act_col].shift(periods=-1,freq='D')[self.data.index[i]]:
+                sri_delta[i] = 1
+            else:
+                sri_delta[i] = 0
+        sri_df = pd.DataFrame(sri_delta)
+        sri = -100 + (200 / (len(self.data[self.data.index[0]:self.data.shift(periods=-1,freq='D').index[-1]]))) * sri_df.sum()
+        self.ARI = float(sri)
+        return self 
+    
+    from sleep_analysis import get_sleep, get_SRI, get_sleep_grid
     from circadian_analysis import get_IV_IS, get_cosinor, get_SSA,get_SSA_par
     from nonlinear_analysis import get_nonlinear, get_nonlin_params
     from crespo_analysis import Crespo
@@ -160,10 +174,10 @@ class Subject:
     
         nonlin_cols = ['dfa_ENMO_sleep','dfa_ENMO_wake','dfa_HR_sleep','dfa_HR_wake','dfa_HRV_sleep','dfa_HRV_wake',
                        'se_ENMO_sleep','se_ENMO_wake','se_HR_sleep','se_HR_wake','se_HRV_sleep','se_HRV_wake']
-        nonlinear = pd.DataFrame(columns=nonlin_cols,index=range(len(self.nonlinear['hrv_ms']['wake'].keys())))
+        nonlinear = pd.DataFrame(columns=nonlin_cols,index=range(len(self.wake_windows)))
         #nonlinear = pd.DataFrame(columns=nonlin_cols,index=self.pa_rec.index)
 
-        for idx in self.nonlinear['ENMO']['sleep'].keys():
+        for idx in range(len(self.sleep_windows)):
             nonlinear.loc[idx,'dfa_ENMO_sleep'] = self.nonlinear['ENMO']['sleep'][idx]['DFA']
             nonlinear.loc[idx,'dfa_HR_sleep'] = self.nonlinear['mean_hr']['sleep'][idx]['DFA']
             nonlinear.loc[idx,'dfa_HRV_sleep'] = self.nonlinear['hrv_ms']['sleep'][idx]['DFA']
@@ -171,18 +185,16 @@ class Subject:
             nonlinear.loc[idx,'se_HR_sleep'] = self.nonlinear['mean_hr']['sleep'][idx]['SampEn']
             nonlinear.loc[idx,'se_HRV_sleep'] = self.nonlinear['hrv_ms']['sleep'][idx]['SampEn']
    
-        for jdx in self.nonlinear['hrv_ms']['wake'].keys():
+        for jdx in range(len(self.wake_windows)):
             nonlinear.loc[jdx,'dfa_ENMO_wake'] = self.nonlinear['ENMO']['wake'][jdx]['DFA']
             nonlinear.loc[jdx,'dfa_HR_wake'] = self.nonlinear['mean_hr']['wake'][jdx]['DFA']
             nonlinear.loc[jdx,'dfa_HRV_wake'] = self.nonlinear['hrv_ms']['wake'][jdx]['DFA']
             nonlinear.loc[jdx,'se_ENMO_wake'] = self.nonlinear['ENMO']['wake'][jdx]['SampEn']
             nonlinear.loc[jdx,'se_HR_wake'] = self.nonlinear['mean_hr']['wake'][jdx]['SampEn']
             nonlinear.loc[jdx,'se_HRV_wake'] = self.nonlinear['hrv_ms']['wake'][jdx]['SampEn']
-            
-       
-        nonlinear = nonlinear.set_index(pa_rec.index)
+        
         #print(nonlinear)
-        wake_lengths = pd.DataFrame(columns = ['w_length'],index = pa_rec.index)
+        wake_lengths = pd.DataFrame(columns = ['w_length'],index = self.pa_rec.index)
         for idx in range(len(self.wake_windows)):
             wake_lengths.iloc[idx]['w_length'] = self.wake_windows[idx]['length'][0]
         sleep_lengths = pd.DataFrame(columns = ['s_length'],index = self.pa_rec.index)
@@ -190,6 +202,14 @@ class Subject:
             sleep_lengths.iloc[idx]['s_length'] = self.sleep_windows[idx]['length'][0]
 
         sleep_rec.index = pd.to_datetime(self.sleep_rec.index.values) - timedelta(hours=20)
+        
+        if len(nonlinear.index)==len(sleep_rec.index):
+            #nonlinear = nonlinear.reset_index()
+            nonlinear = nonlinear.set_index(sleep_rec.index)
+        elif len(nonlinear.index)==len(pa_rec.index):
+            #nonlinear = nonlinear.reset_index()
+            nonlinear = nonlinear.set_index(self.pa_rec.index)
+        
         #print(df.sleep_rec)
         daily = pd.concat([pa_rec,sleep_rec, wake_lengths,sleep_lengths,nonlinear],axis=1)
 
