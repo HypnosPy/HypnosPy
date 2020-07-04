@@ -281,3 +281,67 @@ def plot_hr(d):
     fig.legend(bbox_to_anchor=(0.4,0.8), ncol=2)
     #plt.tight_layout()
     return fig
+
+def plot_algos(d,i,diary):
+    fig, ax1 = plt.subplots(4, 1, figsize= (20, 10),sharex=True)
+    #ax1.set_title("Physical activity and sedentary time per hour")                        
+    #Resampling: hourly
+    df2_h = d[i].data.copy()#resample(frequency).sum()
+    ax1[0].set_ylim(0,max(df2_h['ENMO']))
+    ax1[0].set_facecolor('snow')
+    ax1[0].plot(df2_h.index,df2_h['ENMO'], label='MET_MVPA',linewidth=1, color ='black',alpha=1)
+    ax1[0].fill_between(df2_h.index, 0, df2_h['min_VigPA']*1500,facecolor ='darkgreen',alpha=0.7, label='VPA',edgecolor='darkgreen')
+    ax1[0].fill_between(df2_h.index, 0, df2_h['min_MVPA']*1500,facecolor ='forestgreen',alpha=0.7, label='MVPA',edgecolor='forestgreen')
+    ax1[0].fill_between(df2_h.index, 0, (df2_h['MET_Sed'])*1500,facecolor ='palegoldenrod',alpha=0.6,label='sedentary',edgecolor='palegoldenrod')
+    ax1[0].set_ylabel('ENMO')
+    ax1[0].set_xticks([])
+    ax1[0].legend()  
+    #Add grey windows for sleep
+    for idx in range(len(diary)):
+        ax1[0].axvspan(diary['sleep_onset'][idx],diary['sleep_offset'][idx],facecolor='salmon',alpha=1) 
+    for idx in range(len(d[i].sleep_rec[0.4])):
+        ax1[0].axvspan(d[i].sleep_rec[0.4]['sleep_onset'][idx],d[i].sleep_rec[0.4]['sleep_offset'][idx],facecolor='black',alpha=0.5) 
+ 
+    
+    ax1[1].plot(df2_h.index,df2_h['pitch_mean_dw'].abs(), label='pitch_dw',linewidth=0.4, color ='green',alpha=0.3)
+    ax1[1].plot(df2_h.index,df2_h['roll_mean_dw'].abs(), label='roll_dw',linewidth=0.4, color ='orange',alpha=0.3)
+    ax1[1].set_xticks([])
+    ax1[1].set_ylabel('Abs Angle dw')
+    ax1[1].set_facecolor('snow')
+    ax1[1].set_ylim(0,max(df2_h['pitch_mean_dw']))
+    ax1[2].plot(df2_h.index,df2_h['pitch_mean_ndw'].abs(), label='pitch_ndw',linewidth=0.4, color ='green',alpha=0.3)
+    ax1[2].plot(df2_h.index,df2_h['roll_mean_ndw'].abs(), label='roll_ndw',linewidth=0.4, color ='orange',alpha=0.3)
+    ax1[2].set_xticks([])
+     
+    ax1[2].set_facecolor('snow')
+    ax1[2].set_ylabel('Abs Angle ndw')
+    ax1[2].set_ylim(0,max(df2_h['pitch_mean_ndw']))
+    ax1[3].plot(df2_h.index,df2_h['pitch_mean_thigh'].abs(), label='pitch_thigh',linewidth=0.4, color ='green',alpha=0.3)
+    ax1[3].plot(df2_h.index,df2_h['roll_mean_thigh'].abs(), label='roll_thigh',linewidth=0.4, color ='orange',alpha=0.3)
+    
+    ax1[3].set_facecolor('snow')
+    ax1[3].set_ylabel('Abs Angle thigh')
+    ax1[3].set_ylim(0,max(df2_h['pitch_mean_thigh']))
+    
+    for jdx in range(1,4):
+        for idx in range(len(diary)):
+            ax1[jdx].axvspan(diary['sleep_onset'][idx],diary['sleep_offset'][idx],facecolor='peru',alpha=1) 
+    for idx in range(len(d[i].sleep_recvh['dw'])):
+        ax1[1].axvspan(d[i].sleep_recvh['dw']['sleep_onset'][idx],d[i].sleep_recvh['dw']['sleep_offset'][idx],facecolor='royalblue',alpha=0.6)
+    for idx in range(len(d[i].sleep_recvh['ndw'])):
+        ax1[2].axvspan(d[i].sleep_recvh['ndw']['sleep_onset'][idx],d[i].sleep_recvh['ndw']['sleep_offset'][idx],facecolor='royalblue',alpha=0.6)
+    for idx in range(len(d[i].sleep_recvh['dw'])):
+        ax1[3].axvspan(d[i].sleep_recvh['thigh']['sleep_onset'][idx],d[i].sleep_recvh['thigh']['sleep_offset'][idx],facecolor='royalblue',alpha=0.6)
+    
+    #ax1[-1].xaxis.set_minor_locator(dates.HourLocator(interval=4))   # every 4 hours
+    #ax1[-1].xaxis.set_minor_formatter(dates.DateFormatter('%a'))
+    ax1[-1].xaxis.set_major_locator(dates.DayLocator(interval=1))    # every day
+    ax1[-1].xaxis.set_major_formatter(dates.DateFormatter('%a'))
+    plt.setp(ax1, xlim=(df2_h.index[0],df2_h.index[-1]))
+    ax1[0].legend()
+    ax1[1].legend()
+    ax1[2].legend()
+    ax1[3].legend()
+    #fig.legend()
+    plt.tight_layout()
+    return fig 
