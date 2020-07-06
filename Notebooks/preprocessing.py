@@ -146,7 +146,7 @@ class Subject:
         self.ARI = float(sri)
         return self 
     
-    from sleep_analysis import get_sleep, get_SRI, get_sleep_grid
+    from sleep_analysis import get_sleep, get_SRI, get_sleep_grid, get_vanhees
     from circadian_analysis import get_IV_IS, get_cosinor, get_SSA,get_SSA_par
     from nonlinear_analysis import get_nonlinear, get_nonlin_params
     from crespo_analysis import Crespo
@@ -170,28 +170,30 @@ class Subject:
     def get_daily_stats(self):
         sleep_rec = self.sleep_rec.copy()
         pa_rec = self.pa_rec.copy()
-        ssa = self.ssa.copy()
+        if hasattr(self, 'ssa'):
+            ssa = self.ssa.copy()
     
         nonlin_cols = ['dfa_ENMO_sleep','dfa_ENMO_wake','dfa_HR_sleep','dfa_HR_wake','dfa_HRV_sleep','dfa_HRV_wake',
                        'se_ENMO_sleep','se_ENMO_wake','se_HR_sleep','se_HR_wake','se_HRV_sleep','se_HRV_wake']
         nonlinear = pd.DataFrame(columns=nonlin_cols,index=range(len(self.wake_windows)))
         #nonlinear = pd.DataFrame(columns=nonlin_cols,index=self.pa_rec.index)
-
-        for idx in range(len(self.sleep_windows)):
-            nonlinear.loc[idx,'dfa_ENMO_sleep'] = self.nonlinear['ENMO']['sleep'][idx]['DFA']
-            nonlinear.loc[idx,'dfa_HR_sleep'] = self.nonlinear['mean_hr']['sleep'][idx]['DFA']
-            nonlinear.loc[idx,'dfa_HRV_sleep'] = self.nonlinear['hrv_ms']['sleep'][idx]['DFA']
-            nonlinear.loc[idx,'se_ENMO_sleep'] = self.nonlinear['ENMO']['sleep'][idx]['SampEn']
-            nonlinear.loc[idx,'se_HR_sleep'] = self.nonlinear['mean_hr']['sleep'][idx]['SampEn']
-            nonlinear.loc[idx,'se_HRV_sleep'] = self.nonlinear['hrv_ms']['sleep'][idx]['SampEn']
+        
+        if hasattr(self,'nonlinear'):
+            for idx in range(len(self.sleep_windows)):
+                nonlinear.loc[idx,'dfa_ENMO_sleep'] = self.nonlinear['ENMO']['sleep'][idx]['DFA']
+                nonlinear.loc[idx,'dfa_HR_sleep'] = self.nonlinear['mean_hr']['sleep'][idx]['DFA']
+                nonlinear.loc[idx,'dfa_HRV_sleep'] = self.nonlinear['hrv_ms']['sleep'][idx]['DFA']
+                nonlinear.loc[idx,'se_ENMO_sleep'] = self.nonlinear['ENMO']['sleep'][idx]['SampEn']
+                nonlinear.loc[idx,'se_HR_sleep'] = self.nonlinear['mean_hr']['sleep'][idx]['SampEn']
+                nonlinear.loc[idx,'se_HRV_sleep'] = self.nonlinear['hrv_ms']['sleep'][idx]['SampEn']
    
-        for jdx in range(len(self.wake_windows)):
-            nonlinear.loc[jdx,'dfa_ENMO_wake'] = self.nonlinear['ENMO']['wake'][jdx]['DFA']
-            nonlinear.loc[jdx,'dfa_HR_wake'] = self.nonlinear['mean_hr']['wake'][jdx]['DFA']
-            nonlinear.loc[jdx,'dfa_HRV_wake'] = self.nonlinear['hrv_ms']['wake'][jdx]['DFA']
-            nonlinear.loc[jdx,'se_ENMO_wake'] = self.nonlinear['ENMO']['wake'][jdx]['SampEn']
-            nonlinear.loc[jdx,'se_HR_wake'] = self.nonlinear['mean_hr']['wake'][jdx]['SampEn']
-            nonlinear.loc[jdx,'se_HRV_wake'] = self.nonlinear['hrv_ms']['wake'][jdx]['SampEn']
+            for jdx in range(len(self.wake_windows)):
+                nonlinear.loc[jdx,'dfa_ENMO_wake'] = self.nonlinear['ENMO']['wake'][jdx]['DFA']
+                nonlinear.loc[jdx,'dfa_HR_wake'] = self.nonlinear['mean_hr']['wake'][jdx]['DFA']
+                nonlinear.loc[jdx,'dfa_HRV_wake'] = self.nonlinear['hrv_ms']['wake'][jdx]['DFA']
+                nonlinear.loc[jdx,'se_ENMO_wake'] = self.nonlinear['ENMO']['wake'][jdx]['SampEn']
+                nonlinear.loc[jdx,'se_HR_wake'] = self.nonlinear['mean_hr']['wake'][jdx]['SampEn']
+                nonlinear.loc[jdx,'se_HRV_wake'] = self.nonlinear['hrv_ms']['wake'][jdx]['SampEn']
         
         #print(nonlinear)
         wake_lengths = pd.DataFrame(columns = ['w_length'],index = self.pa_rec.index)
@@ -203,22 +205,23 @@ class Subject:
 
         sleep_rec.index = pd.to_datetime(self.sleep_rec.index.values) - timedelta(hours=20)
         
-        if len(nonlinear.index)==len(sleep_rec.index):
-            #nonlinear = nonlinear.reset_index()
-            nonlinear = nonlinear.set_index(sleep_rec.index)
-        elif len(nonlinear.index)==len(pa_rec.index):
-            #nonlinear = nonlinear.reset_index()
-            nonlinear = nonlinear.set_index(self.pa_rec.index)
+        if hasattr(self,'nonlinear'):
+            if len(nonlinear.index)==len(sleep_rec.index):
+                #nonlinear = nonlinear.reset_index()
+                nonlinear = nonlinear.set_index(sleep_rec.index)
+            elif len(nonlinear.index)==len(pa_rec.index):
+                #nonlinear = nonlinear.reset_index()
+                nonlinear = nonlinear.set_index(self.pa_rec.index)
         
-        #print(df.sleep_rec)
         daily = pd.concat([pa_rec,sleep_rec, wake_lengths,sleep_lengths,nonlinear],axis=1)
-
-        daily['ENMO_SSA_phi'] = self.ssa['ENMO']['acrophase']
-        daily['mean_hr_SSA_phi'] = self.ssa['mean_hr']['acrophase']
-        daily['ENMO_SSA_per'] = self.ssa['ENMO']['period']
-        daily['mean_hr_SSA_per'] = self.ssa['mean_hr']['period']
-        daily['ENMO_phisleep_delay'] = daily['sleep_onset'] - daily['ENMO_SSA_phi']
-        daily['mean_hr_phisleep_delay'] = daily['sleep_onset'] - daily['mean_hr_SSA_phi']
+        if hasattr(self, 'ssa'):
+           
+            daily['ENMO_SSA_phi'] = self.ssa['ENMO']['acrophase']
+            daily['mean_hr_SSA_phi'] = self.ssa['mean_hr']['acrophase']
+            daily['ENMO_SSA_per'] = self.ssa['ENMO']['period']
+            daily['mean_hr_SSA_per'] = self.ssa['mean_hr']['period']
+            daily['ENMO_phisleep_delay'] = daily['sleep_onset'] - daily['ENMO_SSA_phi']
+            daily['mean_hr_phisleep_delay'] = daily['sleep_onset'] - daily['mean_hr_SSA_phi']
 
         self.daily_stats = daily
         return self
