@@ -346,6 +346,50 @@ def plot_algos(d,i,diary,qtl,length):
     plt.tight_layout()
     return fig 
 
+def plot_algos_dw(d,i,diary,qtl,length):
+    fig, ax1 = plt.subplots(2, 1, figsize= (20, 10),sharex=True)
+    #ax1.set_title("Physical activity and sedentary time per hour")                        
+    #Resampling: hourly
+    df2_h = d[i].data.copy()#resample(frequency).sum()
+    ax1[0].set_ylim(0,max(df2_h['ENMO']))
+    ax1[0].set_facecolor('snow')
+    ax1[0].plot(df2_h.index,df2_h['ENMO'], label='MET_MVPA',linewidth=1, color ='black',alpha=1)
+    ax1[0].fill_between(df2_h.index, 0, df2_h['min_VigPA']*1500,facecolor ='darkgreen',alpha=0.7, label='VPA',edgecolor='darkgreen')
+    ax1[0].fill_between(df2_h.index, 0, df2_h['min_MVPA']*1500,facecolor ='forestgreen',alpha=0.7, label='MVPA',edgecolor='forestgreen')
+    ax1[0].fill_between(df2_h.index, 0, (df2_h['MET_Sed'])*1500,facecolor ='palegoldenrod',alpha=0.6,label='sedentary',edgecolor='palegoldenrod')
+    ax1[0].set_ylabel('ENMO')
+    ax1[0].set_xticks([])
+    ax1[0].legend()  
+    #Add grey windows for sleep
+    for idx in range(len(diary)):
+        ax1[0].axvspan(diary['sleep_onset'][idx],diary['sleep_offset'][idx],facecolor='peru',alpha=1) 
+    for idx in range(len(d[i].sleep_rec[qtl][length])):
+        ax1[0].axvspan(d[i].sleep_rec[qtl][length]['sleep_onset'][idx],d[i].sleep_rec[qtl][length]['sleep_offset'][idx],facecolor='black',alpha=0.5) 
+ 
+    
+    ax1[1].plot(df2_h.index,df2_h['pitch_mean_dw'].abs(), label='pitch_dw',linewidth=0.4, color ='green',alpha=0.3)
+    ax1[1].plot(df2_h.index,df2_h['roll_mean_dw'].abs(), label='roll_dw',linewidth=0.4, color ='orange',alpha=0.3)
+    ax1[1].set_xticks([])
+    ax1[1].set_ylabel('Abs Angle dw')
+    ax1[1].set_facecolor('snow')
+    ax1[1].set_ylim(0,max(df2_h['pitch_mean_dw']))
+    
+    for idx in range(len(diary)):
+        ax1[1].axvspan(diary['sleep_onset'][idx],diary['sleep_offset'][idx],facecolor='peru',alpha=1) 
+    for idx in range(len(d[i].sleep_recvh['dw'])):
+        ax1[1].axvspan(d[i].sleep_recvh['dw']['sleep_onset'][idx],d[i].sleep_recvh['dw']['sleep_offset'][idx],facecolor='royalblue',alpha=0.6)
+    
+    #ax1[-1].xaxis.set_minor_locator(dates.HourLocator(interval=4))   # every 4 hours
+    #ax1[-1].xaxis.set_minor_formatter(dates.DateFormatter('%a'))
+    ax1[-1].xaxis.set_major_locator(dates.DayLocator(interval=1))    # every day
+    ax1[-1].xaxis.set_major_formatter(dates.DateFormatter('%a'))
+    plt.setp(ax1, xlim=(df2_h.index[0],df2_h.index[-1]))
+    ax1[0].legend()
+    ax1[1].legend()
+    #fig.legend()
+    plt.tight_layout()
+    return fig 
+
 
 def plot_daily_vh(d,i):
     import matplotlib.dates as dates

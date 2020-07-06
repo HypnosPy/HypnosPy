@@ -208,7 +208,7 @@ def get_sleep_grid(self, q_sleep=[0.4], bed_time = '20:00',wake_time = '12:00', 
         sleep_df['sleep_offset'] = state_changes.resample('24H',base=base_s).max()
         sleep_df['TST']= sleep_df['sleep_offset'] -  sleep_df['sleep_onset']
         sleep_df['weekday'] = sleep_df.index.dayofweek
-        sleep_df = pd.DataFrame(sleep_df)
+        sleep_df = pd.DataFrame(sleep_df).dropna()
         #Label sleep windows on original df according to sleep_df
         df[col_sleep+'_window'] = np.nan
         df[col_sleep+'_window'].loc[sleep_df['sleep_onset']] = 1
@@ -320,11 +320,15 @@ def get_vanhees(self, limb = 'dw',q_sleep=0.1, bed_time = '20:00',wake_time = '1
         #Extract the times when labelled sleep changes to wake and viceversa
         state_changes = df['sleepvote_'+limb].diff().fillna(0)[lambda x: x != 0].index.tolist()
         state_changes = pd.to_datetime(state_changes).to_frame()
+        #print(state_changes)
         #Extract index of nights available for the subject to pass onto sleep df
-        index = state_changes.resample('24H',base=base_s).min().index
+        #Keep only nights with enough data (more than 7 hours available in the interval) 
+        index = state_changes.resample('24H',base=base_s).min()[night_count > 420].index
+        #print(state_changes.resample('24H',base=base_s).min()[night_count > 480])
         sleep_df = pd.DataFrame(columns=['TST','sleep_onset','sleep_offset','weekday'], index = index)
+        #print(sleep_df)
         #Extract sleep onset each night as earliest wake-sleep transition after base hour
-        sleep_df['sleep_onset'] = state_changes.resample('24H',base=base_s).min()
+        sleep_df['sleep_onset'] = state_changes.resample('24H',base=base_s).min()[night_count > 420]
         #Extract sleep onset each night as last sleep-wake transition after base hour
         sleep_df['sleep_offset'] = state_changes.resample('24H',base=base_s).max()
         sleep_df['TST']= sleep_df['sleep_offset'] -  sleep_df['sleep_onset']
@@ -333,8 +337,8 @@ def get_vanhees(self, limb = 'dw',q_sleep=0.1, bed_time = '20:00',wake_time = '1
         #Label sleep windows on original df according to sleep_df
         df['sleep_window_'+limb] = np.nan
         sleep_df = sleep_df.dropna()
-        #Keep only nights with enough data (more than 8 hours available in the interval)
-        sleep_df = sleep_df[night_count > 480]
+
+
         #print(sleep_df)
         df['sleep_window_'+limb].loc[sleep_df['sleep_onset']] = 1
         df['sleep_window_'+limb].loc[sleep_df['sleep_offset']] = 0
@@ -352,8 +356,7 @@ def get_vanhees(self, limb = 'dw',q_sleep=0.1, bed_time = '20:00',wake_time = '1
                                             include_end = True)
     night_count = night['pitch_mean_'+limb].resample('24H',base=base_s).count()
     
-    night, state_changes, sleep_df, index,vhees= get_sleep_windows(night,
-                                                                       vhees,limb,night_count,['pitch_mean_'+limb,'roll_mean_'+limb],
+    night, state_changes, sleep_df, index,vhees= get_sleep_windows(night,vhees,limb,night_count,['pitch_mean_'+limb,'roll_mean_'+limb],
                                                                        base_w,base_s,min_len)
     #night, state_changes_r, sleep_df_r, index,vhees = get_sleep_windows(night,vhees,limb,night_count,'roll_mean_'+limb, base_w,base_s,min_len)
        
@@ -372,7 +375,6 @@ def get_vanhees(self, limb = 'dw',q_sleep=0.1, bed_time = '20:00',wake_time = '1
     
     #Extract sleep efficiency as (TST-WASO)/TST
     sleep_TST_delta = [(x.seconds/60) for x in sleep_df['TST'] ] 
-    #sleep_TST_delta_r = [(x.seconds/60) for x in sleep_df_r['TST'] ] 
             
     self.data['sleep_window_'+limb] = vhees['sleep_window_'+limb]
     
