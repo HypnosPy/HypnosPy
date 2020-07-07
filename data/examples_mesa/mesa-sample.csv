@@ -1,4 +1,4 @@
-esaid,line,linetime,offwrist,activity,marker,whitelight,redlight,greenlight,bluelight,wake,interval,dayofweek,daybymidnight,daybynoon
+mesaid,line,linetime,offwrist,activity,marker,whitelight,redlight,greenlight,bluelight,wake,interval,dayofweek,daybymidnight,daybynoon
 1,1,17:00:00,0,100.00,0,3619.370,0.1140,385.0000,229.0000,1,ACTIVE,4,1,1
 1,2,17:00:30,0,316.00,1,24.6100,3.2800,1.9500,0.2720,1,ACTIVE,4,1,1
 1,3,17:01:00,0,96.00,0,13.3700,2.8200,0.8020,0.1140,1,ACTIVE,4,1,1

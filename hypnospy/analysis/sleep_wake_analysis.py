@@ -3,11 +3,21 @@ from hypnospy import Wearable
 class SleepWakeAnalysis(object):
 
     def __init__(self, wearable: Wearable):
-        # TODO: we might want to have the activityIdx in the wearable object,
-        #  so we do not need to use it as parameters anymore
+
         self.wearable = wearable
 
-    def run_sleep_algorithm(self, algname, activityIdx, resolution="30s", rescoring=False):
+        # Get activity col configuration from wearable
+        # TODO: Assuming we are using only the first axis
+        self.activityIdx = wearable.activitycols[0]
+        print("Using col %s as activity index." % (self.activityIdx))
+
+        if not self.wearable.is_act_count:
+            raise AttributeError("This device does not have activity counts. Sleep Formulas rely on activity counts.")
+
+        # TODO: we should have the option to only run sleep algorithms in the "hyp_night" period
+
+
+    def run_sleep_algorithm(self, algname, activityIdx=None, resolution="30s", rescoring=False):
         """ Function that chooses sleep algorithm from a list of heuristic (non-data driven) approaches
             Function takes in algorithm (1) choice, (2) resolution (30s or 60s) currently available
             and (3) activity index method. Currently counts and ENMO (universally derivable across triaxial
@@ -69,7 +79,7 @@ class SleepWakeAnalysis(object):
         return result
 
     # %%
-    def run_sleep_all_algorithm(self, activityIdx, rescoring=False):
+    def run_sleep_all_algorithm(self, activityIdx=None, rescoring=False):
         """ This function runs the algorithm of choice"
         """
 
@@ -91,9 +101,24 @@ class SleepWakeAnalysis(object):
 
     ### INCLUDE OUR HR- RESCORING HERE?####
 
+
+    def __get_activity(self, activityIdx):
+        if activityIdx is None:
+            act = self.wearable.data[self.activityIdx]
+        else:
+            if activityIdx in self.wearable.data.keys():
+                act = self.wearable.data[activityIdx]
+            else:
+                raise ValueError("Activity %s not found in the dataset. "
+                                 "Options are: %s" % (activityIdx, ','.join(self.wearable.data.keys())))
+
+        return act
+
+
     #Scripps Clinic Algorithm Definition
-    def scripps_clinic_algorithm(self, activityIdx, scaler=0.204):
-        act = self.wearable.data[activityIdx]
+    def scripps_clinic_algorithm(self, activityIdx=None, scaler=0.204):
+
+        act = self.__get_activity(activityIdx)
 
         act_series = dict()
         act_series["_a0"] = act.fillna(0.0)
@@ -118,12 +143,12 @@ class SleepWakeAnalysis(object):
 
     # %%
     # Sadeh Algorithm
-    def sadeh_algorithm(self, activityIdx, min_threshold=0, minNat=50, maxNat=100,
+    def sadeh_algorithm(self, activityIdx=None, min_threshold=0, minNat=50, maxNat=100,
                         window_past = 6, window_nat = 11, window_centered = 11):
         """
         Sadeh model for classifying sleep vs active
         """
-        act = self.wearable.data[activityIdx]
+        act = self.__get_activity(activityIdx)
 
         _mean = act.rolling(window=window_centered, center=True, min_periods=1).mean()
         _std = act.rolling(window=window_past, min_periods=1).std()
@@ -139,11 +164,11 @@ class SleepWakeAnalysis(object):
 
     # %%
     # Oakley Algorithm
-    def oakley_algorithm(self, activityIdx, threshold=80):
+    def oakley_algorithm(self, activityIdx=None, threshold=80):
         """
         Oakley method to class sleep vs active/awake
         """
-        act = self.wearable.data[activityIdx]
+        act = self.__get_activity(activityIdx)
 
         act_series = {}
 
@@ -161,11 +186,11 @@ class SleepWakeAnalysis(object):
 
     # %%
     # Cole Kripke algorithm
-    def cole_kripke_algorithm(self, activityIdx):
+    def cole_kripke_algorithm(self, activityIdx=None):
         """
         Cole-Kripke method to classify sleep vs awake
         """
-        act = self.wearable.data[activityIdx]
+        act = self.__get_activity(activityIdx)
 
         act_series = {}
 
@@ -187,11 +212,11 @@ class SleepWakeAnalysis(object):
 
     # %%
     # Sazonov algorithm
-    def sazonov_algorithm(self, activityIdx):
+    def sazonov_algorithm(self, activityIdx=None):
         """
         Sazonov formula as shown in the original paper
         """
-        act = self.wearable.data[activityIdx]
+        act = self.__get_activity(activityIdx)
 
         act_series = {}
 
