@@ -3,52 +3,70 @@ import numpy as np
 
 class RawProcessing(object):
 
-    def __init__(self, filename=None,
-                 collection_name=None,
-                 device_location=None,
-                 additional_data=None):
+    def __init__(self):
 
         """
         :param filename: input filepath
         :param device_location: where this device was located (options are: "bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all")
         :param additional_data:
         """
-        self.possible_locations = ["bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all"]
-        self.possible_collections = ["mesa", "latinos", "hchs"]
+        self.filename = None
+        self.data = None
+        self.device_location = None
+        self.additional_data = None
 
-        if filename is not None:
-            self.load_file(filename, collection_name, device_location, additional_data)
+        self.possible_locations = ["bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all"]
+        self.internal_time_col = "hyp_time"
+        self.internal_activity_cols = ["hyp_act_x", "hyp_act_y", "hpy_act_z"]
+        self.naxis = 0
+        self.is_act_count = False
+        self.is_emno = False
 
     def load_file(self,
-                  filename,
-                  collection_name,
-                  device_location,
-                  additional_data=None,
+                  filename:str,
+                  device_location:str,
+                  # Configuration for activity
+                  cols_for_activity,
+                  is_emno=False,
+                  is_act_count=False,
                   # Datatime parameters
-                  col_for_datatime="time",
-                  start_of_week=None,
-                  strftime=None,
+                  col_for_datatime:str="time",
+                  start_of_week:int=-1,
+                  strftime:str=None,
                   # PID parameters
-                  col_for_pid=None,
-                  pid=-1,
+                  col_for_pid:str=None,
+                  pid:int=-1,
+                  # Any additional data?
+                  additional_data: object = None,
                   ):
 
         self.filename = filename
         if device_location not in self.possible_locations:
             print("ERROR: Device location '%s' not implemented. Options are %s" % (device_location, ','.join(self.possible_locations)))
 
-        if collection_name is None or collection_name not in self.possible_collections:
-            # TODO: Should we restrict the user like that?
-            print("ERROR: Collection '%s' not recognized. Possible collections: %s."% (collection_name, ','.join(self.possible_collections)))
-
         self.device_location = device_location
         self.additional_data = additional_data
-        self.collection_name = collection_name
 
         self.data = self.__load_wearable_data(self.filename)
+        self.__configure_activity(cols_for_activity, is_emno, is_act_count)
         self.__configure_datatime(col_for_datatime, strftime, start_of_week)
         self.__configure_pid(col_for_pid, pid)
 
+
+    def __configure_activity(self, cols_for_activity, is_emno, is_act_count):
+        self.is_act_count = is_act_count
+        self.is_emno = is_emno
+        self.naxis = len(cols_for_activity)
+
+        if self.naxis == 0:
+            raise ValueError("Need at least one col to represent activity.")
+
+        for i, col in enumerate(cols_for_activity):
+            if col not in self.data.keys():
+                raise ValueError("Col %s not detected in the dataset. Possibilities are %s" % (col, ','.join(self.data.keys())))
+            # If col exists, we save it with our internal name.
+            # Note that in case only one axis is available, it will be 'hyp_act_x'.
+            self.data[self.internal_activity_cols[i]] = self.data[col]
 
     def __configure_pid(self, col_for_pid:str, pid:int):
         if col_for_pid is None and pid == -1:
@@ -68,6 +86,8 @@ class RawProcessing(object):
         if strftime is None and start_of_week is None:
             raise ValueError("Either strftime or start_of_week need to have a valid value.")
 
+        # We need to figure out when the data started being collected.
+        # Some datasets like MESA and HCHS from sleepdata.org do not have date information, unfortunately
         if strftime is None or (strftime is not None and strftime.find("%d") == -1): # Could not find a day
             # Check if we can extract the start_of_week:
             starting_day_of_week = 1
@@ -82,6 +102,9 @@ class RawProcessing(object):
 
             self.__datatime_without_date(col_for_datatime, starting_day_of_week)
 
+        # We know when the week started because we have strftime well defined:
+        else:
+            self.data[self.internal_time_col] = pd.to_datatime(self.data[col_for_datatime], format=strftime)
 
     def __datatime_without_date(self, col_for_datatime, starting_day_of_week):
         """
@@ -113,7 +136,7 @@ class RawProcessing(object):
                                   freq="{}s".format(freq))
 
             if times.shape[0] == self.data.shape[0]:
-                self.data[col_for_datatime] = times
+                self.data[self.internal_time_col] = times
                 break
         else:
             raise ValueError("Could not find correct range for dataframe. "
@@ -129,12 +152,14 @@ class RawProcessing(object):
 
         # TODO: find a better way to save these fields to file
         self.data.to_hdf(filename, key='data', mode='w')
-        s = pd.Series([self.device_location, self.collection_name, self.additional_data])
+        s = pd.Series([self.pid, self.internal_time_col,
+                       self.internal_activity_cols[0:self.naxis],
+                       self.is_act_count, self.is_emno,
+                       self.device_location, self.additional_data])
         s.to_hdf(filename, key='other')
 
         # mydict = dict(data=self.data,
         #               location=self.device_location,
-        #               collection=self.collection_name,
         #               additional=self.additional_data)
         #
         # with h5py.File(filename, 'w') as hf:
@@ -145,7 +170,6 @@ class RawProcessing(object):
         #hf.create_dataset('data', data=mydata)
 
         #hf.create_dataset('location', data=)
-        #hf.create_dataset('collection', data=self.collection)
         #hf.create_dataset('additional_data', data=self.additional_data)
 
         print("Saved file %s." % (filename))

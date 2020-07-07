@@ -3,6 +3,7 @@ from unittest import TestCase
 from hypnospy.data import RawProcessing
 
 class TestRawProcessing(TestCase):
+
     def test_load_file(self):
 
         pp1 = RawProcessing()
@@ -24,6 +25,9 @@ class TestRawProcessing(TestCase):
                       start_of_week=4,
                       pid=1)
 
+        nrows = pp2.data.shape[0]
+        self.assertEqual(nrows, 23003)
+        self.assertIn("hyp_time", pp2.data.keys())
 
     def test_export_hypnospy(self):
         pass
