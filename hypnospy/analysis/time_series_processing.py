@@ -76,6 +76,12 @@ class TimeSeriesProcessing(object):
     def __sleep_boundaries_with_annotations(self, wearable, annotation_col, hour_to_start_search=18,
                                             merge_tolerance_in_minutes=20):
 
+        if annotation_col is None:
+            raise KeyError("No annotations column specified for pid %s" % wearable.get_pid())
+
+        if annotation_col not in wearable.data.keys():
+            raise KeyError("Col %s is not a valid for pid %s" % (annotation_col, wearable.get_pid()))
+
         saved_hour_start_day = wearable.hour_start_experiment
         wearable.configure_experiment_day(hour_to_start_search)
 
@@ -136,7 +142,7 @@ class TimeSeriesProcessing(object):
                 return
             to_invalidate = wearable.data["hyp_sleep_period"] == -1
             if to_invalidate.sum() > 0:
-                print("Invalidating %d rows for pid %d." % (to_invalidate.sum(), wearable.get_pid()))
+                print("Invalidating %d rows for pid %s." % (to_invalidate.sum(), wearable.get_pid()))
             wearable.data.loc[to_invalidate, wearable.invalid_col] = True
 
     def invalidate_day_if_sleep_smaller_than_X_hours(self, X):
@@ -146,7 +152,7 @@ class TimeSeriesProcessing(object):
 
     def fill_no_activity(self, value):
         for wearable in self.wearables:
-            wearable.fill_no_activity()
+            wearable.fill_no_activity(value)
 
     def detect_non_wear(self,
                         strategy,
@@ -218,18 +224,12 @@ class TimeSeriesProcessing(object):
 
         # TODO: write the use case for triaxial devices.
         act_data = wearable.data[wearable.get_activity_col()]
-        freq_in_secs = wearable.get_frequency_in_secs()
+        epochs_in_min = int(wearable.get_epochs_in_min())
 
-        if freq_in_secs == 30:
-            # Adjust thresholds
-            more_than_2_min = 5
-            min_period_len_minutes = 2 * min_period_len_minutes
-            min_window_len_minutes = 2 * min_window_len_minutes
-            spike_tolerance = 2 * spike_tolerance
-        elif freq_in_secs == 60:
-            more_than_2_min = 3
-        else:
-            raise ValueError("Frequency found (%d) is not supported yet." % freq_in_secs)
+        more_than_2_min = (2 * epochs_in_min) + 1
+        min_period_len_minutes = epochs_in_min * min_period_len_minutes
+        min_window_len_minutes = epochs_in_min * min_window_len_minutes
+        spike_tolerance = epochs_in_min * spike_tolerance
 
         # check if act_data contains at least min_period_len of act_data
         if len(act_data) < min_period_len_minutes:
@@ -385,12 +385,10 @@ class TimeSeriesProcessing(object):
 
             # Task 2:
             freq_in_secs = wearable.get_frequency_in_secs()
-            if freq_in_secs == 30:
-                # Adjust thresholds
-                minutes_in_a_day = 2880
-                max_non_wear_min_per_day *= 2
-            elif freq_in_secs == 60:
-                minutes_in_a_day = 1440
+            epochs_in_minute = wearable.get_epochs_in_min()
+
+            minutes_in_a_day = 1440 * epochs_in_minute
+            max_non_wear_min_per_day *= epochs_in_minute
 
             if wearable.experiment_day_col not in wearable.data.keys():
                 # If it was not configured yet, we start the experiment day from midnight.
@@ -417,6 +415,10 @@ class TimeSeriesProcessing(object):
         :param min_number_days:
         :return:
         """
+
+
+        # TODO: Found a problem here. If the days are 30, 31, 1, 2, 3 the sorted(days) below fails.
+        #  A work around is separating the concept of calendar_day and experiment_day
 
         for wearable in self.wearables:
             days = wearable.get_valid_days()

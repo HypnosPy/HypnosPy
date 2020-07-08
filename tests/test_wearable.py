@@ -79,7 +79,9 @@ class TestWearable(TestCase):
         self.assertEqual(self.w_5day_invalid5hours.data.iloc[2160]["hyp_exp_day"], 5)
 
     def test_has_nan_activity(self):
-        pass
+        self.assertTrue(self.w_5day_invalid5hours.has_no_activity())
+        self.w_5day_invalid5hours.fill_no_activity(1)
+        self.assertFalse(self.w_5day_invalid5hours.has_no_activity())
 
     def test_valid_invalid_days(self):
         # Should not return anything yet, as we never marked any row as invalid
