@@ -76,10 +76,10 @@ class TimeSeriesProcessing(object):
     def __sleep_boundaries_with_annotations(self, wearable, annotation_col, hour_to_start_search=18,
                                             merge_tolerance_in_minutes=20):
 
-        if annotation_col is None:
+        if annotation_col is None and self.annotation_col is None:
             raise KeyError("No annotations column specified for pid %s" % wearable.get_pid())
 
-        if annotation_col not in wearable.data.keys():
+        if annotation_col and annotation_col not in wearable.data.keys():
             raise KeyError("Col %s is not a valid for pid %s" % (annotation_col, wearable.get_pid()))
 
         saved_hour_start_day = wearable.hour_start_experiment
