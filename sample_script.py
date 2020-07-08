@@ -42,7 +42,6 @@ if __name__ == "__main__":
 
     exp.add_wearable(w1)
 
-
     # User can either use an individual wearable or a list of them with experiments.
     #exp = Experiment(collection_name="mesa")
     #exp.add(w)

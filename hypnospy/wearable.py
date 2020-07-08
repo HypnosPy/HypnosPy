@@ -11,6 +11,7 @@ class Wearable(object):
         :param input: Either a path to a PreProcessing file saved with ``export_hyp`` or a PreProcessing object
         """
         self.data = None
+        self.freq_in_secs = None
         self.hour_start_experiment = None
         self.experiment_day_col = "hyp_exp_day"
         self.invalid_col = "hyp_invalid"
@@ -36,6 +37,8 @@ class Wearable(object):
         self.is_emno = input.is_emno
         # Time Info
         self.time_col = input.internal_time_col
+        # HR Info
+        self.hr_col = input.internal_hr_col
 
     def __read_hypnospy(self, filename):
         self.data = pd.read_hdf(filename, 'data')
@@ -60,15 +63,25 @@ class Wearable(object):
     def get_time_col(self):
         return self.time_col
 
+    def set_frequency_in_secs(self, freq):
+        self.freq_in_secs = freq
+
     def get_frequency_in_secs(self):
+        if self.freq_in_secs:
+            return self.freq_in_secs
+
         freq_str = pd.infer_freq(self.data[self.time_col])
+        if freq_str is None:
+            raise ValueError("Could not infer the frequency for pid %s." % self.get_pid())
         return int(pd.to_timedelta(freq_str).total_seconds())
 
     def get_epochs_in_min(self):
-        return 60. / self.get_frequency_in_secs()
+        # TODO: should we force it to be integer?
+        return 60 / self.get_frequency_in_secs()
 
     def get_epochs_in_hour(self):
-        return 60. * self.get_epochs_in_min()
+        # TODO: should we force it to be integer?
+        return 60 * self.get_epochs_in_min()
 
     def fill_no_activity(self, value):
         # TODO: write the use case for triaxial devices.

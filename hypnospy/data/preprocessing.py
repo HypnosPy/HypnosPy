@@ -36,6 +36,8 @@ class RawProcessing(object):
                   # PID parameters
                   col_for_pid:str=None,
                   pid:int=-1,
+                  # HR parameters
+                  col_for_hr:str=None,
                   # Any additional data?
                   additional_data: object = None,
                   ):
@@ -51,7 +53,10 @@ class RawProcessing(object):
         self.__configure_activity(cols_for_activity, is_emno, is_act_count)
         self.__configure_datatime(col_for_datatime, strftime, start_of_week)
         self.__configure_pid(col_for_pid, pid)
+        self.__configure_hr(col_for_hr)
 
+    def __configure_hr(self, col_for_hr):
+        self.internal_hr_col = col_for_hr
 
     def __configure_activity(self, cols_for_activity, is_emno, is_act_count):
         self.is_act_count = is_act_count
@@ -60,6 +65,9 @@ class RawProcessing(object):
 
         if self.naxis == 0:
             raise ValueError("Need at least one col to represent activity.")
+
+        if len(cols_for_activity) > 3:
+            raise ValueError("Current implementation allows up to 3 cols for physical activity.")
 
         for i, col in enumerate(cols_for_activity):
             if col not in self.data.keys():
@@ -104,7 +112,7 @@ class RawProcessing(object):
 
         # We know when the week started because we have strftime well defined:
         else:
-            self.data[self.internal_time_col] = pd.to_datatime(self.data[col_for_datatime], format=strftime)
+            self.data[self.internal_time_col] = pd.to_datetime(self.data[col_for_datatime], format=strftime)
 
     def __datatime_without_date(self, col_for_datatime, starting_day_of_week):
         """

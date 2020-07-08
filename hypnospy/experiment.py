@@ -1,4 +1,5 @@
 from glob import glob
+import os
 
 from hypnospy.data import RawProcessing
 from hypnospy import Wearable
@@ -27,11 +28,20 @@ class Experiment(object):
                              # PID parameters
                              col_for_pid:str=None,
                              pid:int =-1,
-                             additional_data:object=None
+                             additional_data:object=None,
+                             # HR parameters
+                             col_for_hr:str=None,
     ):
 
         # TODO: Missing a check to see if datapath exists.
-        for file in glob(datapath + "/*"):
+        if os.path.isdir(datapath):
+            if not datapath.endswith("*"):
+                datapath = os.path.join(datapath, "*")
+        else:
+            if not datapath.endswith("*"):
+                datapath = datapath + "*"
+
+        for file in glob(datapath):
             pp = RawProcessing()
             pp.load_file(file,
                          device_location=device_location,
@@ -46,9 +56,13 @@ class Experiment(object):
                          # Participant information
                          col_for_pid=col_for_pid,
                          pid=pid,
-                         additional_data=additional_data
+                         additional_data=additional_data,
+                         # HR information
+                         col_for_hr=col_for_hr,
             )
 
             self.wearables.append(Wearable(pp))
 
-
+    def set_freq_in_secs(self, freq):
+        for wearable in self.wearables:
+            wearable.set_frequency_in_secs(freq)
