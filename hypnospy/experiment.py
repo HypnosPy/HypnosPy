@@ -9,10 +9,10 @@ class Experiment(object):
 
     def __init__(self):
         self.datapath = None
-        self.wearables = []
+        self.wearables = {}
 
     def add_wearable(self, w):
-        self.wearables.append(w)
+        self.wearables[w.get_pid()] = w
 
     def configure_experiment(self,
                              datapath:str,
@@ -60,8 +60,17 @@ class Experiment(object):
                          # HR information
                          col_for_hr=col_for_hr,
             )
+            w = Wearable(pp)
+            self.wearables[w.get_pid()] = w
 
-            self.wearables.append(Wearable(pp))
+    def get_wearable(self, pid):
+        if pid in self.wearables.keys():
+            return self.wearables[pid]
+        else:
+            raise KeyError("Unknown PID %s." % pid)
+
+    def get_all_wearables(self):
+        return self.wearables.values()
 
     def set_freq_in_secs(self, freq):
         for wearable in self.wearables:
