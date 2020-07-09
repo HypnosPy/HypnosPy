@@ -12,10 +12,8 @@ if __name__ == "__main__":
     # Configure an Experiment
     exp = Experiment()
 
-    file_path = "./data/small_collection_fenland/dummy5.csv"
+    file_path = "./data/small_collection_fenland/dummy*.csv"
 
-    # Iterates over a set of files in a directory.
-    # Unfortunately, we have to do it manually with RawProcessing because we are modifying the annotations
     exp.configure_experiment(file_path,
                              # HR information
                              col_for_hr="mean_hr",
@@ -47,16 +45,15 @@ if __name__ == "__main__":
     print("Valid days:", tsp.get_valid_days())
     print("Invalid days:", tsp.get_invalid_days())
 
-    #tsp.drop_invalid_days()
+    tsp.drop_invalid_days()
 
-    # # TODO: PA bouts? How to?
-    # #pa = PhysicalActivity(w1, 399, 1404)
-    # #mvpa_bouts = pa.get_mvpas(length_in_minutes=1, decomposite_bouts=False)
-    # #lpa_bouts = pa.get_lpas(length_in_minutes=1, decomposite_bouts=False)
-    #
-    # #pa_bins = pa.get_binned_pa_representation()
-    # #pa_stats = pa.get_stats_pa_representation()
-    #
+    #pa = PhysicalActivity(exp, 1.5, 3, 6)
+    #pa.generate_pa_columns(based_on="mets")
+    #mvpa_bouts = pa.get_mvpas(length_in_minutes=1, decomposite_bouts=False)
+    #lpa_bouts = pa.get_lpas(length_in_minutes=1, decomposite_bouts=False)
+
+    #pa_bins = pa.get_binned_pa_representation()
+    #pa_stats = pa.get_stats_pa_representation()
+
     # print("DONE")
-    #
 

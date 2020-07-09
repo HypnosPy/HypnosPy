@@ -9,29 +9,57 @@ class PhysicalActivity(object):
 
     # TODO: activity is currently limited to one axis.
 
-    def __init__(self, input: {Experiment, Wearable}, mvpa=None, vpa=None):
+    def __init__(self, input: {Experiment, Wearable}, lpa=None, mvpa=None, vpa=None):
 
         if type(input) is Wearable:
             self.wearables = [input]
         elif type(input) is Experiment:
             self.wearables = input.get_all_wearables()
 
-        # self.activity_col = wearable.activitycols[0]
-        # self.experiment_day_col = self.wearable.experiment_day_col
-        # self.time_col = self.wearable.time_col
+        self.sed_col = "hyp_sed"
+        self.lpa_col = "hyp_lpa"
+        self.mvpa_col = "hyp_mvpa"
+        self.vpa_col = "hyp_vpa"
 
-        self.mvpa_value = self.vpa_value = None
-        self.set_pa_thresholds(mvpa, vpa)
+        self.lpa_value = self.mvpa_value = self.vpa_value = None
+        self.set_pa_thresholds(lpa, mvpa, vpa)
 
-    def set_pa_thresholds(self, mvpa=None, vpa=None):
+    def set_pa_thresholds(self, lpa=None, mvpa=None, vpa=None):
+        if lpa is not None:
+            self.lpa_value = lpa
         if mvpa is not None:
             self.mvpa_value = mvpa
-
         if vpa is not None:
             self.vpa_value = vpa
 
+    def generate_pa_columns(self, based_on="activity"):
+        if self.lpa_value is None or self.mvpa_value is None or self.vpa_value is None:
+            raise AttributeError("Please use `set_pa_thresholds` before using this method.")
+
+        for wearable in self.wearables:
+            if based_on.lower() == "activity":
+                col = wearable.get_activity_col()
+            elif based_on.lower() == "mets":
+                col = wearable.get_mets_col()
+            else:
+                col = based_on
+
+            # TODO: If we have a value that is VPA, is it also MVPA and LPA?
+            wearable.data[self.sed_col] = wearable.data[col] <= self.lpa_value
+            wearable.data[self.lpa_col] = wearable.data[col] > self.lpa_value
+            wearable.data[self.mvpa_col] = wearable.data[col] > self.mvpa_value
+            wearable.data[self.vpa_col] = wearable.data[col] > self.vpa_value
+
+    def __pa_cols_okay(self):
+        for wearable in self.wearables:
+            keys = wearable.data.keys()
+            if self.sed_col not in keys or self.lpa_col not in keys or \
+                    self.mvpa_col not in keys or self.vpa_col not in keys:
+                return False
+        return True
+
     def mask_sleep_period(self, mask):
-        # TODO:
+        # TODO: missing implementation and finding a better name for this method.
         df["X"] = df["activity"].where(~df["sleep_period"].astype(np.bool), 0)
 
     def __get_bout(self, dd, epochs_per_minute, pacol, mins=10, decomposite_bouts=True):
@@ -46,49 +74,65 @@ class PhysicalActivity(object):
         else:
             return len(bouts["pa_grp"].unique())
 
-    def get_mvpas(self, length_in_minutes, decomposite_bouts=False):
-        if self.mvpa_value is None:
-            raise ValueError("Please set MVPA first by running ``set_pa_thresholds``.")
+    def get_vpas(self, length_in_minutes, decomposite_bouts=False):
+        if self.vpa_value is None:
+            raise ValueError("Please set VPA first by running ``set_pa_thresholds``.")
+        if not self.__pa_cols_okay():
+            raise AttributeError("Please use ``generate_pa_columns`` before using this function.")
 
         returning_dict = {}
         for wearable in self.wearables:
-            wearable.data["hyp_mvpa"] = wearable.data[wearable.get_activity_col()] > self.mvpa_value
             pid = wearable.get_pid()
             epochs_per_minute = wearable.get_epochs_in_min()
             returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
-                lambda x: self.__get_bout(x, epochs_per_minute, pacol="hyp_mvpa", mins=length_in_minutes,
+                lambda x: self.__get_bout(x, epochs_per_minute, pacol=self.vpa_col, mins=length_in_minutes,
                                           decomposite_bouts=decomposite_bouts)
             )
         return returning_dict
 
-    def get_vpas(self, length_in_minutes, decomposite_bouts=False):
-        if self.vpa_value is None:
-            raise ValueError("Please set VPA first by running ``set_pa_thresholds``.")
+    def get_mvpas(self, length_in_minutes, decomposite_bouts=False):
+        if self.mvpa_value is None:
+            raise ValueError("Please set MVPA first by running ``set_pa_thresholds``.")
+        if not self.__pa_cols_okay():
+            raise AttributeError("Please use ``generate_pa_columns`` before using this function.")
 
         returning_dict = {}
         for wearable in self.wearables:
-            wearable.data["hyp_vpa"] = wearable.data[wearable.get_activity_col()] > self.vpa_value
             pid = wearable.get_pid()
             epochs_per_minute = wearable.get_epochs_in_min()
             returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
-                lambda x: self.__get_bout(x, epochs_per_minute, pacol="hyp_vpa", mins=length_in_minutes,
+                lambda x: self.__get_bout(x, epochs_per_minute, pacol=self.mvpa_col, mins=length_in_minutes,
                                           decomposite_bouts=decomposite_bouts)
             )
         return returning_dict
 
     def get_lpas(self, length_in_minutes, decomposite_bouts=False):
         if self.mvpa_value is None:
-            raise ValueError("Please set MVPA first by running ``set_pa_thresholds``. "
-                       "LPA will be any value equal or small than MVPA. ")
+            raise ValueError("Please set LPA first by running ``set_pa_thresholds``. ")
+        if not self.__pa_cols_okay():
+            raise AttributeError("Please use ``generate_pa_columns`` before using this function.")
 
         returning_dict = {}
         for wearable in self.wearables:
             pid = wearable.get_pid()
             epochs_per_minute = wearable.get_epochs_in_min()
-            wearable.data["hyp_lpa"] = wearable.data[wearable.get_activity_col()] <= self.mvpa_value
-
             returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
-                lambda x: self.__get_bout(x, epochs_per_minute, pacol="hyp_lpa", mins=length_in_minutes,
+                lambda x: self.__get_bout(x, epochs_per_minute, pacol=self.lpa_col, mins=length_in_minutes,
+                                          decomposite_bouts=decomposite_bouts)
+            )
+        return returning_dict
+
+    def get_seds(self, length_in_minutes, decomposite_bouts=False):
+        if self.lpa_value is None:
+            raise ValueError("Please set SED first by running ``set_pa_thresholds``. "
+                             "SED will be any value equal or small than LPA. ")
+
+        returning_dict = {}
+        for wearable in self.wearables:
+            pid = wearable.get_pid()
+            epochs_per_minute = wearable.get_epochs_in_min()
+            returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
+                lambda x: self.__get_bout(x, epochs_per_minute, pacol=self.sed_col, mins=length_in_minutes,
                                           decomposite_bouts=decomposite_bouts)
             )
         return returning_dict
@@ -101,7 +145,8 @@ class PhysicalActivity(object):
         rows = []
         for wearable in self.wearables:
             act_hour = \
-                wearable.data.groupby([wearable.get_experiment_day_col(), wearable.data[wearable.get_time_col()].dt.hour])[
+                wearable.data.groupby(
+                    [wearable.get_experiment_day_col(), wearable.data[wearable.get_time_col()].dt.hour])[
                     wearable.get_activity_col()]
 
             pid = wearable.get_pid()
@@ -111,9 +156,10 @@ class PhysicalActivity(object):
             mvpa.name = "MVPA"
             vpa = act_hour.apply(lambda x: (x >= self.vpa_value).sum())
             vpa.name = "VPA"
-            concatted = pd.concat([lpa, mvpa, vpa], axis=1)
-            concatted["pid"] = pid
-            rows.append(concatted)
+
+            concatenated = pd.concat([lpa, mvpa, vpa], axis=1)
+            concatenated["pid"] = pid
+            rows.append(concatenated)
 
         return pd.concat(rows)
 
@@ -145,7 +191,7 @@ class PhysicalActivity(object):
         #  TODO: actually, one interesting way to implement it is having a concept of experiment_day that starts from 1
         #   rather than the current experiment_day that start from the day of the week
 
-        #rows = []
+        # rows = []
         # for wearable in self.wearables:
         #     act_hour = \
         #         wearable.data.groupby(

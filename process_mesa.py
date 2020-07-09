@@ -53,9 +53,10 @@ if __name__ == "__main__":
     tsp.drop_invalid_days()
 
     # TODO: PA bouts? How to?
-    #pa = PhysicalActivity(w1, 399, 1404)
-    #mvpa_bouts = pa.get_mvpas(length_in_minutes=1, decomposite_bouts=False)
-    #lpa_bouts = pa.get_lpas(length_in_minutes=1, decomposite_bouts=False)
+    pa = PhysicalActivity(exp, 0, 399, 1404)
+    pa.generate_pa_columns()
+    mvpa_bouts = pa.get_mvpas(length_in_minutes=1, decomposite_bouts=False)
+    lpa_bouts = pa.get_lpas(length_in_minutes=1, decomposite_bouts=False)
 
     #pa_bins = pa.get_binned_pa_representation()
     #pa_stats = pa.get_stats_pa_representation()
