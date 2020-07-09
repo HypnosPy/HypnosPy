@@ -15,9 +15,11 @@ class RawProcessing(object):
         self.device_location = None
         self.additional_data = None
 
-        self.possible_locations = ["bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all"]
+        #self.possible_locations = ["bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all"]
+
         self.internal_time_col = "hyp_time"
         self.internal_activity_cols = ["hyp_act_x", "hyp_act_y", "hpy_act_z"]
+        self.internal_mets_col = None
         self.naxis = 0
         self.is_act_count = False
         self.is_emno = False
@@ -28,8 +30,9 @@ class RawProcessing(object):
                   device_location:str,
                   # Configuration for activity
                   cols_for_activity,
-                  is_emno=False,
-                  is_act_count=False,
+                  col_for_mets:object=None,
+                  is_emno:bool=False,
+                  is_act_count:bool=False,
                   # Datatime parameters
                   col_for_datatime:str="time",
                   start_of_week:int=-1,
@@ -40,18 +43,18 @@ class RawProcessing(object):
                   # HR parameters
                   col_for_hr:str=None,
                   # Any additional data?
-                  additional_data: object = None,
+                  additional_data:object = None,
                   ):
 
         self.filename = filename
-        if device_location not in self.possible_locations:
-            print("ERROR: Device location '%s' not implemented. Options are %s" % (device_location, ','.join(self.possible_locations)))
+        #if device_location not in self.possible_locations:
+        #    print("ERROR: Device location '%s' not implemented. Options are %s" % (device_location, ','.join(self.possible_locations)))
 
         self.device_location = device_location
         self.additional_data = additional_data
 
         self.data = self.__load_wearable_data(self.filename)
-        self.__configure_activity(cols_for_activity, is_emno, is_act_count)
+        self.__configure_activity(cols_for_activity, col_for_mets, is_emno, is_act_count)
         self.__configure_datatime(col_for_datatime, strftime, start_of_week)
         self.__configure_pid(col_for_pid, pid)
         self.__configure_hr(col_for_hr)
@@ -59,10 +62,13 @@ class RawProcessing(object):
     def get_pid(self):
         return self.pid
 
+    def set_time_col(self, new_name:str):
+        self.internal_time_col = new_name
+
     def __configure_hr(self, col_for_hr):
         self.internal_hr_col = col_for_hr
 
-    def __configure_activity(self, cols_for_activity, is_emno, is_act_count):
+    def __configure_activity(self, cols_for_activity, col_for_mets, is_emno, is_act_count):
         self.is_act_count = is_act_count
         self.is_emno = is_emno
         self.naxis = len(cols_for_activity)
@@ -72,6 +78,9 @@ class RawProcessing(object):
 
         if len(cols_for_activity) > 3:
             raise ValueError("Current implementation allows up to 3 cols for physical activity.")
+
+        if col_for_mets is not None:
+            self.internal_mets_col = col_for_mets
 
         for i, col in enumerate(cols_for_activity):
             if col not in self.data.keys():
@@ -166,6 +175,7 @@ class RawProcessing(object):
         self.data.to_hdf(filename, key='data', mode='w')
         s = pd.Series([self.pid, self.internal_time_col,
                        self.internal_activity_cols[0:self.naxis],
+                       self.internal_mets_col,
                        self.is_act_count, self.is_emno,
                        self.device_location, self.additional_data])
         s.to_hdf(filename, key='other')

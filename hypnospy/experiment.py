@@ -19,6 +19,7 @@ class Experiment(object):
                              device_location:str,
                              # Configuration for activity
                              cols_for_activity,
+                             col_for_mets:str=None,
                              is_emno:bool=False,
                              is_act_count:bool=False,
                              # Datatime parameters
@@ -38,7 +39,7 @@ class Experiment(object):
             if not datapath.endswith("*"):
                 datapath = os.path.join(datapath, "*")
         else:
-            if not datapath.endswith("*"):
+            if '*' not in datapath:
                 datapath = datapath + "*"
 
         for file in glob(datapath):
@@ -51,6 +52,7 @@ class Experiment(object):
                          is_emno=is_emno,
                          # Datatime information
                          col_for_datatime=col_for_datatime,
+                         col_for_mets=col_for_mets,
                          start_of_week=start_of_week,
                          strftime=strftime,
                          # Participant information
@@ -73,5 +75,5 @@ class Experiment(object):
         return self.wearables.values()
 
     def set_freq_in_secs(self, freq):
-        for wearable in self.wearables:
+        for wearable in self.get_all_wearables():
             wearable.set_frequency_in_secs(freq)

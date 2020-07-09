@@ -16,6 +16,22 @@ class Wearable(object):
         self.experiment_day_col = "hyp_exp_day"
         self.invalid_col = "hyp_invalid"
 
+        # Other fields
+        self.mets_col = None
+        self.device_location = None
+        self.additional_data = None
+        # Participant Info
+        self.pid = None
+        # Activity Info
+        self.activitycols = None
+        self.mets_col = None
+        self.is_act_count = None
+        self.is_emno = None
+        # Time Info
+        self.time_col = None
+        # HR Info
+        self.hr_col = None
+
         if type(input) == str:
             # Reads a hypnosys file from disk
             self.__read_hypnospy(input)
@@ -33,6 +49,7 @@ class Wearable(object):
         self.pid = str(input.pid)
         # Activity Info
         self.activitycols = input.internal_activity_cols
+        self.mets_col = input.internal_mets_col
         self.is_act_count = input.is_act_count
         self.is_emno = input.is_emno
         # Time Info
@@ -41,14 +58,14 @@ class Wearable(object):
         self.hr_col = input.internal_hr_col
 
     def __read_hypnospy(self, filename):
+
         self.data = pd.read_hdf(filename, 'data')
         l = pd.read_hdf(filename, 'other')
-        self.pid, self.time_col, self.activitycols, self.is_act_count, self.is_emno, \
+        self.pid, self.time_col, self.activitycols, self.internal_mets_col, self.is_act_count, self.is_emno, \
         self.device_location, self.additional_data = l
 
         self.pid = str(self.pid)
 
-        #
         # hf = h5py.File(filename, 'r')
         # self.data = hf.get('data')
         # self.device_location = hf.get('location')
@@ -59,6 +76,9 @@ class Wearable(object):
 
     def get_experiment_day_col(self):
         return self.experiment_day_col
+
+    def get_mets_col(self):
+        return self.mets_col
 
     def get_time_col(self):
         return self.time_col
@@ -73,6 +93,9 @@ class Wearable(object):
         freq_str = pd.infer_freq(self.data[self.time_col])
         if freq_str is None:
             raise ValueError("Could not infer the frequency for pid %s." % self.get_pid())
+        # pd.to_timedelta requires we have a number
+        if not freq_str[0].isdigit():
+            freq_str = "1" + freq_str
         return int(pd.to_timedelta(freq_str).total_seconds())
 
     def get_epochs_in_min(self):
