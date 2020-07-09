@@ -20,12 +20,14 @@ class Subject:
             self.data["ts"] = [datetime.strptime(ts,"%d-%m-%Y %H:%M:%S") for ts in self.data["real_time"]] 
         elif 'REALTIME' in self.data.columns:    
             self.data["ts"] = [datetime.strptime(ts,"%d-%b-%Y %H:%M:%S") for ts in self.data["REALTIME"]] 
+        
         self.data['date'] = self.data['ts'].dt.date
         self.data['hour'] = self.data['ts'].dt.hour
         self.data.set_index(pd.DatetimeIndex(self.data['ts']), inplace=True)
 
         #Set ENMO
         self.data['ENMO'] = (self.data["ACC"]/0.0060321) + 0.057
+        
         #Get other variables
         if 'predRMR_Oxford2005' in self.data.columns:
             self.RMR = self.data['predRMR_Oxford2005'][0]

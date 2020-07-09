@@ -14,25 +14,10 @@ class Experiment(object):
     def add_wearable(self, w):
         self.wearables[w.get_pid()] = w
 
-    def configure_experiment(self,
-                             datapath:str,
-                             device_location:str,
-                             # Configuration for activity
-                             cols_for_activity,
-                             col_for_mets:str=None,
-                             is_emno:bool=False,
-                             is_act_count:bool=False,
-                             # Datatime parameters
-                             col_for_datatime:str="time",
-                             start_of_week:int=-1,
-                             strftime:str=None,
-                             # PID parameters
-                             col_for_pid:str=None,
-                             pid:int =-1,
-                             additional_data:object=None,
-                             # HR parameters
-                             col_for_hr:str=None,
-    ):
+    def configure_experiment(self, datapath: str, device_location: str, cols_for_activity, col_for_mets: str = None,
+                             is_emno: bool = False, is_act_count: bool = False, col_for_datetime: str = "time",
+                             start_of_week: int = -1, strftime: str = None, col_for_pid: str = None, pid: int = -1,
+                             additional_data: object = None, col_for_hr: str = None):
 
         # TODO: Missing a check to see if datapath exists.
         if os.path.isdir(datapath):
@@ -43,25 +28,23 @@ class Experiment(object):
                 datapath = datapath + "*"
 
         for file in glob(datapath):
-            pp = RawProcessing()
-            pp.load_file(file,
-                         device_location=device_location,
-                         # activitiy information
-                         cols_for_activity=cols_for_activity,
-                         is_act_count=is_act_count,
-                         is_emno=is_emno,
-                         # Datatime information
-                         col_for_datatime=col_for_datatime,
-                         col_for_mets=col_for_mets,
-                         start_of_week=start_of_week,
-                         strftime=strftime,
-                         # Participant information
-                         col_for_pid=col_for_pid,
-                         pid=pid,
-                         additional_data=additional_data,
-                         # HR information
-                         col_for_hr=col_for_hr,
-            )
+            pp = RawProcessing(file,
+                               device_location=device_location,
+                               # activitiy information
+                               cols_for_activity=cols_for_activity,
+                               is_act_count=is_act_count,
+                               is_emno=is_emno,
+                               # Datatime information
+                               col_for_datetime=col_for_datetime,
+                               col_for_mets=col_for_mets,
+                               start_of_week=start_of_week,
+                               strftime=strftime,
+                               # Participant information
+                               col_for_pid=col_for_pid,
+                               pid=pid,
+                               additional_data=additional_data,
+                               # HR information
+                               col_for_hr=col_for_hr, )
             w = Wearable(pp)
             self.wearables[w.get_pid()] = w
 

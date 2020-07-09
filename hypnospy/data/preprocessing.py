@@ -1,69 +1,64 @@
 import pandas as pd
 import numpy as np
 
+
 class RawProcessing(object):
 
-    def __init__(self):
+    def __init__(self,
+                 filename: str,
+                 device_location: str,
+                 # Configuration for activity
+                 cols_for_activity,
+                 col_for_mets: object = None,
+                 is_emno: bool = False,
+                 is_act_count: bool = False,
+                 # Datetime parameters
+                 col_for_datetime: str = "time",
+                 start_of_week: int = -1,
+                 strftime: str = None,
+                 # PID parameters
+                 col_for_pid: str = None,
+                 pid: int = -1,
+                 # HR parameters
+                 col_for_hr: str = None,
+                 # Any additional data?
+                 additional_data: object = None,
+                 ):
 
         """
         :param filename: input filepath
         :param device_location: where this device was located (options are: "bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all")
         :param additional_data:
         """
-        self.filename = None
-        self.data = None
-        self.device_location = None
-        self.additional_data = None
+        # self.possible_locations = ["bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all"]
+        self.device = None
+        self.filename = filename
+        self.device_location = device_location
+        self.additional_data = additional_data
 
-        #self.possible_locations = ["bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all"]
-
-        self.internal_time_col = "hyp_time"
-        self.internal_activity_cols = ["hyp_act_x", "hyp_act_y", "hpy_act_z"]
+        self.internal_activity_cols = ["hyp_act_x", "hyp_act_y", "hyp_act_z"]
+        self.internal_time_col = "hyp_time_col"
         self.internal_mets_col = None
         self.naxis = 0
         self.is_act_count = False
         self.is_emno = False
         self.pid = None
 
-    def load_file(self,
-                  filename:str,
-                  device_location:str,
-                  # Configuration for activity
-                  cols_for_activity,
-                  col_for_mets:object=None,
-                  is_emno:bool=False,
-                  is_act_count:bool=False,
-                  # Datatime parameters
-                  col_for_datatime:str="time",
-                  start_of_week:int=-1,
-                  strftime:str=None,
-                  # PID parameters
-                  col_for_pid:str=None,
-                  pid:int=-1,
-                  # HR parameters
-                  col_for_hr:str=None,
-                  # Any additional data?
-                  additional_data:object = None,
-                  ):
-
-        self.filename = filename
-        #if device_location not in self.possible_locations:
-        #    print("ERROR: Device location '%s' not implemented. Options are %s" % (device_location, ','.join(self.possible_locations)))
-
-        self.device_location = device_location
-        self.additional_data = additional_data
-
         self.data = self.__load_wearable_data(self.filename)
         self.__configure_activity(cols_for_activity, col_for_mets, is_emno, is_act_count)
-        self.__configure_datatime(col_for_datatime, strftime, start_of_week)
+        self.__configure_datetime(col_for_datetime, strftime, start_of_week)
         self.__configure_pid(col_for_pid, pid)
         self.__configure_hr(col_for_hr)
+
+        # if device_location not in self.possible_locations:
+        #    print("ERROR: Device location '%s' not implemented. Options are %s" % (device_location, ','.join(self.possible_locations)))
 
     def get_pid(self):
         return self.pid
 
-    def set_time_col(self, new_name:str):
-        self.internal_time_col = new_name
+    def set_time_col(self, new_name: str):
+        if new_name is not None:
+            self.internal_time_col = new_name
 
     def __configure_hr(self, col_for_hr):
         self.internal_hr_col = col_for_hr
@@ -84,12 +79,13 @@ class RawProcessing(object):
 
         for i, col in enumerate(cols_for_activity):
             if col not in self.data.keys():
-                raise ValueError("Col %s not detected in the dataset. Possibilities are %s" % (col, ','.join(self.data.keys())))
+                raise ValueError(
+                    "Col %s not detected in the dataset. Possibilities are %s" % (col, ','.join(self.data.keys())))
             # If col exists, we save it with our internal name.
             # Note that in case only one axis is available, it will be 'hyp_act_x'.
             self.data[self.internal_activity_cols[i]] = self.data[col]
 
-    def __configure_pid(self, col_for_pid:str, pid:int):
+    def __configure_pid(self, col_for_pid: str, pid: int):
         if col_for_pid is None and pid == -1:
             raise ValueError("Either pid or col_for_pid need to have a valid value.")
 
@@ -103,13 +99,13 @@ class RawProcessing(object):
             pid = self.data.iloc[0][col_for_pid]
             self.pid = pid
 
-    def __configure_datatime(self, col_for_datatime, strftime, start_of_week):
+    def __configure_datetime(self, col_for_datetime, strftime, start_of_week):
         if strftime is None and start_of_week is None:
             raise ValueError("Either strftime or start_of_week need to have a valid value.")
 
         # We need to figure out when the data started being collected.
         # Some datasets like MESA and HCHS from sleepdata.org do not have date information, unfortunately
-        if strftime is None or (strftime is not None and strftime.find("%d") == -1): # Could not find a day
+        if strftime is None or (strftime is not None and strftime.find("%d") == -1):  # Could not find a day
             # Check if we can extract the start_of_week:
             starting_day_of_week = 1
             if type(start_of_week) == str:  # ColName from which we will extract the start_of_week
@@ -121,13 +117,13 @@ class RawProcessing(object):
             elif type(start_of_week) == int:
                 starting_day_of_week = start_of_week
 
-            self.__datatime_without_date(col_for_datatime, starting_day_of_week)
+            self.__datetime_without_date(col_for_datetime, starting_day_of_week)
 
         # We know when the week started because we have strftime well defined:
         else:
-            self.data[self.internal_time_col] = pd.to_datetime(self.data[col_for_datatime], format=strftime)
+            self.data[self.internal_time_col] = pd.to_datetime(self.data[col_for_datetime], format=strftime)
 
-    def __datatime_without_date(self, col_for_datatime, starting_day_of_week):
+    def __datetime_without_date(self, col_for_datatime, starting_day_of_week):
         """
         If we blindly use something like
 
@@ -163,7 +159,6 @@ class RawProcessing(object):
             raise ValueError("Could not find correct range for dataframe. "
                              "Please check if parameter ``datatime_col'' is correct.")
 
-
     def export_hypnospy(self, filename):
         """
 
@@ -189,13 +184,12 @@ class RawProcessing(object):
         #     for k, v in mydict.items():
         #         grp.create_dataset(k, data=v)
 
-        #hf.create_dataset('data', data=mydata)
+        # hf.create_dataset('data', data=mydata)
 
-        #hf.create_dataset('location', data=)
-        #hf.create_dataset('additional_data', data=self.additional_data)
+        # hf.create_dataset('location', data=)
+        # hf.create_dataset('additional_data', data=self.additional_data)
 
         print("Saved file %s." % (filename))
-
 
     def __load_wearable_data(self, filename):
         """ Obtain device type
@@ -254,100 +248,19 @@ class RawProcessing(object):
         pass
 
 
-    ### Activity Index (counts- from another repo- modify)
-    def extract_activity_index(self):
-        """
-        Calculates the activity index feature on each 24 hour day.
-        """
-        try:
-            os.mkdir(self.sub_dst + "/activity_index_days")  # set up output directory
-        except OSError:
-            pass
+class ActiwatchSleepData(RawProcessing):
 
-        count = 0
+    def __init__(self, filename, device_location=None, col_for_datetime="time", col_for_pid="pid"):
+        super().__init__(filename, device_location=device_location,
+                         cols_for_activity=["activity"],
+                         is_act_count=True,
+                         # Datatime information
+                         col_for_datetime=col_for_datetime,
+                         start_of_week="dayofweek",
+                         # Participant information
+                         col_for_pid=col_for_pid,
+                         )
+        self.device = "actigraphy"
+        self.data["hyp_annotation"] = self.data["interval"].isin(["REST", "REST-S"])
 
-        # get days
-        days = sorted(
-            [
-                self.sub_dst + "/raw_days/" + i
-                for i in os.listdir(self.sub_dst + "/raw_days/")
-                if ".DS_Store" not in i
-            ]
-        )
-        for day in days:
-            count += 1
-
-            # load data
-            df = pd.read_hdf(day)
-            activity = []
-            header = ["Time", "activity_index"]
-            idx = 0
-            window = int(self.window_size * self.fs)
-            incrementer = int(self.window_size * self.fs)
-
-            # iterate through windows
-            while idx < len(df) - incrementer:
-                # preprocessing: BP Filter
-                temp = df[["X", "Y", "Z"]].iloc[idx : idx + window]
-                start_time = temp.index[0]
-                temp.index = range(len(temp.index))  # reset index
-                temp = band_pass_filter(
-                    temp, self.fs, bp_cutoff=self.band_pass_cutoff, order=3
-                )
-
-                # activity index extraction
-                bp_channels = [
-                    i for i in temp.columns.values[1:] if "bp" in i
-                ]  # band pass filtered channels
-                activity.append(
-                    [
-                        start_time,
-                        activity_index(temp, channels=bp_channels).values[0][0],
-                    ]
-                )
-                idx += incrementer
-
-            # save data
-            activity = pd.DataFrame(activity)
-            activity.columns = header
-            activity.set_index("Time", inplace=True)
-            dst = "/activity_index_days/{}_activity_index_day_{}.h5".format(
-                self.src_name, str(count).zfill(2)
-            )
-            activity.to_hdf(
-                self.sub_dst + dst, key="activity_index_data_24hr", mode="w"
-            )
-
-
-
-class DataReader():
-    r""" Reads processed raw files and files obtained that are already proceessed"
-
-    Params
-    ---------
-
-    """
-
-    def __init__(self, wearable_type, datareader=[]):
-
-        #store wearable type
-        self.__wearable_type = wearable_type
-
-        # store list of data reader
-        self.__datareader = datareader
-
-    @property
-    def wearable_type(self):
-        r""" This function will take in the type of reader"""
-        #1. Check file type from above processing
-        #2,.
-        return
-
-    @property
-    def datareader(self):
-        r""" This function will """
-        #1. Check file type
-        #2. Determine
-        return
-
-
+# TODO: missing Actiheart (Fenland, BBVS), Axivity (BBVS, Biobank)
