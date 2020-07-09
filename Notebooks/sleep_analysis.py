@@ -239,9 +239,16 @@ def get_sleep_grid(self, q_sleep=[0.4], bed_time = '20:00',wake_time = '12:00', 
         #print(sleep_df)
         for i in range(len(sleep_df['sleep_onset'])):
             lookon = data[sleep_df['sleep_onset'][i]-timedelta(hours=4):sleep_df['sleep_onset'][i]+timedelta(minutes=5)]
-            new_onset_list = lookon[lookon[col_sleep+'_vard']>4].index.tolist()
+            new_onset_list = lookon[lookon[col_sleep+'_vard']>5].index.tolist()
             if len(new_onset_list)!=0:
                 sleep_df['sleep_onset'][i] = new_onset_list[-1]
+        for j in range(len(sleep_df['sleep_offset'])):
+            lookoff = data[sleep_df['sleep_offset'][j]-timedelta(minutes=1):sleep_df['sleep_offset'][j]+timedelta(hours=2)]
+            new_offset_list = lookoff[lookoff[col_sleep+'_vard']>6].index.tolist()
+            if len(new_offset_list)!=0:
+                sleep_df['sleep_offset'][j] = new_offset_list[0]
+        
+        
         #print(sleep_df)
         
         
