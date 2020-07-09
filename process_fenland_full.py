@@ -17,17 +17,16 @@ if __name__ == "__main__":
     # Iterates over a set of files in a directory.
     # Unfortunately, we have to do it manually with RawProcessing because we are modifying the annotations
     for file in glob(file_path):
-        pp = RawProcessing()
-        pp.load_file(file,
+        pp = RawProcessing(file,
                      # HR information
                      col_for_hr="mean_hr",
-                     # activitiy information
+                     # Activity information
                      cols_for_activity=["ACC"],
                      col_for_mets="stdMET_highIC_Branch",
                      is_act_count=False,
                      device_location="dw",
-                     # Datatime information
-                     col_for_datatime="real_time",
+                     # Datetime information
+                     col_for_datetime="real_time",
                      strftime="%d-%m-%Y %H:%M:%S",
                      # Participant information
                      col_for_pid="id")

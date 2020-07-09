@@ -32,11 +32,11 @@ class Wearable(object):
         # HR Info
         self.hr_col = None
 
-        if type(input) == str:
+        if isinstance(input, str):
             # Reads a hypnosys file from disk
             self.__read_hypnospy(input)
 
-        elif type(input) == hypnospy.data.preprocessing.RawProcessing:
+        elif isinstance(input, hypnospy.data.preprocessing.RawProcessing):
             self.__read_preprocessing_obj(input)
             print("Loaded wearable with pid %s" % (self.get_pid()))
 
@@ -62,7 +62,7 @@ class Wearable(object):
         self.data = pd.read_hdf(filename, 'data')
         l = pd.read_hdf(filename, 'other')
         self.pid, self.time_col, self.activitycols, self.internal_mets_col, self.is_act_count, self.is_emno, \
-        self.device_location, self.additional_data = l
+          self.device_location, self.additional_data = l
 
         self.pid = str(self.pid)
 
@@ -126,6 +126,9 @@ class Wearable(object):
     def get_activity_col(self):
         return self.activitycols[0]
 
+    def get_hr_col(self):
+        return self.hr_col
+
     def get_invalid_days(self):
         """
 
@@ -155,3 +158,44 @@ class Wearable(object):
         valid_days = self.get_valid_days()
 
         self.data = self.data[self.data[self.experiment_day_col].isin(valid_days)]
+
+    def view_signals(self, signals=["activity", "hr"]):
+        # TODO: implement it
+        # TODO: probably we should move it to another viz package.
+        import matplotlib.pyplot as plt
+        import matplotlib.dates as dates
+        cols = []
+        for signal in signals:
+            if signal == "activity":
+                cols.append(self.get_activity_col())
+            elif signal == "hr":
+                cols.append(self.get_hr_col())
+            else:
+                cols.append(signal)
+
+        if len(cols) == 0:
+            raise ValueError("Aborting: Empty list of signals to show.")
+
+        fig, ax1 = plt.subplots(len(cols), 1, figsize=(14, 15))
+
+        # ax1.set_title("Physical activity and sedentary time per hour")
+        for idx in cols:
+
+            # Resampling: hourly
+            df2_h = d[idx].data.resample(frequency).sum()
+            ax1[idx].tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=True, rotation=10)
+            ax1[idx].set_xlabel('Time, sleep windows shaded grey')
+            ax1[idx].set_ylim(0, max(df2_h['MET_MVPA']))
+
+            ax1[idx].grid(color='#b2b2b7', linestyle='--', linewidth=1, alpha=0.5)
+            ax1[idx].plot(df2_h.index, df2_h['MET_MVPA'], label='MET_MVPA', linewidth=3, color='green', alpha=1)
+            ax1[idx].plot(df2_h.index, df2_h['MET_VigPA'], label='MET_VigPA', linewidth=3, color='red', alpha=1)
+            ax1[idx].set_ylabel('MET_MVPA')
+            ax1[idx].legend()
+
+            # Add grey windows for sleep
+            for i in range(len(d[idx].sleep_rec)):
+                ax1[idx].axvspan(d[idx].sleep_rec['sleep_onset'][i], d[idx].sleep_rec['sleep_offset'][i],
+                                 facecolor='grey', alpha=0.4)
+            for j in range(len(d[idx].crespo_on)):
+                ax1[idx].axvspan(d[idx].crespo_on[j], d[idx].crespo_off[j], facecolor='blue', alpha=0.3)

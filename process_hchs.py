@@ -1,6 +1,6 @@
 from glob import glob
 from hypnospy import Wearable
-from hypnospy.data import RawProcessing
+from hypnospy.data import ActiwatchSleepData
 from hypnospy.analysis import SleepWakeAnalysis
 from hypnospy.analysis import TimeSeriesProcessing
 from hypnospy.analysis import PhysicalActivity
@@ -17,18 +17,7 @@ if __name__ == "__main__":
     # Iterates over a set of files in a directory.
     # Unfortunately, we have to do it manually with RawProcessing because we are modifying the annotations
     for file in glob(file_path):
-        pp = RawProcessing()
-        pp.load_file(file,
-                     # activitiy information
-                     cols_for_activity=["activity"],
-                     is_act_count=True,
-                     # Datatime information
-                     col_for_datatime="time",
-                     device_location="dw",
-                     start_of_week="dayofweek",
-                     # Participant information
-                     col_for_pid="pid")
-        pp.data["hyp_annotation"] = pp.data["interval"].isin(["REST", "REST-S"])
+        pp = ActiwatchSleepData(file, col_for_datetime="time", col_for_pid="pid")
         w = Wearable(pp)  # Creates a wearable from a pp object
         w.configure_experiment_day(0)
         exp.add_wearable(w)

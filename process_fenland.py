@@ -13,19 +13,9 @@ if __name__ == "__main__":
     exp = Experiment()
 
     file_path = "./data/small_collection_fenland/dummy*.csv"
-
-    exp.configure_experiment(file_path,
-                             # HR information
-                             col_for_hr="mean_hr",
-                             # activitiy information
-                             cols_for_activity=["ENMO_mean"], # or ["X_mean", "Y_mean", "Z_mean"],
-                             is_act_count=False,
-                             device_location="dw",
-                             # Datatime information
-                             col_for_datatime="timestamp",
-                             strftime="%Y-%m-%d %H:%M:%S",
-                             # Participant information
-                             col_for_pid="id")
+    exp.configure_experiment(file_path, device_location="dw", cols_for_activity=["ENMO_mean"], is_act_count=False,
+                             col_for_datetime="timestamp",
+                             strftime="%Y-%m-%d %H:%M:%S", col_for_pid="id", col_for_hr="mean_hr")
     exp.set_freq_in_secs(15)
 
     tsp = TimeSeriesProcessing(exp)
