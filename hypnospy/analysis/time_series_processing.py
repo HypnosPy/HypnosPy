@@ -21,7 +21,7 @@ class TimeSeriesProcessing(object):
         if type(input) is Wearable:
             self.wearables = [input]
         elif type(input) is Experiment:
-            self.wearables = input.wearables  # TODO: Should I copy the objects or only have their pointer?
+            self.wearables = input.get_all_wearables()
 
         # TODO: probably all these should be done for each wearable:
         # self.freq_in_sec = self.wearables[0].get_frequency_in_secs()
@@ -118,6 +118,7 @@ class TimeSeriesProcessing(object):
             -----
 
             strategy: "annotation", "hr",
+
         """
         # Include HR sleeping window approach here (SLEEP 2020 paper)
         # if no HR look for expert annotations _anno

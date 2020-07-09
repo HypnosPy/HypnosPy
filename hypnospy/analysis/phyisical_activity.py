@@ -14,7 +14,7 @@ class PhysicalActivity(object):
         if type(input) is Wearable:
             self.wearables = [input]
         elif type(input) is Experiment:
-            self.wearables = input.wearables
+            self.wearables = input.get_all_wearables()
 
         # self.activity_col = wearable.activitycols[0]
         # self.experiment_day_col = self.wearable.experiment_day_col

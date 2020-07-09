@@ -21,6 +21,7 @@ class RawProcessing(object):
         self.naxis = 0
         self.is_act_count = False
         self.is_emno = False
+        self.pid = None
 
     def load_file(self,
                   filename:str,
@@ -54,6 +55,9 @@ class RawProcessing(object):
         self.__configure_datatime(col_for_datatime, strftime, start_of_week)
         self.__configure_pid(col_for_pid, pid)
         self.__configure_hr(col_for_hr)
+
+    def get_pid(self):
+        return self.pid
 
     def __configure_hr(self, col_for_hr):
         self.internal_hr_col = col_for_hr
@@ -304,18 +308,6 @@ class RawProcessing(object):
                 self.sub_dst + dst, key="activity_index_data_24hr", mode="w"
             )
 
-    def find_sleepwin():
-        # Apply our method based on HR here
-        # if no HR look for expert annotations _anno
-        # if no annotations look for diaries
-        # if no diaries apply Van Hees heuristic method
-        pass
-
-    def obtain_data():
-        """ Here we will define epochperiod, columns to be included, and generate
-        the new .hpy file
-        """
-        pass
 
 
 class DataReader():
