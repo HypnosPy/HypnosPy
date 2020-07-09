@@ -354,6 +354,8 @@ def plot_algos_dw(d,i,diary,qtl,length):
     ax1[0].set_ylim(0,max(df2_h['ENMO']))
     ax1[0].set_facecolor('snow')
     ax1[0].plot(df2_h.index,df2_h['ENMO'], label='MET_MVPA',linewidth=1, color ='black',alpha=1)
+    ax1[0].plot(df2_h.index,df2_h['mean_hr']*6, label='mean_hr',linewidth=1, color ='red',alpha=1)
+    ax1[0].plot(df2_h.index,df2_h['mean_hr'].rolling(10).std()*100, label='hrstd',linewidth=1, color ='blue',alpha=1)
     ax1[0].fill_between(df2_h.index, 0, df2_h['min_VigPA']*1500,facecolor ='darkgreen',alpha=0.7, label='VPA',edgecolor='darkgreen')
     ax1[0].fill_between(df2_h.index, 0, df2_h['min_MVPA']*1500,facecolor ='forestgreen',alpha=0.7, label='MVPA',edgecolor='forestgreen')
     ax1[0].fill_between(df2_h.index, 0, (df2_h['MET_Sed'])*1500,facecolor ='palegoldenrod',alpha=0.6,label='sedentary',edgecolor='palegoldenrod')
