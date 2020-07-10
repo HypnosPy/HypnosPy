@@ -215,16 +215,23 @@ def get_sleep_grid(self, q_sleep=[0.4], bed_time = '20:00',wake_time = '12:00', 
         data[col_sleep+'_windowb'] = data[col_sleep+'_windowb'].fillna(method='ffill').fillna(method='bfill')
         sleep_over = []
         state_filtered = state_changes.copy()
+        data[col_sleep+'_naps'] = np.nan  
         #state_date = pd.to_datetime(state_changes)
         for i in np.arange(1, len(state_changes)-1,2):
-            if df[state_changes[0][i]-timedelta(hours=2):state_changes[0][i]][col_sleep+'_windowb'].sum()<60:
+            if (data[state_changes[0][i]-timedelta(hours=4):state_changes[0][i]][col_sleep+'_windowb'].sum()<180) or \
+                (data[state_changes[0][i]-timedelta(hours=1):state_changes[0][i]][col_sleep+'_windowb'].sum()<40):
                 sleep_over.append(i-1)
                 sleep_over.append(i)
+                data[col_sleep+'_naps'].loc[state_changes[0][i]] = 0
+                data[col_sleep+'_naps'].loc[state_changes[0][i-1]] = 1
+        data[col_sleep+'_naps'][0] = 0        
+        data[col_sleep+'_naps'] = data[col_sleep+'_naps'].fillna(method='ffill')
+        
         keep = set(range(len(state_filtered))) - set(sleep_over)
         state_filtered = state_filtered.iloc[list(keep)]
-        #state_filtered = pd.to_datetime([state_filtered[j] for j in set(range(len(state_filtered))) - set(sleep_over)])
         #print(state_filtered)
         
+
         #Extract index of nights available for the subject to pass onto sleep df
         index = state_changes.resample('24H',base=base_s).min().index
         sleep_df = pd.DataFrame(columns=['TST','sleep_onset','sleep_offset','weekday'], index = index)
@@ -238,13 +245,13 @@ def get_sleep_grid(self, q_sleep=[0.4], bed_time = '20:00',wake_time = '12:00', 
         
         #print(sleep_df)
         for i in range(len(sleep_df['sleep_onset'])):
-            lookon = data[sleep_df['sleep_onset'][i]-timedelta(hours=4):sleep_df['sleep_onset'][i]+timedelta(minutes=5)]
+            lookon = data[sleep_df['sleep_onset'][i]-timedelta(hours=4):sleep_df['sleep_onset'][i]+timedelta(minutes=60)]
             new_onset_list = lookon[lookon[col_sleep+'_vard']>5].index.tolist()
             if len(new_onset_list)!=0:
                 sleep_df['sleep_onset'][i] = new_onset_list[-1]
         for j in range(len(sleep_df['sleep_offset'])):
             lookoff = data[sleep_df['sleep_offset'][j]-timedelta(minutes=1):sleep_df['sleep_offset'][j]+timedelta(hours=2)]
-            new_offset_list = lookoff[lookoff[col_sleep+'_vard']>6].index.tolist()
+            new_offset_list = lookoff[lookoff[col_sleep+'_vard']>5].index.tolist()
             if len(new_offset_list)!=0:
                 sleep_df['sleep_offset'][j] = new_offset_list[0]
         
@@ -254,16 +261,29 @@ def get_sleep_grid(self, q_sleep=[0.4], bed_time = '20:00',wake_time = '12:00', 
         
         
         sleep_df['TST']= sleep_df['sleep_offset'] -  sleep_df['sleep_onset']
+        
         sleep_df['weekday'] = sleep_df.index.dayofweek
         sleep_df = pd.DataFrame(sleep_df).dropna()
         #Label sleep windows on original df according to sleep_df
         
         data[col_sleep+'_window'] = np.nan
         data[col_sleep+'_window'].loc[sleep_df['sleep_onset']] = 1
-        data[col_sleep+'_window'].loc[sleep_df['sleep_offset']] = 2
-        data[col_sleep+'_window'][0] = 2
+        data[col_sleep+'_window'].loc[sleep_df['sleep_offset']] = 0
+        data[col_sleep+'_window'][0] = 0
         data[col_sleep+'_window'] = data[col_sleep+'_window'].fillna(method='ffill').fillna(method='bfill')
         
+        #data[col_sleep+'_napbuffer'] = np.nan
+        #data[col_sleep+'_napbuffer'].loc[sleep_df['sleep_onset']] = 1
+        #data[col_sleep+'_napbuffer'].loc[sleep_df['sleep_offset']] = 2
+        #data[col_sleep+'_napbuffer'][0] = 2
+        #data[col_sleep+'_napbuffer'] = data[col_sleep+'_napbuffer'].fillna(method='ffill').fillna(method='bfill')
+        
+        data[col_sleep+'_naps'] = ((data[col_sleep+'_naps']==1)&(data[col_sleep+'_window']==0)& \
+                                   (data[col_sleep+'_window'].rolling(180).sum()==0)& \
+                                   (data[col_sleep+'_window'].shift(-90).rolling(90).sum()==0)).astype(int)
+        
+        sleep_df['NapDuration'] = data[col_sleep+'_naps'].resample('24H',base=base_s).sum()
+            
         return df, state_changes, sleep_df, index, data
 
     def get_wake_windows(df,data,col_wake, col_sleep,base_s):
@@ -326,6 +346,7 @@ def get_sleep_grid(self, q_sleep=[0.4], bed_time = '20:00',wake_time = '12:00', 
             self.data['sleep_window_'+str(qtl)+'_'+str(lens)] = df_all['sleep_window']
             self.data['wake_window_'+str(qtl)+'_'+str(lens)] = df_all['wake_window']
             self.data['sleep_windowb_'+str(qtl)+'_'+str(lens)] = df_all['sleep_windowb']
+            self.data['naps_'+str(qtl)+'_'+str(lens)] = df[col_sleep+'_naps']
             self.sleep_rec[qtl][lens] = sleep_df
             
     return self
