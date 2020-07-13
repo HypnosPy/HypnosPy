@@ -473,7 +473,8 @@ class TimeSeriesProcessing(object):
         for wearable in self.wearables:
             pid = wearable.get_pid()
             days = wearable.get_invalid_days()
-            return_dict[pid] = days
+            if len(days) > 0:
+                return_dict[pid] = days
         return return_dict
 
     def drop_invalid_days(self):
