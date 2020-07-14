@@ -20,14 +20,12 @@ class Subject:
             self.data["ts"] = [datetime.strptime(ts,"%d-%m-%Y %H:%M:%S") for ts in self.data["real_time"]] 
         elif 'REALTIME' in self.data.columns:    
             self.data["ts"] = [datetime.strptime(ts,"%d-%b-%Y %H:%M:%S") for ts in self.data["REALTIME"]] 
-        
         self.data['date'] = self.data['ts'].dt.date
         self.data['hour'] = self.data['ts'].dt.hour
         self.data.set_index(pd.DatetimeIndex(self.data['ts']), inplace=True)
 
         #Set ENMO
         self.data['ENMO'] = (self.data["ACC"]/0.0060321) + 0.057
-        
         #Get other variables
         if 'predRMR_Oxford2005' in self.data.columns:
             self.RMR = self.data['predRMR_Oxford2005'][0]
@@ -148,7 +146,7 @@ class Subject:
         self.ARI = float(sri)
         return self 
     
-    from sleep_analysis import get_sleep, get_SRI, get_sleep_grid, get_vanhees
+    from sleep_analysis import label_sleep, get_vanhees
     from circadian_analysis import get_IV_IS, get_cosinor, get_SSA,get_SSA_par
     from nonlinear_analysis import get_nonlinear, get_nonlin_params
     from crespo_analysis import Crespo
