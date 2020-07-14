@@ -38,7 +38,6 @@ if __name__ == "__main__":
 
     pp.data["hyp_annotation"] = pp.data["interval"].isin(["REST", "REST-S"])
     w1 = Wearable(pp)  # Creates a wearable from a pp object
-    w1.configure_experiment_day(0)
 
     exp.add_wearable(w1)
 

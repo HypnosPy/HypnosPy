@@ -34,7 +34,8 @@ class TimeSeriesProcessing(object):
         self.wearing_col = "hyp_wearing"
         self.annotation_col = "hyp_annotation"  # 1 for sleep, 0 for awake
 
-    def __find_largest_sleep(self, df_orig, time_col, tolerance_minutes=20):
+    @staticmethod
+    def __find_largest_sleep(df_orig, time_col, tolerance_minutes=20):
 
         df = df_orig.copy()
         df["hyp_sleep_period"] = False
@@ -83,7 +84,7 @@ class TimeSeriesProcessing(object):
             raise KeyError("Col %s is not a valid for pid %s" % (annotation_col, wearable.get_pid()))
 
         saved_hour_start_day = wearable.hour_start_experiment
-        wearable.configure_experiment_day(hour_to_start_search)
+        wearable.change_start_hour_for_experiment_day(hour_to_start_search)
 
         if annotation_col is None:
             annotation_col = self.annotation_col
@@ -106,7 +107,7 @@ class TimeSeriesProcessing(object):
         del wearable.data["hyp_seq_length"]
         del wearable.data["hyp_sleep_candidate"]
 
-        wearable.configure_experiment_day(saved_hour_start_day)
+        wearable.change_start_hour_for_experiment_day(saved_hour_start_day)
 
     def detect_sleep_boundaries(self, strategy: str,
                                 annotation_hour_to_start_search=18, annotation_col=None,
@@ -393,7 +394,7 @@ class TimeSeriesProcessing(object):
 
             if wearable.experiment_day_col not in wearable.data.keys():
                 # If it was not configured yet, we start the experiment day from midnight.
-                wearable.configure_experiment_day(0)
+                wearable.change_start_hour_for_experiment_day(0)
 
             if self.wearing_col not in wearable.data.keys():
                 raise KeyError("Col %s not found in wearable (pid=%s). Did you forget to run ``detect_non_wear(...)``?" % (

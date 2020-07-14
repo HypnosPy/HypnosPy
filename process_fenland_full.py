@@ -33,7 +33,6 @@ if __name__ == "__main__":
         pp.data["hyp_act_x"] = (pp.data["hyp_act_x"]/0.0060321) + 0.057
 
         w = Wearable(pp)  # Creates a wearable from a pp object
-        w.configure_experiment_day(0)
         exp.add_wearable(w)
 
     # tsp = TimeSeriesProcessing(exp)

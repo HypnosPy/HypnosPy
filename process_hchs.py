@@ -19,7 +19,6 @@ if __name__ == "__main__":
     for file in glob(file_path):
         pp = ActiwatchSleepData(file, col_for_datetime="time", col_for_pid="pid")
         w = Wearable(pp)  # Creates a wearable from a pp object
-        w.configure_experiment_day(0)
         exp.add_wearable(w)
 
     tsp = TimeSeriesProcessing(exp)
