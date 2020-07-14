@@ -30,7 +30,6 @@ if __name__ == "__main__":
                            col_for_pid="mesaid")
 
         w = Wearable(pp)  # Creates a wearable from a pp object
-        w.configure_experiment_day(0)
         exp.add_wearable(w)
 
     tsp = TimeSeriesProcessing(exp)

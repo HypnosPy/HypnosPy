@@ -57,24 +57,24 @@ class TestWearable(TestCase):
         self.assertEqual(nepochs, 120.0)
         self.assertIsInstance(nepochs, float)
 
-    def test_configure_experiment_day(self):
-        self.w_5day_invalid5hours.configure_experiment_day(0)
+    def test_change_start_hour_for_experiment_day(self):
+        self.w_5day_invalid5hours.change_start_hour_for_experiment_day(0)
 
         # We are expecting to have only one experiment day and this will be day 5
         self.assertEqual(self.w_5day_invalid5hours.data["hyp_exp_day"].unique()[0], 5)
 
         # We now start our day at hour 18
-        self.w_5day_invalid5hours.configure_experiment_day(18)
+        self.w_5day_invalid5hours.change_start_hour_for_experiment_day(18)
         # print(tsp.wearable.data[2155:2165])
         # Check if transition from artificial day 4 to day 5 is done correctly
         self.assertEqual(self.w_5day_invalid5hours.data.iloc[2159]["hyp_exp_day"], 4)
         self.assertEqual(self.w_5day_invalid5hours.data.iloc[2160]["hyp_exp_day"], 5)
 
         # Randomly change the start hour and return it back to 18
-        self.w_5day_invalid5hours.configure_experiment_day(18)
-        self.w_5day_invalid5hours.configure_experiment_day(0)
-        self.w_5day_invalid5hours.configure_experiment_day(15)
-        self.w_5day_invalid5hours.configure_experiment_day(18)
+        self.w_5day_invalid5hours.change_start_hour_for_experiment_day(18)
+        self.w_5day_invalid5hours.change_start_hour_for_experiment_day(0)
+        self.w_5day_invalid5hours.change_start_hour_for_experiment_day(15)
+        self.w_5day_invalid5hours.change_start_hour_for_experiment_day(18)
         self.assertEqual(self.w_5day_invalid5hours.data.iloc[2159]["hyp_exp_day"], 4)
         self.assertEqual(self.w_5day_invalid5hours.data.iloc[2160]["hyp_exp_day"], 5)
 

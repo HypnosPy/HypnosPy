@@ -40,6 +40,9 @@ class Wearable(object):
             self.__read_preprocessing_obj(input)
             print("Loaded wearable with pid %s" % (self.get_pid()))
 
+        # Creates the experiment day and set it the initial hour to be midnight
+        self.change_start_hour_for_experiment_day(0)
+
     def __read_preprocessing_obj(self, input):
         "input is a wearable object. We can copy its fields"
         self.data = input.data
@@ -113,15 +116,17 @@ class Wearable(object):
     def has_no_activity(self):
         return self.data[self.get_activity_col()].isnull().any()
 
-    def configure_experiment_day(self, hour_start_experiment):
+    def change_start_hour_for_experiment_day(self, hour_start_experiment):
         """
         Allows the experiment to start in another time than 00:00.
 
         :param hour_start_experiment: 0: midnight, 1: 01:00AM ...
         """
         self.hour_start_experiment = hour_start_experiment
+        day_zero = self.data.iloc[0][self.time_col].day
         self.data[self.experiment_day_col] = (
-                self.data[self.time_col] - pd.DateOffset(hours=hour_start_experiment)).dt.day
+                self.data[self.time_col] - pd.DateOffset(hours=hour_start_experiment)
+        ).dt.day - day_zero
 
     def get_activity_col(self):
         return self.activitycols[0]
@@ -137,7 +142,7 @@ class Wearable(object):
 
         if self.experiment_day_col not in self.data.keys():
             # If it was not configured yet, we start the experiment day from midnight.
-            self.configure_experiment_day(0)
+            self.change_start_hour_for_experiment_day(0)
 
         if self.invalid_col not in self.data.keys():
             self.data[self.invalid_col] = False
