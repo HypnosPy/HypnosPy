@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import hypnospy
 import pandas as pd
 import h5py
@@ -123,10 +125,10 @@ class Wearable(object):
         :param hour_start_experiment: 0: midnight, 1: 01:00AM ...
         """
         self.hour_start_experiment = hour_start_experiment
-        day_zero = self.data.iloc[0][self.time_col].day
+        day_zero = self.data.iloc[0][self.time_col].toordinal()
         self.data[self.experiment_day_col] = (
                 self.data[self.time_col] - pd.DateOffset(hours=hour_start_experiment)
-        ).dt.day - day_zero
+        ).apply(lambda x: x.toordinal() - day_zero)
 
     def get_activity_col(self):
         return self.activitycols[0]
