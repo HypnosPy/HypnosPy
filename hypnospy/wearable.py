@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import hypnospy
 import pandas as pd
+from hypnospy import Diary
 import h5py
 
 
@@ -33,6 +34,10 @@ class Wearable(object):
         self.time_col = None
         # HR Info
         self.hr_col = None
+        # Diary
+        self.diary = None
+        self.diary_event = "hyp_diary_event"
+        self.diary_sleep = "hyp_diary_sleep"
 
         if isinstance(input, str):
             # Reads a hypnosys file from disk
@@ -166,8 +171,54 @@ class Wearable(object):
 
         self.data = self.data[self.data[self.experiment_day_col].isin(valid_days)]
 
-    def view_signals(self, signals=["activity", "hr"]):
-        # TODO: implement it
+    def add_diary(self, d: Diary):
+        d.data = d.data[d.data["pid"] == self.get_pid()]
+        self.diary = d
+        self.data[self.diary_event] = False
+        self.data.loc[self.data[self.time_col].isin(self.diary.data["sleep_onset"]), self.diary_event] = True
+        self.data.loc[self.data[self.time_col].isin(self.diary.data["sleep_offset"]), self.diary_event] = True
+
+        self.data[self.diary_sleep] = False
+        for row in self.diary.data.iterrows():
+            if not pd.isna(row[1]["sleep_onset"]) and not pd.isna(row[1]["sleep_offset"]):
+                self.data.loc[(self.data[self.time_col] >= row[1]["sleep_onset"]) & (
+                    self.data[self.time_col] <= row[1]["sleep_offset"]), self.diary_sleep] = True
+
+    def invalidate_days_without_diary(self):
+        tst = self.get_total_sleep_time_per_day(based_on_diary=True)
+        # Gets the experiment days with 0 total sleep time (i.e., no diary entry)
+        invalid_days = set(tst[tst["hyp_diary_sleep"] == 0].index)
+        # Flag them as invalid
+        if len(invalid_days):
+            self.data.loc[self.data[self.experiment_day_col].isin(invalid_days), self.invalid_col] = True
+
+    def get_total_sleep_time_per_day(self, sleep_col: str = None, based_on_diary: bool = False):
+        """
+
+        :param sleep_col:
+        :param based_on_diary:
+        :return: A Series indexed by experiment_day with total of minutes slept per day
+        """
+
+        if not based_on_diary and sleep_col is None:
+            raise ValueError("Unable to calculate total sleep time."
+                             " You have to specify a sleep column or set ``based_on_diary`` to True "
+                             "(assuming you previously added a diary.")
+        if based_on_diary:
+            if self.diary is None:
+                raise ValueError("Diary not found. Add a diary with ``add_diary``.")
+            return self.data.groupby(self.experiment_day_col)[[self.diary_sleep]].apply(
+                lambda x: x.sum() / self.get_epochs_in_min())
+
+        else:
+            if sleep_col not in self.data.keys():
+                raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
+            return self.data.groupby(self.experiment_day_col)[[sleep_col]].apply(
+                lambda x: x.sum() / self.get_epochs_in_min())
+
+    def view_signals(self, signals: list = ["activity", "hr", "pa_intensity", "sleep"], frequency: str = "60S",
+                     sleep_col: str = None):
+        # TODO: finish implementing it!
         # TODO: probably we should move it to another viz package.
         import matplotlib.pyplot as plt
         import matplotlib.dates as dates
