@@ -49,6 +49,7 @@ class PhysicalActivity(object):
             wearable.data[self.lpa_col] = wearable.data[col] > self.lpa_value
             wearable.data[self.mvpa_col] = wearable.data[col] > self.mvpa_value
             wearable.data[self.vpa_col] = wearable.data[col] > self.vpa_value
+            wearable.pa_intensity_cols = [self.sed_col, self.lpa_col, self.mvpa_col, self.vpa_col]
 
     def __pa_cols_okay(self):
         for wearable in self.wearables:
