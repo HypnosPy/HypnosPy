@@ -68,7 +68,7 @@ class Experiment(object):
     def get_all_wearables(self):
         return self.wearables.values()
 
-    def set_freq_in_secs(self, freq):
+    def set_freq_in_secs(self, freq: int):
         for wearable in self.get_all_wearables():
             wearable.set_frequency_in_secs(freq)
 

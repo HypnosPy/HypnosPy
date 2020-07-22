@@ -72,7 +72,7 @@ class Wearable(object):
         self.data = pd.read_hdf(filename, 'data')
         l = pd.read_hdf(filename, 'other')
         self.pid, self.time_col, self.activitycols, self.internal_mets_col, self.is_act_count, self.is_emno, \
-          self.device_location, self.additional_data = l
+        self.device_location, self.additional_data = l
 
         self.pid = str(self.pid)
 
@@ -168,7 +168,6 @@ class Wearable(object):
 
     def drop_invalid_days(self):
         valid_days = self.get_valid_days()
-
         self.data = self.data[self.data[self.experiment_day_col].isin(valid_days)]
 
     def add_diary(self, d: Diary):
