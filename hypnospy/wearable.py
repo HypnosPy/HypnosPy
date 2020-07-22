@@ -223,37 +223,118 @@ class Wearable(object):
         import matplotlib.pyplot as plt
         import matplotlib.dates as dates
         cols = []
+
         for signal in signals:
             if signal == "activity":
                 cols.append(self.get_activity_col())
+
             elif signal == "hr":
-                cols.append(self.get_hr_col())
+                if self.get_hr_col():
+                    cols.append(self.get_hr_col())
+                else:
+                    raise KeyError("HR is not available for PID %s" % self.get_pid())
+
+            elif signal == "pa_intensity":
+                if hasattr(self, 'pa_intensity_cols'):
+                    for pa in self.pa_intensity_cols:
+                        if pa in self.data.keys():
+                            cols.append(pa)
+
+            elif signal == "sleep":
+                if sleep_col not in self.data.keys():
+                    raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
+                cols.append(sleep_col)
+
+            elif signal == "diary" and self.diary_event in self.data.keys():
+                cols.append(self.diary_event)
+
             else:
                 cols.append(signal)
 
         if len(cols) == 0:
             raise ValueError("Aborting: Empty list of signals to show.")
 
-        fig, ax1 = plt.subplots(len(cols), 1, figsize=(14, 15))
+        cols.append(self.time_col)
+        cols.append(self.experiment_day_col)
+        df_plot = self.data[cols].set_index(self.time_col).resample(frequency).sum()
 
-        # ax1.set_title("Physical activity and sedentary time per hour")
-        for idx in cols:
+        # Daily version
+        # dfs_per_day = [pd.DataFrame(group[1]) for group in df_plot.groupby(df_plot.index.day)]
+        # Based on the experiment day gives us the correct chronological order of the days
+        dfs_per_day = [pd.DataFrame(group[1]) for group in df_plot.groupby(self.experiment_day_col)]
+        fig, ax1 = plt.subplots(len(dfs_per_day), 1, figsize=(14, 20))
+        maxy = 10000
+
+        for idx in range(len(dfs_per_day)):
 
             # Resampling: hourly
-            df2_h = d[idx].data.resample(frequency).sum()
-            ax1[idx].tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=True, rotation=10)
-            ax1[idx].set_xlabel('Time, sleep windows shaded grey')
-            ax1[idx].set_ylim(0, max(df2_h['MET_MVPA']))
+            df2_h = dfs_per_day[idx]
+            ax1[idx].tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=True, rotation=0)
+            ax1[idx].set_facecolor('snow')
+            # ax1[idx].set_ylim(0, max(df_plot[self.get_activity_col()] / 10))
+            ax1[idx].set_xlim(
+                dfs_per_day[idx].index[0] - timedelta(hours=dfs_per_day[idx].index[0].hour - self.hour_start_experiment,
+                                                      minutes=dfs_per_day[idx].index[0].minute,
+                                                      seconds=dfs_per_day[idx].index[0].second),
+                dfs_per_day[idx].index[0] - timedelta(hours=dfs_per_day[idx].index[0].hour - self.hour_start_experiment,
+                                                      minutes=dfs_per_day[idx].index[0].minute,
+                                                      seconds=dfs_per_day[idx].index[0].second) + timedelta(minutes=1439))
 
-            ax1[idx].grid(color='#b2b2b7', linestyle='--', linewidth=1, alpha=0.5)
-            ax1[idx].plot(df2_h.index, df2_h['MET_MVPA'], label='MET_MVPA', linewidth=3, color='green', alpha=1)
-            ax1[idx].plot(df2_h.index, df2_h['MET_VigPA'], label='MET_VigPA', linewidth=3, color='red', alpha=1)
-            ax1[idx].set_ylabel('MET_MVPA')
-            ax1[idx].legend()
+            if "activity" in signals:
+                # maxy = min(maxy, df2_h[self.get_activity_col()].max())
+                ax1[idx].plot(df2_h.index, df2_h[self.get_activity_col()], label='Activity', linewidth=1,
+                              color='black', alpha=1)
 
-            # Add grey windows for sleep
-            for i in range(len(d[idx].sleep_rec)):
-                ax1[idx].axvspan(d[idx].sleep_rec['sleep_onset'][i], d[idx].sleep_rec['sleep_offset'][i],
-                                 facecolor='grey', alpha=0.4)
-            for j in range(len(d[idx].crespo_on)):
-                ax1[idx].axvspan(d[idx].crespo_on[j], d[idx].crespo_off[j], facecolor='blue', alpha=0.3)
+            if "pa_intensity" in signals:
+                # maxy = 2000
+                ax1[idx].fill_between(df2_h.index, 0, maxy, where=df2_h['hyp_vpa'], facecolor='darkgreen', alpha=0.7,
+                                      label='VPA', edgecolor='darkgreen')
+                only_mvpa = (df2_h['hyp_mvpa']) & (~df2_h['hyp_vpa'])
+                ax1[idx].fill_between(df2_h.index, 0, maxy, where=only_mvpa, facecolor='forestgreen', alpha=0.7,
+                                      label='MVPA', edgecolor='forestgreen')
+                only_lpa = (df2_h['hyp_lpa']) & (~df2_h['hyp_mvpa']) & (~df2_h['hyp_vpa'])
+                ax1[idx].fill_between(df2_h.index, 0, maxy, where=only_lpa, facecolor='lightgreen', alpha=0.7,
+                                      label='LPA', edgecolor='lightgreen')
+                ax1[idx].fill_between(df2_h.index, 0, maxy, where=df2_h['hyp_sed'], facecolor='palegoldenrod',
+                                      alpha=0.6,
+                                      label='sedentary', edgecolor='palegoldenrod')
+
+            if "sleep" in signals:
+                sleeping = df2_h[sleep_col]  # TODO: get a method instead of an attribute
+                ax1[idx].fill_between(df2_h.index, 0, maxy, where=sleeping, facecolor='royalblue',
+                                      alpha=1, label='sleep')
+                # ax1[idx].fill_between(df2_h.index, 0, (df2_h['wake_window_0.4']) * 200, facecolor='cyan', alpha=1,
+                #                   label='wake')
+
+            if "diary" in signals and self.diary_event in df2_h.keys():
+                diary_event = df2_h[df2_h[self.diary_event] == True].index
+                ax1[idx].vlines(x=diary_event, ymin=0, ymax=10000, facecolor='black', alpha=1, label='Diary',
+                                linestyles="dashed")
+
+            #ax1[idx].set_xticks([])
+            ax1[idx].set_yticks([])
+            #ax1[idx].set_label(["Experiment Day %d" % (idx)])
+
+            # create a twin of the axis that shares the x-axis
+            if "hr" in signals:
+                ax2 = ax1[idx].twinx()
+                # ax2.set_ylabel('mean_HR')  # we already handled the x-label with ax1
+                ax2.plot(df2_h.index, df2_h[self.get_hr_col()], label='HR', color='red')
+                ax2.set_ylim(30, df2_h[self.get_hr_col()].max())
+                ax2.set_xticks([])
+                ax2.set_yticks([])
+
+        ax1[0].set_title("%s" % self.get_pid(), fontsize=16)
+        ax1[-1].set_xlabel('Time')
+        ax1[-1].xaxis.set_minor_locator(dates.HourLocator(interval=4))  # every 4 hours
+        ax1[-1].xaxis.set_minor_formatter(dates.DateFormatter('%H:%M'))  # hours and minutes
+
+        handles, labels = ax1[-1].get_legend_handles_labels()
+        # handles2, labels2 = ax2.get_legend_handles_labels()
+        # fig.legend(handles + handles2, labels + labels2, loc='lower center', ncol=4)
+        # return fig
+        # ax.figure.savefig('%s_signals.pdf' % (self.get_pid()))
+        # fig.suptitle("%s" % self.get_pid(), fontsize=16)
+
+        fig.legend(handles, labels, loc='lower center', ncol=len(cols))
+        fig.savefig('%s_signals.pdf' % (self.get_pid()))
