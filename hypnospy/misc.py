@@ -1,4 +1,3 @@
-
 def get_consecutive_serie(df_in, col):
     df = df_in.copy()
 
