@@ -1,8 +1,10 @@
 from glob import glob
 import os
+import warnings
 
 from hypnospy.data import RawProcessing
 from hypnospy import Wearable
+from hypnospy import Diary
 
 
 class Experiment(object):
@@ -48,11 +50,20 @@ class Experiment(object):
             w = Wearable(pp)
             self.wearables[w.get_pid()] = w
 
-    def get_wearable(self, pid):
+    def add_diary(self, diary: Diary):
+        for pid in diary.data["pid"].unique():
+            di = diary.data[diary.data["pid"] == pid]
+            w = self.get_wearable(pid)
+            if w:
+                w.add_diary(Diary().from_dataframe(di))
+
+    def get_wearable(self, pid: str):
         if pid in self.wearables.keys():
             return self.wearables[pid]
         else:
-            raise KeyError("Unknown PID %s." % pid)
+            warnings.warn("Unknown PID %s." % pid)
+            return None
+            #raise KeyError("Unknown PID %s." % pid)
 
     def get_all_wearables(self):
         return self.wearables.values()
@@ -60,3 +71,7 @@ class Experiment(object):
     def set_freq_in_secs(self, freq):
         for wearable in self.get_all_wearables():
             wearable.set_frequency_in_secs(freq)
+
+    def invalidate_days_without_diary(self):
+        for wearable in self.get_all_wearables():
+            wearable.invalidate_days_without_diary()
