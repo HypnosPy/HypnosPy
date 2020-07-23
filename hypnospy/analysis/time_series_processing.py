@@ -29,12 +29,13 @@ class TimeSeriesProcessing(object):
 
         self.sleep_period_col = "hyp_sleep_period"  # after running detect_sleep_boundaries
 
-    def __find_largest_sleep(self, df_orig, time_col, output_col, tolerance_minutes=20):
+    @staticmethod
+    def __find_largest_sleep(df_orig, time_col, sleep_candidate_col, output_col, tolerance_minutes=20):
 
         df = df_orig.copy()
         df[output_col] = False
 
-        df_candidates = df[df["hyp_sleep_candidate"] == True]
+        df_candidates = df[df[sleep_candidate_col] == True]
 
         if df_candidates.shape[0] == 0:
             warnings.warn("Day has no sleep period!")
@@ -69,7 +70,7 @@ class TimeSeriesProcessing(object):
         return df[output_col]
 
     @staticmethod
-    def __create_threshold_col_based_on_time(df, new_col, time_col: str, hr_col: str, start_time: int, end_time: int,
+    def __create_threshold_col_based_on_time(df, time_col: str, hr_col: str, start_time: int, end_time: int,
                                              quantile: float, rolling_win_in_minutes: int,
                                              sleep_only_in_sleep_search_window: bool):
 
@@ -83,24 +84,24 @@ class TimeSeriesProcessing(object):
         # We set the hr_col to nan for the time outside the search win in order to find the quantile below ignoring nans
         df_time.loc[idx, hr_col] = np.nan
 
-        df_time[new_col] = df_time[hr_col].resample('24H', base=start_time).apply(
+        df_time["hyp_sleep"] = df_time[hr_col].resample('24H', base=start_time).apply(
             lambda x: np.nanquantile(x, quantile)).fillna(method='ffill').fillna(method='bfill')
 
         # We fill the nans in the df_time and copy the result back to the original df
-        df_time[new_col] = df_time[new_col].fillna(method='ffill').fillna(method='bfill')
+        df_time["hyp_sleep"] = df_time["hyp_sleep"].fillna(method='ffill').fillna(method='bfill')
 
         # binarize_by_hr_threshold
-        df_time[new_col + "_bin"] = np.where((df_time[hr_col] - df_time[new_col]) > 0, 0, 1)
-        df_time[new_col + "_bin"] = df_time[new_col + "_bin"].rolling(window=rolling_win_in_minutes).median().fillna(
+        df_time["hyp_sleep_bin"] = np.where((df_time[hr_col] - df_time["hyp_sleep"]) > 0, 0, 1)
+        df_time["hyp_sleep_bin"] = df_time["hyp_sleep_bin"].rolling(window=rolling_win_in_minutes).median().fillna(
             method='bfill')
 
         if sleep_only_in_sleep_search_window:
             #  Ignore all sleep candidate period outsite win
-            df_time.loc[idx, new_col + "_bin"] = 0
+            df_time.loc[idx, "hyp_sleep_bin"] = 0
 
-        df[new_col] = df_time[new_col].values
-        df[new_col + "_bin"] = df_time[new_col + "_bin"].values
-        df[new_col + "_len"], df[new_col + "_grpid"] = misc.get_consecutive_serie(df, new_col + "_bin")
+        df["hyp_sleep"] = df_time["hyp_sleep"].values
+        df["hyp_sleep_bin"] = df_time["hyp_sleep_bin"].values
+        df["hyp_seq_length"], df["hyp_seq_id"] = misc.get_consecutive_serie(df, "hyp_sleep_bin")
 
     def __sleep_boundaries_with_hr(self, wearable: Wearable,
                                    output_col: str,
@@ -112,13 +113,12 @@ class TimeSeriesProcessing(object):
                                    volatility_window_in_minutes: int = 10,
                                    merge_blocks_delta_time_in_min: int = 240,
                                    sleep_only_in_sleep_search_window: bool = False,
+                                   only_largest_sleep_period: bool = False,
                                    ):
 
         if wearable.hr_col is None:
             raise AttributeError("HR is not available for PID %s." % (wearable.get_pid()))
 
-        col_win_night = 'hyp_win_night'
-        # col_win_day = 'hyp_win_day'
         rolling_win_in_minutes = int(rolling_win_in_minutes * wearable.get_epochs_in_min())
         min_window_length_in_minutes = int(min_window_length_in_minutes * wearable.get_epochs_in_min())
         volatility_window_in_minutes = int(volatility_window_in_minutes * wearable.get_epochs_in_min())
@@ -126,23 +126,18 @@ class TimeSeriesProcessing(object):
         df = wearable.data
 
         # Work on night data
-        self.__create_threshold_col_based_on_time(df, col_win_night, wearable.time_col, wearable.hr_col,
+        self.__create_threshold_col_based_on_time(df, wearable.time_col, wearable.hr_col,
                                                   sleep_search_window[0], sleep_search_window[1], quantile,
                                                   rolling_win_in_minutes, sleep_only_in_sleep_search_window)
 
-        # Work on day data
-        # self.__create_threshold_col_based_on_time(df, col_win_day, wearable.time_col, wearable.hr_col,
-        #                                           day_hr_window[0], day_hr_window[1], quantile)
-        # self.__binarize_by_hr_threshold(df, col_win_day, wearable.hr_col, rolling_win_in_minutes)
+        df['hyp_sleep_candidate'] = ((df["hyp_sleep_bin"] == 1.0) & (
+                df['hyp_seq_length'] > min_window_length_in_minutes)).astype(int)
 
-        df[col_win_night + '_sleep_candidate'] = ((df[col_win_night + '_bin'] == 1.0) & (
-                df[col_win_night + '_len'] > min_window_length_in_minutes)).astype(int)
-
-        df[col_win_night + '_vard'] = df[wearable.hr_col].rolling(volatility_window_in_minutes,
+        df["hyp_sleep_vard"] = df[wearable.hr_col].rolling(volatility_window_in_minutes,
                                                                   center=True).std().fillna(0)
 
         # Merge two sleep segments if their gap is smaller than X min:
-        sleep_segments = df[df[col_win_night + '_sleep_candidate'] == 1][col_win_night + '_grpid'].unique()
+        sleep_segments = df[df["hyp_sleep_candidate"] == 1]["hyp_seq_id"].unique()
 
         if len(sleep_segments) == 0:
             warnings.warn("Could not detect any sleep segment for pid %s. Aborting..." % (wearable.get_pid()))
@@ -153,51 +148,72 @@ class TimeSeriesProcessing(object):
 
         for next_sleep_seg_id in sleep_segments[1:]:
 
-            actual_segment = df[df[col_win_night + '_grpid'] == actual_sleep_seg_id]
+            actual_segment = df[df["hyp_seq_id"] == actual_sleep_seg_id]
             start_time_actual_seg = actual_segment.index[0]
             end_time_actual_seg = actual_segment.index[-1]
 
-            next_segment = df[df[col_win_night + '_grpid'] == next_sleep_seg_id]
+            next_segment = df[df["hyp_seq_id"] == next_sleep_seg_id]
             start_time_next_segment = next_segment.index[0]
             end_time_next_segment = next_segment.index[-1]
 
             if start_time_next_segment - end_time_actual_seg <= timedelta(minutes=merge_blocks_delta_time_in_min):
                 # Merges two sleep block
-                df.loc[start_time_actual_seg:end_time_next_segment, col_win_night + '_grpid'] = actual_sleep_seg_id
-                df.loc[start_time_actual_seg:end_time_next_segment, col_win_night + '_sleep_candidate'] = 1
+                df.loc[start_time_actual_seg:end_time_next_segment, "hyp_seq_id"] = actual_sleep_seg_id
+                df.loc[start_time_actual_seg:end_time_next_segment, "hyp_sleep_candidate"] = 1
             else:
                 actual_sleep_seg_id = next_sleep_seg_id
-        new_sleep_segments = df[df[col_win_night + '_sleep_candidate'] == 1][col_win_night + '_grpid'].unique()
+        new_sleep_segments = df[df["hyp_sleep_candidate"] == 1]["hyp_seq_id"].unique()
         ####
 
         # Check if we can modify the sleep onset
         for sleep_seg_id in new_sleep_segments:
-            actual_seg = df[df[col_win_night + '_grpid'] == sleep_seg_id]
+            actual_seg = df[df["hyp_seq_id"] == sleep_seg_id]
             start_time = actual_seg.index[0]
             end_time = actual_seg.index[0]
 
             look_sleep_onset = df[start_time - timedelta(hours=4): start_time + timedelta(minutes=60)]
             look_sleep_offset = df[end_time - timedelta(minutes=1): end_time + timedelta(minutes=120)]
 
-            new_sleep_onset = look_sleep_onset[look_sleep_onset[col_win_night + '_vard'] > volarity_threshold]
-            new_sleep_offset = look_sleep_offset[look_sleep_offset[col_win_night + '_vard'] > volarity_threshold]
+            new_sleep_onset = look_sleep_onset[look_sleep_onset["hyp_sleep_vard"] > volarity_threshold]
+            new_sleep_offset = look_sleep_offset[look_sleep_offset["hyp_sleep_vard"] > volarity_threshold]
 
             new_start = new_sleep_onset.index[-1] if new_sleep_onset.shape[0] > 0 else start_time
             new_end = new_sleep_offset.index[0] if new_sleep_offset.shape[0] > 0 else end_time
 
-            df.loc[new_start:new_end, col_win_night + '_grpid'] = sleep_seg_id
-            df.loc[new_start:new_end, col_win_night + '_sleep_candidate'] = 1
+            df.loc[new_start:new_end, "hyp_seq_id"] = sleep_seg_id
+            df.loc[new_start:new_end, "hyp_sleep_candidate"] = 1
 
         # new_sleep_segments = df[df[col_win_night + '_sleep_candidate'] == 1][col_win_night + '_grpid'].unique()
-        df[output_col] = False
-        df.loc[df[(df[col_win_night + '_sleep_candidate'] == 1)].index, output_col] = True
+        wearable.data = df.reset_index()
+
+        if only_largest_sleep_period:  # If true, we keep only one sleep period per night.
+
+            saved_hour_start_day = wearable.hour_start_experiment
+            print("SAVED HOUR:", saved_hour_start_day)
+            wearable.change_start_hour_for_experiment_day(sleep_search_window[0])
+
+            largest_sleep = wearable.data.groupby(wearable.experiment_day_col, sort=False).apply(
+                lambda day: self.__find_largest_sleep(day, wearable.time_col, "hyp_sleep_candidate",
+                                                      output_col, tolerance_minutes=1))
+
+            # We actually should be happy with invalid days with 0
+            largest_sleep = largest_sleep.replace(-1, 0)
+            wearable.data = pd.merge(wearable.data,
+                                     largest_sleep.reset_index(level=[wearable.experiment_day_col])[output_col],
+                                     right_index=True, left_index=True)
+
+            wearable.change_start_hour_for_experiment_day(saved_hour_start_day)
+
+        else:
+            # Save final output
+            wearable.data[output_col] = False
+            wearable.data.loc[wearable.data[(wearable.data["hyp_sleep_candidate"] == 1)].index, output_col] = True
 
         # Clean up!
-        wearable.data = df.reset_index()
         wearable.data.drop(
-            columns=[col_win_night, col_win_night + '_sleep_candidate', col_win_night + '_grpid',
-                     col_win_night + '_bin',
-                     col_win_night + '_vard', col_win_night + '_len'], inplace=True)
+            columns=["hyp_sleep", "hyp_sleep_candidate", "hyp_seq_id",
+                     "hyp_sleep_bin",
+                     "hyp_sleep_vard", "hyp_seq_length"], inplace=True)
 
     def __sleep_boundaries_with_annotations(self,
                                             wearable,
@@ -227,7 +243,7 @@ class TimeSeriesProcessing(object):
 
         # Gets the largest sleep_candidate per night
         largest_sleep = wearable.data.groupby(wearable.experiment_day_col, sort=False).apply(
-            lambda day: self.__find_largest_sleep(day, wearable.time_col, output_col,
+            lambda day: self.__find_largest_sleep(day, wearable.time_col, "hyp_sleep_candidate", output_col,
                                                   tolerance_minutes=merge_tolerance_in_minutes))
 
         # TODO: it fails when we have only one single day. Need to fix it.
@@ -258,6 +274,7 @@ class TimeSeriesProcessing(object):
                                 hr_volatility_window_in_minutes: int = 10,
                                 hr_merge_blocks_delta_time_in_min: int = 240,
                                 hr_sleep_only_in_sleep_search_window: bool = False,
+                                hr_only_largest_sleep_period: bool = False,
                                 ):
         """
             Detected the sleep boundaries.
@@ -288,7 +305,7 @@ class TimeSeriesProcessing(object):
                                                 hr_rolling_win_in_minutes,
                                                 hr_sleep_search_window, hr_min_window_length_in_minutes,
                                                 hr_volatility_window_in_minutes, hr_merge_blocks_delta_time_in_min,
-                                                hr_sleep_only_in_sleep_search_window)
+                                                hr_sleep_only_in_sleep_search_window, hr_only_largest_sleep_period)
             else:
                 warnings.warn("Strategy %s is not yet implemented" % (strategy))
 
