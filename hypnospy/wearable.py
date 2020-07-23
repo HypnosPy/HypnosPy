@@ -217,6 +217,54 @@ class Wearable(object):
             return self.data.groupby(self.experiment_day_col)[[sleep_col]].apply(
                 lambda x: x.sum() / self.get_epochs_in_min())
 
+
+    def get_onset_sleep_time_per_day(self, sleep_col: str = None, based_on_diary: bool = False):
+        """
+
+        :param sleep_col:
+        :param based_on_diary:
+        :return: A Series indexed by experiment_day with total of minutes slept per day
+        """
+
+        if not based_on_diary and sleep_col is None:
+            raise ValueError("Unable to calculate total sleep time."
+                             " You have to specify a sleep column or set ``based_on_diary`` to True "
+                             "(assuming you previously added a diary.")
+        if based_on_diary:
+            if self.diary is None:
+                raise ValueError("Diary not found. Add a diary with ``add_diary``.")
+            event = self.data[self.data[self.diary_event] == True]
+        else:
+            if sleep_col not in self.data.keys():
+                raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
+            event = self.data[self.data[sleep_col] == True]
+
+        return event.groupby(self.experiment_day_col)[self.time_col].first()
+
+    def get_offset_sleep_time_per_day(self, sleep_col: str = None, based_on_diary: bool = False):
+        """
+
+        :param sleep_col:
+        :param based_on_diary:
+        :return: A Series indexed by experiment_day with total of minutes slept per day
+        """
+
+        if not based_on_diary and sleep_col is None:
+            raise ValueError("Unable to calculate total sleep time."
+                             " You have to specify a sleep column or set ``based_on_diary`` to True "
+                             "(assuming you previously added a diary.")
+        if based_on_diary:
+            if self.diary is None:
+                raise ValueError("Diary not found. Add a diary with ``add_diary``.")
+            event = self.data[self.data[self.diary_event] == True]
+        else:
+            if sleep_col not in self.data.keys():
+                raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
+            event = self.data[self.data[sleep_col] == True]
+
+        return event.groupby(self.experiment_day_col)[self.time_col].last()
+
+
     def view_signals(self, signals: list = ["activity", "hr", "pa_intensity", "sleep"], frequency: str = "60S",
                      sleep_col: str = None):
         # TODO: finish implementing it!
@@ -271,6 +319,7 @@ class Wearable(object):
         plt.rc('font', family='serif')
 
         maxy = 10000
+
 
         for idx in range(len(dfs_per_day)):
 
