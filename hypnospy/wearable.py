@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+import calendar
+
 import hypnospy
 import pandas as pd
 from hypnospy import Diary
@@ -261,7 +263,13 @@ class Wearable(object):
         # dfs_per_day = [pd.DataFrame(group[1]) for group in df_plot.groupby(df_plot.index.day)]
         # Based on the experiment day gives us the correct chronological order of the days
         dfs_per_day = [pd.DataFrame(group[1]) for group in df_plot.groupby(self.experiment_day_col)]
-        fig, ax1 = plt.subplots(len(dfs_per_day), 1, figsize=(14, 20))
+
+        fig, ax1 = plt.subplots(len(dfs_per_day), 1, figsize=(14, 8))
+        plt.rcParams['font.size'] = 18
+        plt.rcParams['image.cmap'] = 'plasma'
+        plt.rcParams['axes.linewidth'] = 2
+        plt.rc('font', family='serif')
+
         maxy = 10000
 
         for idx in range(len(dfs_per_day)):
@@ -286,14 +294,14 @@ class Wearable(object):
 
             if "pa_intensity" in signals:
                 # maxy = 2000
-                ax1[idx].fill_between(df2_h.index, 0, maxy, where=df2_h['hyp_vpa'], facecolor='darkgreen', alpha=0.7,
-                                      label='VPA', edgecolor='darkgreen')
+                ax1[idx].fill_between(df2_h.index, 0, maxy, where=df2_h['hyp_vpa'], facecolor='forestgreen', alpha=1.0,
+                                      label='VPA', edgecolor='forestgreen')
                 only_mvpa = (df2_h['hyp_mvpa']) & (~df2_h['hyp_vpa'])
-                ax1[idx].fill_between(df2_h.index, 0, maxy, where=only_mvpa, facecolor='forestgreen', alpha=0.7,
-                                      label='MVPA', edgecolor='forestgreen')
+                ax1[idx].fill_between(df2_h.index, 0, maxy, where=only_mvpa, facecolor='palegreen', alpha=1.0,
+                                      label='MVPA', edgecolor='palegreen')
                 only_lpa = (df2_h['hyp_lpa']) & (~df2_h['hyp_mvpa']) & (~df2_h['hyp_vpa'])
-                ax1[idx].fill_between(df2_h.index, 0, maxy, where=only_lpa, facecolor='lightgreen', alpha=0.7,
-                                      label='LPA', edgecolor='lightgreen')
+                ax1[idx].fill_between(df2_h.index, 0, maxy, where=only_lpa, facecolor='honeydew', alpha=1.0,
+                                      label='LPA', edgecolor='honeydew')
                 ax1[idx].fill_between(df2_h.index, 0, maxy, where=df2_h['hyp_sed'], facecolor='palegoldenrod',
                                       alpha=0.6,
                                       label='sedentary', edgecolor='palegoldenrod')
@@ -309,6 +317,12 @@ class Wearable(object):
                 diary_event = df2_h[df2_h[self.diary_event] == True].index
                 ax1[idx].vlines(x=diary_event, ymin=0, ymax=10000, facecolor='black', alpha=1, label='Diary',
                                 linestyles="dashed")
+
+
+            ax1[idx].set_ylabel("%d-%s\n%s" % (dfs_per_day[idx].index[-1].day,
+                                               calendar.month_name[dfs_per_day[idx].index[-1].month][:3],
+                                               calendar.day_name[dfs_per_day[idx].index[-1].dayofweek]),
+                                rotation=0, horizontalalignment="right", verticalalignment="center")
 
             #ax1[idx].set_xticks([])
             ax1[idx].set_yticks([])
@@ -335,5 +349,5 @@ class Wearable(object):
         # ax.figure.savefig('%s_signals.pdf' % (self.get_pid()))
         # fig.suptitle("%s" % self.get_pid(), fontsize=16)
 
-        fig.legend(handles, labels, loc='lower center', ncol=len(cols))
+        fig.legend(handles, labels, loc='lower center', ncol=len(cols), fontsize=12)
         fig.savefig('%s_signals.pdf' % (self.get_pid()))
