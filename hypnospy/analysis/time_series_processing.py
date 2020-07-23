@@ -99,9 +99,9 @@ class TimeSeriesProcessing(object):
             #  Ignore all sleep candidate period outsite win
             df_time.loc[idx, "hyp_sleep_bin"] = 0
 
-        df["hyp_sleep"] = df_time["hyp_sleep"].values
-        df["hyp_sleep_bin"] = df_time["hyp_sleep_bin"].values
-        df["hyp_seq_length"], df["hyp_seq_id"] = misc.get_consecutive_serie(df, "hyp_sleep_bin")
+        seq_length, seq_id = misc.get_consecutive_serie(df_time, "hyp_sleep_bin")
+
+        return df_time["hyp_sleep"].values, df_time["hyp_sleep_bin"].values, seq_length.values, seq_id.values
 
     def __sleep_boundaries_with_hr(self, wearable: Wearable,
                                    output_col: str,
@@ -123,12 +123,15 @@ class TimeSeriesProcessing(object):
         min_window_length_in_minutes = int(min_window_length_in_minutes * wearable.get_epochs_in_min())
         volatility_window_in_minutes = int(volatility_window_in_minutes * wearable.get_epochs_in_min())
 
-        df = wearable.data
+        df = wearable.data.copy()
 
         # Work on night data
-        self.__create_threshold_col_based_on_time(df, wearable.time_col, wearable.hr_col,
-                                                  sleep_search_window[0], sleep_search_window[1], quantile,
-                                                  rolling_win_in_minutes, sleep_only_in_sleep_search_window)
+        df["hyp_sleep"], df["hyp_sleep_bin"], df["hyp_seq_length"], df[
+            "hyp_seq_id"] = self.__create_threshold_col_based_on_time(wearable.data, wearable.time_col, wearable.hr_col,
+                                                                      sleep_search_window[0], sleep_search_window[1],
+                                                                      quantile,
+                                                                      rolling_win_in_minutes,
+                                                                      sleep_only_in_sleep_search_window)
 
         df['hyp_sleep_candidate'] = ((df["hyp_sleep_bin"] == 1.0) & (
                 df['hyp_seq_length'] > min_window_length_in_minutes)).astype(int)
@@ -189,7 +192,6 @@ class TimeSeriesProcessing(object):
         if only_largest_sleep_period:  # If true, we keep only one sleep period per night.
 
             saved_hour_start_day = wearable.hour_start_experiment
-            print("SAVED HOUR:", saved_hour_start_day)
             wearable.change_start_hour_for_experiment_day(sleep_search_window[0])
 
             largest_sleep = wearable.data.groupby(wearable.experiment_day_col, sort=False).apply(
