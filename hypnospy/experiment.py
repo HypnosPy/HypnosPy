@@ -63,7 +63,7 @@ class Experiment(object):
         else:
             warnings.warn("Unknown PID %s." % pid)
             return None
-            #raise KeyError("Unknown PID %s." % pid)
+            # raise KeyError("Unknown PID %s." % pid)
 
     def get_all_wearables(self):
         return self.wearables.values()
@@ -75,3 +75,7 @@ class Experiment(object):
     def invalidate_days_without_diary(self):
         for wearable in self.get_all_wearables():
             wearable.invalidate_days_without_diary()
+
+    def change_start_hour_for_experiment_day(self, hour):
+        for wearable in self.get_all_wearables():
+            wearable.change_start_hour_for_experiment_day(hour)
