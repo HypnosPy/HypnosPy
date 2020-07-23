@@ -8,16 +8,28 @@ from hypnospy.analysis import PhysicalActivity
 from hypnospy import Experiment
 from hypnospy import Diary
 
+from argparse import ArgumentParser
+
 from sklearn.metrics import mean_squared_error, cohen_kappa_score
 
 if __name__ == "__main__":
 
+    parser = ArgumentParser()
+
+    parser.add_argument('--diary_path', type=str, default="./data/diaries/NewBVSdiaries.csv")
+    parser.add_argument('--data_path', type=str, default="./data/small_collection_bvs/DummyBVS4.csv")
+
+    parser.add_argument('--hr_quantile', type=float, default=0.40)
+    parser.add_argument('--hr_merge_blocks', type=int, default=300)
+    parser.add_argument('--hr_min_window_length', type=int, default=40)
+    parser.add_argument('--hr_volarity', type=int, default=5)
+    args = parser.parse_args()
+
     # Configure an Experiment
     exp = Experiment()
 
-    #diary_path = "./data/diaries/NewBBVSdiaries_werror.csv"
-    diary_path = "./data/diaries/NewBVSdiaries.csv"
-    data_path = "./data/small_collection_bvs/DummyBVS*.csv"
+    data_path = args.data_path
+    diary_path = args.diary_path
 
     # Iterates over a set of files in a directory.
     # Unfortunately, we have to do it manually with RawProcessing because we are modifying the annotations
@@ -26,7 +38,7 @@ if __name__ == "__main__":
                      # HR information
                      col_for_hr="mean_hr",
                      # Activity information
-                     cols_for_activity=["ACC"],
+                     cols_for_activity=["stdMET_highIC_Branch"],
                      is_act_count=False,
                      device_location="dw",
                      # Datetime information
@@ -34,7 +46,11 @@ if __name__ == "__main__":
                      strftime="%d-%b-%Y %H:%M:%S",
                      # Participant information
                      col_for_pid="id")
-        pp.data["hyp_act_x"] = (pp.data["hyp_act_x"]/0.0060321) + 0.057
+        #pp.data["hyp_act_x"] = (pp.data["hyp_act_x"]/0.0060321) + 0.057
+
+        pp.data["hyp_act_x"] = pp.data["hyp_act_x"] - 1.0  # adjust for the BBVA dataset
+
+        # stdMET_highIC_Branch
 
         w = Wearable(pp)  # Creates a wearable from a pp object
         exp.add_wearable(w)
@@ -42,13 +58,19 @@ if __name__ == "__main__":
     diary = Diary().from_file(diary_path)
     exp.add_diary(diary)
     exp.invalidate_days_without_diary()
+    # TODO: Need to drop invalid days first
 
     tsp = TimeSeriesProcessing(exp)
     tsp.fill_no_activity(-0.0001)
-    tsp.detect_sleep_boundaries(strategy="hr", output_col="hyp_sleep_period_hr", hr_quantile=0.425,
-                                hr_volarity_threshold=5, hr_rolling_win_in_minutes=5, hr_sleep_search_window=(20, 12),
-                                hr_min_window_length_in_minutes=40, hr_volatility_window_in_minutes=10,
-                                hr_merge_blocks_delta_time_in_min=300, hr_sleep_only_in_sleep_search_window=True,
+    tsp.detect_sleep_boundaries(strategy="hr", output_col="hyp_sleep_period_hr",
+                                hr_quantile=args.hr_quantile,
+                                hr_volarity_threshold=args.hr_volarity,
+                                hr_volatility_window_in_minutes=10,
+                                hr_rolling_win_in_minutes=5,
+                                hr_sleep_search_window=(21, 11),
+                                hr_min_window_length_in_minutes=args.hr_min_window_length,
+                                hr_merge_blocks_delta_time_in_min=args.hr_merge_blocks,
+                                hr_sleep_only_in_sleep_search_window=True,
                                 )
 
     pa = PhysicalActivity(exp, 1.5, 3, 6) # Should we use 1.5, 3 and 6 or 0.5, 2 and 5?
@@ -77,7 +99,8 @@ if __name__ == "__main__":
         df_tst["pid"] = w.get_pid()
 
         # View signals
-        w.view_signals(["activity", "hr", "pa_intensity", "sleep", "diary"], sleep_col="hyp_sleep_period_hr")
+        #w.change_start_hour_for_experiment_day(0)
+        #w.view_signals(["activity", "hr", "pa_intensity", "sleep", "diary"], sleep_col="hyp_sleep_period_hr")
 
         df_tst_acc.append(df_tst)
 
