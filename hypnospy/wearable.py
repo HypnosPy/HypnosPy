@@ -207,16 +207,15 @@ class Wearable(object):
                              "(assuming you previously added a diary.")
         if based_on_diary:
             if self.diary is None:
-                raise ValueError("Diary not found. Add a diary with ``add_diary``.")
+                raise ValueError("Diary not found for PID %s. Add a diary with ``add_diary``." % (self.get_pid()))
             return self.data.groupby(self.experiment_day_col)[[self.diary_sleep]].apply(
                 lambda x: x.sum() / self.get_epochs_in_min())
 
         else:
             if sleep_col not in self.data.keys():
-                raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
+                raise ValueError("Could not find sleep_col named %s for PID %s. Aborting." % (self.get_pid(), sleep_col))
             return self.data.groupby(self.experiment_day_col)[[sleep_col]].apply(
                 lambda x: x.sum() / self.get_epochs_in_min())
-
 
     def get_onset_sleep_time_per_day(self, sleep_col: str = None, based_on_diary: bool = False):
         """
@@ -264,8 +263,9 @@ class Wearable(object):
 
         return event.groupby(self.experiment_day_col)[self.time_col].last()
 
-
-    def view_signals(self, signals: list = ["activity", "hr", "pa_intensity", "sleep"], frequency: str = "60S",
+    def view_signals(self, signals: list = ["activity", "hr", "pa_intensity", "sleep"],
+                     others: list = [],
+                     frequency: str = "60S",
                      sleep_col: str = None):
         # TODO: finish implementing it!
         # TODO: probably we should move it to another viz package.
@@ -305,6 +305,9 @@ class Wearable(object):
 
         cols.append(self.time_col)
         cols.append(self.experiment_day_col)
+        for col in others:
+            cols.append(col)
+
         df_plot = self.data[cols].set_index(self.time_col).resample(frequency).sum()
 
         # Daily version
@@ -313,15 +316,17 @@ class Wearable(object):
         dfs_per_day = [pd.DataFrame(group[1]) for group in df_plot.groupby(self.experiment_day_col)]
 
         fig, ax1 = plt.subplots(len(dfs_per_day), 1, figsize=(14, 8))
+
+        if len(dfs_per_day) == 1:
+            ax1 = [ax1]
+
         plt.rcParams['font.size'] = 18
         plt.rcParams['image.cmap'] = 'plasma'
         plt.rcParams['axes.linewidth'] = 2
         plt.rc('font', family='serif')
 
-        maxy = 10000
-
-
         for idx in range(len(dfs_per_day)):
+            maxy = 2
 
             # Resampling: hourly
             df2_h = dfs_per_day[idx]
@@ -337,12 +342,11 @@ class Wearable(object):
                                                       seconds=dfs_per_day[idx].index[0].second) + timedelta(minutes=1439))
 
             if "activity" in signals:
-                # maxy = min(maxy, df2_h[self.get_activity_col()].max())
+                maxy = max(maxy, df2_h[self.get_activity_col()].max())
                 ax1[idx].plot(df2_h.index, df2_h[self.get_activity_col()], label='Activity', linewidth=1,
                               color='black', alpha=1)
 
             if "pa_intensity" in signals:
-                # maxy = 2000
                 ax1[idx].fill_between(df2_h.index, 0, maxy, where=df2_h['hyp_vpa'], facecolor='forestgreen', alpha=1.0,
                                       label='VPA', edgecolor='forestgreen')
                 only_mvpa = (df2_h['hyp_mvpa']) & (~df2_h['hyp_vpa'])
@@ -356,6 +360,7 @@ class Wearable(object):
                                       label='sedentary', edgecolor='palegoldenrod')
 
             if "sleep" in signals:
+                maxy = 1000
                 sleeping = df2_h[sleep_col]  # TODO: get a method instead of an attribute
                 ax1[idx].fill_between(df2_h.index, 0, maxy, where=sleeping, facecolor='royalblue',
                                       alpha=1, label='sleep')
@@ -366,6 +371,9 @@ class Wearable(object):
                 diary_event = df2_h[df2_h[self.diary_event] == True].index
                 ax1[idx].vlines(x=diary_event, ymin=0, ymax=10000, facecolor='black', alpha=1, label='Diary',
                                 linestyles="dashed")
+
+            for col in others:
+                ax1[idx].plot(df2_h.index, df2_h[col], label=col, linewidth=1, color='black', alpha=1)
 
 
             ax1[idx].set_ylabel("%d-%s\n%s" % (dfs_per_day[idx].index[-1].day,
@@ -382,7 +390,7 @@ class Wearable(object):
                 ax2 = ax1[idx].twinx()
                 # ax2.set_ylabel('mean_HR')  # we already handled the x-label with ax1
                 ax2.plot(df2_h.index, df2_h[self.get_hr_col()], label='HR', color='red')
-                ax2.set_ylim(30, df2_h[self.get_hr_col()].max())
+                ax2.set_ylim(df2_h[self.get_hr_col()].min() - 5, df2_h[self.get_hr_col()].max() + 5)
                 ax2.set_xticks([])
                 ax2.set_yticks([])
 
