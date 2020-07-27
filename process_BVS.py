@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     #diary_path = "./data/diaries/BBVS_new_diary.csv"
     diary_path = "./data/diaries/NewBVSdiaries.csv"
-    data_path = "./data/small_collection_bvs/DummyBVS*.csv"
+    data_path = "./data/small_collection_bvs/DummyBVS5*.csv"
 
 
     # parser.add_argument('--hr_quantile', type=float, default=0.40)
@@ -38,9 +38,10 @@ if __name__ == "__main__":
     # parser.add_argument('--hr_volarity', type=int, default=5)
     hr_volarity = 5
     exp_id = 0
-    quantiles = [0.325,0.35,0.375,0.4,0.425,0.45,0.475,0.5,0.525]
-    time_merge_blocks = [60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360]
-    window_lengths = [25,27.5,30,32.5,35,37.5,40,42.5,45,47.5,50]
+    quantiles = [0.35, 0.375, 0.4, 0.425, 0.45, 0.475, 0.5, 0.525]
+    window_lengths = [25, 27.5, 30, 32.5, 35, 37.5, 40, 42.5, 45, 47.5, 50]
+    time_merge_blocks = [60, 120, 180, 240, 300, 360]
+    start_hour = 15
 
     with tempfile.TemporaryDirectory() as output_path:
         for hr_quantile in quantiles:
@@ -77,13 +78,16 @@ if __name__ == "__main__":
                     # Set frequency for every wearable in the collection
                     exp.set_freq_in_secs(60)
 
+                    # Changing the hour the experiment starts from midnight (0) to 3pm (15)
+                    exp.change_start_hour_for_experiment_day(start_hour)
+
                     diary = Diary().from_file(diary_path)
                     exp.add_diary(diary)
-                    exp.invalidate_days_without_diary()
-
 
                     tsp = TimeSeriesProcessing(exp)
                     tsp.fill_no_activity(-0.0001)
+                    tsp.detect_non_wear(strategy="none")
+                    tsp.check_valid_days(min_activity_threshold=0, max_non_wear_min_per_day=180, check_sleep_period=False)
                     tsp.drop_invalid_days()
 
                     tsp.detect_sleep_boundaries(strategy="hr", output_col="hyp_sleep_period_hr",
@@ -91,57 +95,74 @@ if __name__ == "__main__":
                                                 hr_volarity_threshold=hr_volarity,
                                                 hr_volatility_window_in_minutes=10,
                                                 hr_rolling_win_in_minutes=5,
-                                                hr_sleep_search_window=(21, 11),
+                                                hr_sleep_search_window=(start_hour, start_hour-1),
                                                 hr_min_window_length_in_minutes=hr_min_window_length,
                                                 hr_merge_blocks_delta_time_in_min=hr_merge_blocks,
                                                 hr_sleep_only_in_sleep_search_window=True,
                                                 hr_only_largest_sleep_period=True,
                                                 )
 
-                    pa = PhysicalActivity(exp, 1.5, 3, 6) # Should we use 1.5, 3 and 6 or 0.5, 2 and 5?
+                    tsp.detect_sleep_boundaries(strategy="adapted_van_hees",
+                                                output_col="hyp_sleep_period_vanhees",
+                                                vanhees_start_hour = start_hour
+                                                )
+
+                    # Dont change the intevals below: we're using 1.5, 3 and 6.
+                    # Removed the -1 when creating the wearable
+                    pa = PhysicalActivity(exp, 1.5, 3, 6)
                     pa.generate_pa_columns()
                     mvpa_bouts = pa.get_mvpas(length_in_minutes=1, decomposite_bouts=False)
                     lpa_bouts = pa.get_lpas(length_in_minutes=1, decomposite_bouts=False)
 
                     df_acc = []
+                    mses = {}
+                    cohens = {}
 
+                    print("Calculating evaluation measures...")
                     for w in exp.get_all_wearables():
-                        print("Calculating evaluation measures...")
-                        # w.view_signals(["activity", "hr", "pa_intensity", "sleep", "diary"])
+                        # w.data = w.data[w.data["hyp_exp_day"].isin([5])]
+
                         diary_sleep = w.data[w.diary_sleep].astype(int)
                         hr_sleep = w.data["hyp_sleep_period_hr"].astype(int)
-                        mse = mean_squared_error(diary_sleep, hr_sleep)
-                        cohens_kappa = cohen_kappa_score(diary_sleep, hr_sleep)
+                        vanhees_sleep = w.data["hyp_sleep_period_vanhees"].astype(int)
 
-                        print("Pid:", w.get_pid())
-                        print("MSE: %.3f" % mse)
-                        print("Cohen's Kappa: %.3f" % cohens_kappa)
+                        mses["diary_hr"] = mean_squared_error(diary_sleep, hr_sleep)
+                        mses["diary_vanhees"] = mean_squared_error(diary_sleep, vanhees_sleep)
+                        mses["hr_vanhees"] = mean_squared_error(hr_sleep, vanhees_sleep)
 
-                        w.change_start_hour_for_experiment_day(15)  # Experiment day now starts on 3pm
+                        cohens["diary_hr"] = cohen_kappa_score(diary_sleep, hr_sleep)
+                        cohens["diary_vanhees"] = cohen_kappa_score(diary_sleep, vanhees_sleep)
+                        cohens["hr_vanhees"] = cohen_kappa_score(hr_sleep, vanhees_sleep)
+
                         tst_diary = w.get_total_sleep_time_per_day(based_on_diary=True)
                         tst_hr = w.get_total_sleep_time_per_day(sleep_col="hyp_sleep_period_hr")
+                        tst_vanhees = w.get_total_sleep_time_per_day(sleep_col="hyp_sleep_period_vanhees")
 
                         onset_diary = w.get_onset_sleep_time_per_day(based_on_diary=True)
                         onset_diary.name = "onset_diary"
                         onset_hr = w.get_onset_sleep_time_per_day(sleep_col="hyp_sleep_period_hr")
                         onset_hr.name = "onset_hr"
+                        onset_vanhees = w.get_onset_sleep_time_per_day(sleep_col="hyp_sleep_period_vanhees")
+                        onset_vanhees.name = "onset_vanhees"
 
                         offset_diary = w.get_offset_sleep_time_per_day(based_on_diary=True)
                         offset_diary.name = "offset_diary"
                         offset_hr = w.get_offset_sleep_time_per_day(sleep_col="hyp_sleep_period_hr")
                         offset_hr.name = "offset_hr"
+                        offset_vanhees = w.get_offset_sleep_time_per_day(sleep_col="hyp_sleep_period_vanhees")
+                        offset_vanhees .name = "offset_vanhees"
 
-                        df_res = pd.concat((onset_hr, onset_diary, offset_hr, offset_diary, tst_diary, tst_hr), axis=1)
+                        df_res = pd.concat((onset_hr, onset_diary, onset_vanhees,
+                                            offset_hr, offset_diary, offset_vanhees, tst_diary, tst_hr), axis=1)
 
-                        df_res["tst_diff"] = df_res["hyp_sleep_period_hr"] - df_res[w.diary_sleep]
-                        df_res["tst_average"] = (df_res["hyp_sleep_period_hr"] + df_res[w.diary_sleep]) / 2.
                         df_res["pid"] = w.get_pid()
-                        df_res["mse"] = mse
-                        df_res["cohens"] = cohens_kappa
+                        for comb in ["diary_hr", "diary_vanhees", "hr_vanhees"]:
+                            df_res["mse_" + comb] = mses[comb]
+                            df_res["cohens_" + comb] = cohens[comb]
 
                         # View signals
                         # w.change_start_hour_for_experiment_day(0)
-                        # w.view_signals(["activity", "hr", "pa_intensity", "sleep", "diary"], sleep_col="hyp_sleep_period_hr")
+                        # w.view_signals(["activity", "hr", "pa_intensity", "sleep", "diary"], sleep_col="hyp_sleep_period_vanhees")
 
                         df_acc.append(df_res)
 
@@ -157,7 +178,7 @@ if __name__ == "__main__":
         # Cleaning up: Merge all experiments and
         dfs = glob(output_path + "/*")
         bigdf = pd.concat([pd.read_csv(f) for f in dfs])
-        bigdf.to_csv("send_to_joao.csv", index=False)
+        bigdf.to_csv("send_to_joao.csv.gz", index=False)
 
     print("DONE!")
 
