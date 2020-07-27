@@ -319,10 +319,8 @@ class TimeSeriesProcessing(object):
         wearable.data["hyp_sleep_candidate"], wearable.data["hyp_seq_id"], wearable.data[
             "hyp_seq_length"] = self.__merge_windows(wearable.data, wearable.time_col, "hyp_sleep_candidate",
                                                  merge_tolerance_in_minutes)
-        print("SEARCHIGN")
         largest_sleep = wearable.data.groupby(wearable.experiment_day_col, sort=False).apply(
                 lambda day: self.__find_largest_sleep(day, "hyp_sleep_candidate", output_col))
-        print("DIONE")
         wearable.data = pd.merge(wearable.data,
                                  largest_sleep.reset_index(level=[wearable.experiment_day_col])[output_col],
                                  right_index=True, left_index=True)
