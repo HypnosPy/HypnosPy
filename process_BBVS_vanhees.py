@@ -56,6 +56,8 @@ def load_experiment(data_path, diary_path):
     return exp
 
 
+# +
+
 if __name__ == "__main__":
 
     diary_path = "./data/diaries/BBVS_new_diary.csv"
@@ -85,6 +87,7 @@ if __name__ == "__main__":
                     tsp.drop_invalid_days()
                     tsp.detect_sleep_boundaries(strategy="adapted_van_hees",
                                                 output_col="hyp_sleep_period_vanhees",
+                                                vanhees_cols=["pitch_mean_dw", "roll_mean_dw"],
                                                 vanhees_start_hour=start_hour,
                                                 vanhees_quantile=quantile,
                                                 vanhees_minimum_len_in_minutes=min_window_length,
@@ -152,7 +155,7 @@ if __name__ == "__main__":
         # Cleaning up: Merge all experiments and
         dfs = glob(output_path + "/*")
         bigdf = pd.concat([pd.read_csv(f) for f in dfs])
-        bigdf.to_csv("send_to_joao.csv.gz", index=False)
+        bigdf.to_csv("results_BBVS_vanhees.csv.gz", index=False)
 
     print("DONE!")
 # -
