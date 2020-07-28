@@ -163,7 +163,9 @@ class TimeSeriesProcessing(object):
 
         # Merge two sleep segments if their gap is smaller than X min:
         # sleep_segments = df[df["hyp_sleep_candidate"] == 1]["hyp_seq_id"].unique()
-        df["hyp_sleep_candidate"], df["hyp_seq_id"], df["hyp_seq_length"] = self.__merge_windows(df, wearable.time_col, "hyp_sleep_candidate", tolerance_minutes=20)
+        df["hyp_sleep_candidate"], df["hyp_seq_id"], df["hyp_seq_length"] = self.__merge_windows(df, wearable.time_col,
+                                                                                                 "hyp_sleep_candidate",
+                                                                                                 tolerance_minutes=merge_blocks_delta_time_in_min)
 
         df = df.set_index(wearable.time_col)
         new_sleep_segments = df[df["hyp_sleep_candidate"] == 1]["hyp_seq_id"].unique()
@@ -299,20 +301,22 @@ class TimeSeriesProcessing(object):
             df_time["hyp_" + col + '_len'], _ = misc.get_consecutive_serie(df_time, "hyp_" + col + '_bin')
 
             if operator == "or":
-                df_time["hyp_sleep_candidate"] = df_time["hyp_sleep_candidate"] | (df_time["hyp_" + col + '_bin'] == 1.0) & (
-                        df_time["hyp_" + col + '_len'] > minimum_len_in_minutes)
+                df_time["hyp_sleep_candidate"] = df_time["hyp_sleep_candidate"] | ((df_time["hyp_" + col + '_bin'] == 1.0) & (
+                        df_time["hyp_" + col + '_len'] > minimum_len_in_minutes))
             else:
-                df_time["hyp_sleep_candidate"] = df_time["hyp_sleep_candidate"] & (
+                df_time["hyp_sleep_candidate"] = df_time["hyp_sleep_candidate"] & ((
                             df_time["hyp_" + col + '_bin'] == 1.0) & (
-                                                         df_time["hyp_" + col + '_len'] > minimum_len_in_minutes)
+                                                         df_time["hyp_" + col + '_len'] > minimum_len_in_minutes))
 
         # Gets the largest sleep_candidate per night
         wearable.data = df_time.reset_index()
+        #wearable.data[output_col] = wearable.data["hyp_sleep_candidate"]
+
         wearable.data["hyp_seq_length"], wearable.data["hyp_seq_id"] = misc.get_consecutive_serie(wearable.data,
                                                                                                   "hyp_sleep_candidate")
         wearable.data["hyp_sleep_candidate"], wearable.data["hyp_seq_id"], wearable.data[
             "hyp_seq_length"] = self.__merge_windows(wearable.data, wearable.time_col, "hyp_sleep_candidate",
-                                                 merge_tolerance_in_minutes)
+                                                     merge_tolerance_in_minutes)
         largest_sleep = wearable.data.groupby(wearable.experiment_day_col, sort=False).apply(
                 lambda day: self.__find_largest_sleep(day, "hyp_sleep_candidate", output_col))
         wearable.data = pd.merge(wearable.data,
@@ -349,6 +353,9 @@ class TimeSeriesProcessing(object):
                                 hr_only_largest_sleep_period: bool = False,
                                 # Adapted Van Hees parameters
                                 vanhees_start_hour: int = 15,
+                                vanhees_quantile: float = 0.1,
+                                vanhees_minimum_len_in_minutes: int = 30,
+                                vanhees_merge_tolerance_in_minutes: int = 180,
                                 ):
         """
             Detected the sleep boundaries.
@@ -382,7 +389,13 @@ class TimeSeriesProcessing(object):
                                                 hr_sleep_only_in_sleep_search_window, hr_only_largest_sleep_period)
 
             elif strategy == "adapted_van_hees":
-                self.__sleep_boundaries_with_adapted_van_hees(wearable, output_col=output_col, start_hour=vanhees_start_hour)
+                self.__sleep_boundaries_with_adapted_van_hees(wearable,
+                                                              output_col=output_col,
+                                                              start_hour=vanhees_start_hour,
+                                                              q_sleep=vanhees_quantile,
+                                                              minimum_len_in_minutes=vanhees_minimum_len_in_minutes,
+                                                              merge_tolerance_in_minutes=vanhees_merge_tolerance_in_minutes,
+                                                              )
 
 
 
