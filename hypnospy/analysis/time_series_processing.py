@@ -352,6 +352,7 @@ class TimeSeriesProcessing(object):
                                 hr_sleep_only_in_sleep_search_window: bool = False,
                                 hr_only_largest_sleep_period: bool = False,
                                 # Adapted Van Hees parameters
+                                vanhees_cols: list = ["pitch_mean_dw", "roll_mean_dw"],
                                 vanhees_start_hour: int = 15,
                                 vanhees_quantile: float = 0.1,
                                 vanhees_minimum_len_in_minutes: int = 30,
@@ -391,6 +392,7 @@ class TimeSeriesProcessing(object):
             elif strategy == "adapted_van_hees":
                 self.__sleep_boundaries_with_adapted_van_hees(wearable,
                                                               output_col=output_col,
+                                                              cols=vanhees_cols,
                                                               start_hour=vanhees_start_hour,
                                                               q_sleep=vanhees_quantile,
                                                               minimum_len_in_minutes=vanhees_minimum_len_in_minutes,
