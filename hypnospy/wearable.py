@@ -180,10 +180,10 @@ class Wearable(object):
         self.data.loc[self.data[self.time_col].isin(self.diary.data["sleep_offset"]), self.diary_event] = True
 
         self.data[self.diary_sleep] = False
-        for row in self.diary.data.iterrows():
-            if not pd.isna(row[1]["sleep_onset"]) and not pd.isna(row[1]["sleep_offset"]):
-                self.data.loc[(self.data[self.time_col] >= row[1]["sleep_onset"]) & (
-                    self.data[self.time_col] <= row[1]["sleep_offset"]), self.diary_sleep] = True
+        for _, row in self.diary.data.iterrows():
+            if not pd.isna(row["sleep_onset"]) and not pd.isna(row["sleep_offset"]):
+                self.data.loc[(self.data[self.time_col] >= row["sleep_onset"]) & (
+                    self.data[self.time_col] <= row["sleep_offset"]), self.diary_sleep] = True
 
     def invalidate_days_without_diary(self):
         tst = self.get_total_sleep_time_per_day(based_on_diary=True)
