@@ -87,7 +87,8 @@ if __name__ == "__main__":
                     tsp = TimeSeriesProcessing(exp)
                     tsp.fill_no_activity(-0.0001)
                     tsp.detect_non_wear(strategy="none")
-                    tsp.check_valid_days(min_activity_threshold=0, max_non_wear_min_per_day=180, check_sleep_period=False)
+                    tsp.check_valid_days(min_activity_threshold=0, max_non_wear_min_per_day=180,
+                                         check_sleep_period=False, check_diary=True)
                     tsp.drop_invalid_days()
 
                     tsp.detect_sleep_boundaries(strategy="hr", output_col="hyp_sleep_period_hr",
