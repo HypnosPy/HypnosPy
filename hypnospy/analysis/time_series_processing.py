@@ -107,8 +107,7 @@ class TimeSeriesProcessing(object):
         # We set the hr_col to nan for the time outside the search win in order to find the quantile below ignoring nans
         df_time.loc[idx, hr_col] = np.nan
 
-        df_time["hyp_sleep"] = df_time[hr_col].resample('24H', base=start_time).apply(
-            lambda x: np.nanquantile(x, quantile)).fillna(method='ffill').fillna(method='bfill')
+        df_time["hyp_sleep"] = df_time[hr_col].resample('24H', base=start_time).quantile(quantile)
 
         # We fill the nans in the df_time and copy the result back to the original df
         df_time["hyp_sleep"] = df_time["hyp_sleep"].fillna(method='ffill').fillna(method='bfill')
@@ -289,11 +288,10 @@ class TimeSeriesProcessing(object):
         else:
             df_time["hyp_sleep_candidate"] = True
 
-
         for col in cols:
             df_time["hyp_" + col + '_diff'] = df_time[col].diff().abs()
             df_time["hyp_" + col + '_5mm'] = df_time["hyp_" + col + '_diff'].rolling(five_min).median().fillna(0.0)
-            df_time["hyp_" + col + '_10pct'] = df_time["hyp_" + col + '_5mm'].resample('24H', base=start_hour).apply(lambda x: np.quantile(x, q_sleep))
+            df_time["hyp_" + col + '_10pct'] = df_time["hyp_" + col + '_5mm'].resample('24H', base=start_hour).quantile(q_sleep)
             df_time["hyp_" + col + '_10pct'] = df_time["hyp_" + col + '_10pct'].fillna(method='ffill').fillna(method='bfill')
 
             df_time["hyp_" + col + '_bin'] = np.where(
