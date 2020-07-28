@@ -44,12 +44,8 @@ class TimeSeriesProcessing(object):
 
         # Mark the largest period as "sleep_period"
         largest_seqid = df_candidates.iloc[df_candidates["hyp_seq_length"].argmax()]["hyp_seq_id"]
-
-        if largest_seqid == 137:
-            print(type(largest_seqid))
         largest = df_candidates[df_candidates["hyp_seq_id"] == largest_seqid]
         df.loc[largest.index, output_col] = True
-
 
         return df[output_col]
 
