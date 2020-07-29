@@ -107,7 +107,10 @@ class TimeSeriesProcessing(object):
         # We set the hr_col to nan for the time outside the search win in order to find the quantile below ignoring nans
         df_time.loc[idx, hr_col] = np.nan
 
-        df_time["hyp_sleep"] = df_time[hr_col].resample('24H', base=start_time).quantile(quantile)
+        quantiles_per_day = df_time[hr_col].resample('24H', base=start_time).quantile(quantile)
+        df_time["hyp_sleep"] = quantiles_per_day
+        if quantiles_per_day.index[0] < df_time.index[0]:
+            df_time.loc[df_time.index[0],"hyp_sleep"] = quantiles_per_day.iloc[0]
 
         # We fill the nans in the df_time and copy the result back to the original df
         df_time["hyp_sleep"] = df_time["hyp_sleep"].fillna(method='ffill').fillna(method='bfill')
@@ -147,7 +150,6 @@ class TimeSeriesProcessing(object):
 
         df = wearable.data.copy()
 
-        # Work on night data
         df["hyp_sleep"], df["hyp_sleep_bin"], df["hyp_seq_length"], df[
             "hyp_seq_id"] = self.__create_threshold_col_based_on_time(wearable.data, wearable.time_col, wearable.hr_col,
                                                                       sleep_search_window[0], sleep_search_window[1],
@@ -199,13 +201,17 @@ class TimeSeriesProcessing(object):
             largest_sleep = wearable.data.groupby(wearable.experiment_day_col, sort=False).apply(
                 lambda day: self.__find_largest_sleep(day, "hyp_sleep_candidate", output_col))
 
-            # We actually should be happy with invalid days with 0
-            largest_sleep = largest_sleep.replace(-1, 0)
-            wearable.data = pd.merge(wearable.data,
-                                     largest_sleep.reset_index(level=[wearable.experiment_day_col])[output_col],
-                                     right_index=True, left_index=True)
+            ###
+            if not isinstance(largest_sleep.index, pd.MultiIndex):
+                l = largest_sleep.T.reset_index(drop=True)
+                l[output_col] = l[0].replace(-1, 0)
+                wearable.data = pd.merge(wearable.data, l[output_col], right_index=True, left_index=True)
 
-            wearable.change_start_hour_for_experiment_day(saved_hour_start_day)
+            else:
+                largest_sleep = largest_sleep.replace(-1, 0)
+                wearable.data = pd.merge(wearable.data,
+                                         largest_sleep.reset_index(level=[wearable.experiment_day_col])[output_col],
+                                         right_index=True, left_index=True)
 
         else:
             # Save final output
