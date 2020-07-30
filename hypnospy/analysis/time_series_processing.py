@@ -204,7 +204,8 @@ class TimeSeriesProcessing(object):
             ###
             if not isinstance(largest_sleep.index, pd.MultiIndex):
                 l = largest_sleep.T.reset_index(drop=True)
-                l[output_col] = l[0].replace(-1, 0)
+                l[output_col] = l[l.keys()[0]]
+                l[output_col] = l[output_col].replace(-1, 0)
                 wearable.data = pd.merge(wearable.data, l[output_col], right_index=True, left_index=True)
 
             else:
@@ -261,7 +262,7 @@ class TimeSeriesProcessing(object):
         # TODO: it fails when we have only one single day. That is a ugly hack to fix it.
         if not isinstance(largest_sleep.index, pd.MultiIndex):
             l = largest_sleep.T.reset_index(drop=True)
-            l[output_col] = l[0]
+            l[output_col] = l[l.keys()[0]]
             wearable.data = pd.merge(wearable.data, l[output_col], right_index=True, left_index=True)
 
         else:
