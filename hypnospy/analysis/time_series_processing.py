@@ -29,26 +29,6 @@ class TimeSeriesProcessing(object):
         self.sleep_period_col = "hyp_sleep_period"  # after running detect_sleep_boundaries
 
     @staticmethod
-    def __find_largest_sleep(df_orig, sleep_candidate_col, output_col):
-
-        df = df_orig.copy()
-        df[output_col] = False
-
-        df_candidates = df[df[sleep_candidate_col] == True]
-
-        if df_candidates.shape[0] == 0:
-            warnings.warn("Day has no sleep period!")
-            df[output_col] = -1
-            return df[output_col]
-
-        # Mark the largest period as "sleep_period"
-        largest_seqid = df_candidates.iloc[df_candidates["hyp_seq_length"].argmax()]["hyp_seq_id"]
-        largest = df_candidates[df_candidates["hyp_seq_id"] == largest_seqid]
-        df.loc[largest.index, output_col] = True
-
-        return df[output_col]
-
-    @staticmethod
     def __merge_windows(df_orig, time_col, sleep_candidate_col, tolerance_minutes=20):
 
         df = df_orig.copy()
@@ -201,22 +181,13 @@ class TimeSeriesProcessing(object):
             saved_hour_start_day = wearable.hour_start_experiment
             wearable.change_start_hour_for_experiment_day(sleep_search_window[0])
 
-            largest_sleep = wearable.data.groupby(wearable.experiment_day_col, sort=False).apply(
-                lambda day: self.__find_largest_sleep(day, "hyp_sleep_candidate", output_col))
-
-            ###
-            if not isinstance(largest_sleep.index, pd.MultiIndex):
-                l = largest_sleep.T.reset_index(drop=True)
-                l[output_col] = l[l.keys()[0]]
-                l[output_col] = l[output_col].replace(-1, 0)
-                wearable.data = pd.merge(wearable.data, l[output_col], right_index=True, left_index=True)
-
-            else:
-                largest_sleep = largest_sleep.replace(-1, 0)
-                wearable.data = pd.merge(wearable.data,
-                                         largest_sleep.reset_index(level=[wearable.experiment_day_col])[output_col],
-                                         right_index=True, left_index=True)
-
+            grps = wearable.data.groupby(wearable.experiment_day_col)
+            tmp_df = []
+            for grp_id, grp_df in grps:
+                df_out = misc.find_largest_sequence(grp_df, "hyp_sleep_candidate", output_col)
+                tmp_df.append(df_out)
+            wearable.data[output_col] = pd.concat(tmp_df)
+            wearable.change_start_hour_for_experiment_day(saved_hour_start_day)
         else:
             # Save final output
             wearable.data[output_col] = False
@@ -258,20 +229,12 @@ class TimeSeriesProcessing(object):
             "hyp_seq_length"] = self.__merge_windows(wearable.data, wearable.time_col, "hyp_sleep_candidate",
                                                  merge_tolerance_in_minutes)
 
-        # Gets the largest sleep_candidate per night
-        largest_sleep = wearable.data.groupby(wearable.experiment_day_col, sort=False).apply(
-            lambda day: self.__find_largest_sleep(day, "hyp_sleep_candidate", output_col))
-
-        # TODO: it fails when we have only one single day. That is a ugly hack to fix it.
-        if not isinstance(largest_sleep.index, pd.MultiIndex):
-            l = largest_sleep.T.reset_index(drop=True)
-            l[output_col] = l[l.keys()[0]]
-            wearable.data = pd.merge(wearable.data, l[output_col], right_index=True, left_index=True)
-
-        else:
-            wearable.data = pd.merge(wearable.data,
-                                     largest_sleep.reset_index(level=[wearable.experiment_day_col])[output_col],
-                                     right_index=True, left_index=True)
+        grps = wearable.data.groupby(wearable.experiment_day_col)
+        tmp_df = []
+        for grp_id, grp_df in grps:
+            df_out = misc.find_largest_sequence(grp_df, "hyp_sleep_candidate", output_col)
+            tmp_df.append(df_out)
+        wearable.data[output_col] = pd.concat(tmp_df)
 
         del wearable.data["hyp_seq_id"]
         del wearable.data["hyp_seq_length"]
@@ -328,19 +291,13 @@ class TimeSeriesProcessing(object):
         wearable.data["hyp_sleep_candidate"], wearable.data["hyp_seq_id"], wearable.data[
             "hyp_seq_length"] = self.__merge_windows(wearable.data, wearable.time_col, "hyp_sleep_candidate",
                                                      merge_tolerance_in_minutes)
-        
-        largest_sleep = wearable.data.groupby(wearable.experiment_day_col, sort=False).apply(
-                lambda day: self.__find_largest_sleep(day, "hyp_sleep_candidate", output_col))
-        
-        if not isinstance(largest_sleep.index, pd.MultiIndex):
-            l = largest_sleep.T.reset_index(drop=True)
-            l[output_col] = l[l.keys()[0]]
-            wearable.data = pd.merge(wearable.data, l[output_col], right_index=True, left_index=True)
 
-        else:
-            wearable.data = pd.merge(wearable.data,
-                                 largest_sleep.reset_index(level=[wearable.experiment_day_col])[output_col],
-                                 right_index=True, left_index=True)
+        grps = wearable.data.groupby(wearable.experiment_day_col)
+        tmp_df = []
+        for grp_id, grp_df in grps:
+            df_out = misc.find_largest_sequence(grp_df, "hyp_sleep_candidate", output_col)
+            tmp_df.append(df_out)
+        wearable.data[output_col] = pd.concat(tmp_df)
 
         # Cleaning up...
         cols_to_drop = ["hyp_sleep_candidate", "hyp_seq_length", "hyp_seq_id"]
