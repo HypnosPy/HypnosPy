@@ -6,7 +6,6 @@ import pandas as pd
 from datetime import timedelta
 import warnings
 
-
 class TimeSeriesProcessing(object):
 
     def __init__(self, input: {Wearable, Experiment}):
@@ -172,11 +171,15 @@ class TimeSeriesProcessing(object):
         df = df.set_index(wearable.time_col)
         new_sleep_segments = df[df["hyp_sleep_candidate"] == 1]["hyp_seq_id"].unique()
 
-        # Check if we can modify the sleep onset
+        # Check if we can modify the sleep onset/offset
         for sleep_seg_id in new_sleep_segments:
             actual_seg = df[df["hyp_seq_id"] == sleep_seg_id]
+
+            if actual_seg.shape[0] == 0:
+                continue
+
             start_time = actual_seg.index[0]
-            end_time = actual_seg.index[0]
+            end_time = actual_seg.index[-1]
 
             look_sleep_onset = df[start_time - timedelta(hours=4): start_time + timedelta(minutes=60)]
             look_sleep_offset = df[end_time - timedelta(minutes=1): end_time + timedelta(minutes=120)]
@@ -281,7 +284,7 @@ class TimeSeriesProcessing(object):
                                                  cols: list = ["pitch_mean_dw", "roll_mean_dw"],
                                                  q_sleep: float = 0.1,
                                                  minimum_len_in_minutes: int = 30,
-                                                 merge_tolerance_in_minutes: int = 60,
+                                                 merge_tolerance_in_minutes: int = 180,
                                                  factor: int = 15,
                                                  operator: str = "or", # Either 'or' or 'and'
         ):
@@ -321,12 +324,21 @@ class TimeSeriesProcessing(object):
 
         wearable.data["hyp_seq_length"], wearable.data["hyp_seq_id"] = misc.get_consecutive_serie(wearable.data,
                                                                                                   "hyp_sleep_candidate")
+        
         wearable.data["hyp_sleep_candidate"], wearable.data["hyp_seq_id"], wearable.data[
             "hyp_seq_length"] = self.__merge_windows(wearable.data, wearable.time_col, "hyp_sleep_candidate",
                                                      merge_tolerance_in_minutes)
+        
         largest_sleep = wearable.data.groupby(wearable.experiment_day_col, sort=False).apply(
                 lambda day: self.__find_largest_sleep(day, "hyp_sleep_candidate", output_col))
-        wearable.data = pd.merge(wearable.data,
+        
+        if not isinstance(largest_sleep.index, pd.MultiIndex):
+            l = largest_sleep.T.reset_index(drop=True)
+            l[output_col] = l[l.keys()[0]]
+            wearable.data = pd.merge(wearable.data, l[output_col], right_index=True, left_index=True)
+
+        else:
+            wearable.data = pd.merge(wearable.data,
                                  largest_sleep.reset_index(level=[wearable.experiment_day_col])[output_col],
                                  right_index=True, left_index=True)
 
@@ -385,6 +397,13 @@ class TimeSeriesProcessing(object):
         # this method requires triaxial accelerometry to be used
 
         for wearable in self.wearables:
+            #print(wearable.get_pid())
+
+            if wearable.data.shape[0] == 0:
+                wearable.data[output_col] = np.nan
+                warnings.warn("No data for PID %s. Skipping it." % wearable.get_pid())
+                continue
+
             if strategy == "annotation":
                 self.__sleep_boundaries_with_annotations(wearable, output_col, annotation_col,
                                                          annotation_hour_to_start_search,
