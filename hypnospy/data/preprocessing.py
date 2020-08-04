@@ -6,7 +6,6 @@ class RawProcessing(object):
 
     def __init__(self,
                  filename: str,
-                 device_location: str,
                  # Configuration for activity
                  cols_for_activity,
                  col_for_mets: object = None,
@@ -23,6 +22,7 @@ class RawProcessing(object):
                  col_for_hr: str = None,
                  # Any additional data?
                  additional_data: object = None,
+                 device_location: str = None,
                  ):
 
         """
