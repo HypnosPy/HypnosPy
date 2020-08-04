@@ -245,6 +245,7 @@ class TimeSeriesProcessing(object):
     def __sleep_boundaries_with_adapted_van_hees(self, wearable: Wearable, output_col: str,
                                                  start_hour: int = 15,
                                                  cols: list = ["pitch_mean_dw", "roll_mean_dw"],
+                                                 use_triaxial_activity=False,
                                                  q_sleep: float = 0.1,
                                                  minimum_len_in_minutes: int = 30,
                                                  merge_tolerance_in_minutes: int = 180,
@@ -258,14 +259,36 @@ class TimeSeriesProcessing(object):
         five_min = int(5 * wearable.get_epochs_in_min())
         minimum_len_in_minutes = int(minimum_len_in_minutes * wearable.get_epochs_in_min())
 
+        if use_triaxial_activity:
+            # Step 1:
+            df_time["hyp_rolling_x"] = df_time["hyp_act_x"].rolling("5s").median().fillna(0.0)
+            df_time["hyp_rolling_y"] = df_time["hyp_act_y"].rolling("5s").median().fillna(0.0)
+            df_time["hyp_rolling_z"] = df_time["hyp_act_z"].rolling("5s").median().fillna(0.0)
+
+            df_time["hyp_act_z"].rolling(five_min).median().fillna(0.0)
+
+            df_time["hyp_angle_z"] = (np.arctan(
+                df_time["hyp_rolling_z"] / (df_time['hyp_rolling_y'] ** 2 + df_time['hyp_rolling_x'] ** 2) ** (
+                            1 / 2))) * 180 / np.pi
+            # Step 2:
+            df_time["hyp_angle_z"] = df_time["hyp_angle_z"].fillna(0.0)
+            # Step 3:
+            df_time["hyp_angle_z"] = df_time["hyp_angle_z"].rolling("5s").mean().fillna(0.0)
+
+            cols += ["hyp_angle_z"]
+
+
         if operator == "or":
             df_time["hyp_sleep_candidate"] = False
         else:
             df_time["hyp_sleep_candidate"] = True
 
         for col in cols:
+            # Paper's Step 4
             df_time["hyp_" + col + '_diff'] = df_time[col].diff().abs()
+            # Paper's Step 5
             df_time["hyp_" + col + '_5mm'] = df_time["hyp_" + col + '_diff'].rolling(five_min).median().fillna(0.0)
+            # Paper's Step 6
             df_time["hyp_" + col + '_10pct'] = df_time["hyp_" + col + '_5mm'].resample('24H', base=start_hour).quantile(q_sleep)
             df_time["hyp_" + col + '_10pct'] = df_time["hyp_" + col + '_10pct'].fillna(method='ffill').fillna(method='bfill')
 
@@ -273,6 +296,7 @@ class TimeSeriesProcessing(object):
                 (df_time["hyp_" + col + '_5mm'] - df_time["hyp_" + col + '_10pct'] * factor) > 0, 0, 1)
             df_time["hyp_" + col + '_len'], _ = misc.get_consecutive_serie(df_time, "hyp_" + col + '_bin')
 
+            # Paper's Step 7
             if operator == "or":
                 df_time["hyp_sleep_candidate"] = df_time["hyp_sleep_candidate"] | ((df_time["hyp_" + col + '_bin'] == 1.0) & (
                         df_time["hyp_" + col + '_len'] > minimum_len_in_minutes))
@@ -287,11 +311,12 @@ class TimeSeriesProcessing(object):
 
         wearable.data["hyp_seq_length"], wearable.data["hyp_seq_id"] = misc.get_consecutive_serie(wearable.data,
                                                                                                   "hyp_sleep_candidate")
-        
+        # Paper's Step 8
         wearable.data["hyp_sleep_candidate"], wearable.data["hyp_seq_id"], wearable.data[
             "hyp_seq_length"] = self.__merge_windows(wearable.data, wearable.time_col, "hyp_sleep_candidate",
                                                      merge_tolerance_in_minutes)
 
+        # Paper's Step 9
         grps = wearable.data.groupby(wearable.experiment_day_col)
         tmp_df = []
         for grp_id, grp_df in grps:
@@ -329,6 +354,7 @@ class TimeSeriesProcessing(object):
                                 hr_only_largest_sleep_period: bool = False,
                                 # Adapted Van Hees parameters
                                 vanhees_cols: list = ["pitch_mean_dw", "roll_mean_dw"],
+                                vanhees_use_triaxial_activity: bool = False,
                                 vanhees_start_hour: int = 15,
                                 vanhees_quantile: float = 0.1,
                                 vanhees_minimum_len_in_minutes: int = 30,
@@ -346,15 +372,13 @@ class TimeSeriesProcessing(object):
             which has value 1 if inside the sleep boundaries and 0 otherwise.
 
         """
-        # Include HR sleeping window approach here (SLEEP 2020 paper)
-        # if no HR look for expert annotations _anno
-        # if no annotations look for diaries
-        # if no diaries apply Crespo (periods of innactivity)
-        # if no diaries apply Van Hees heuristic method
-        # this method requires triaxial accelerometry to be used
+        # (1) HR sleeping window approach here (SLEEP 2020 paper)
+        # (2) expert annotations or PSG
+        # (3) Van Hees heuristic method
+        # Missing: Crespo (periods of innactivity)
 
         for wearable in self.wearables:
-            #print(wearable.get_pid())
+            # print(wearable.get_pid())
 
             if wearable.data.shape[0] == 0:
                 wearable.data[output_col] = np.nan
@@ -376,6 +400,7 @@ class TimeSeriesProcessing(object):
                 self.__sleep_boundaries_with_adapted_van_hees(wearable,
                                                               output_col=output_col,
                                                               cols=vanhees_cols,
+                                                              use_triaxial_activity=vanhees_use_triaxial_activity,
                                                               start_hour=vanhees_start_hour,
                                                               q_sleep=vanhees_quantile,
                                                               minimum_len_in_minutes=vanhees_minimum_len_in_minutes,
@@ -631,8 +656,8 @@ class TimeSeriesProcessing(object):
         wearable.data["%s" % self.wearing_col] = non_wear_vector
 
     def check_valid_days(self, min_activity_threshold: int = 0, max_non_wear_min_per_day: int = 180,
-                             check_sleep_period: bool = True, sleep_period_col: str = None,
-                            check_diary: bool= True):
+                         check_sleep_period: bool = True, sleep_period_col: str = None,
+                         check_diary: bool = True):
         """
             Tasks:
             (1) Mark as invalid epochs in which the activity is smaller than the ``min_activity_threshold``.
@@ -677,6 +702,9 @@ class TimeSeriesProcessing(object):
             if check_diary:
                 if wearable.diary is not None:
                     wearable.invalidate_days_without_diary()
+                else:
+                    warnings.warn("No diary for PID %s. All days will become invalid." % (wearable.get_pid()))
+                    wearable.invalidate_all()
 
     def check_consecutive_days(self, min_number_days):
         """
