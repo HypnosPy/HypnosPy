@@ -47,7 +47,7 @@ class Wearable(object):
 
         elif isinstance(input, hypnospy.data.preprocessing.RawProcessing):
             self.__read_preprocessing_obj(input)
-            print("Loaded wearable with pid %s" % (self.get_pid()))
+            # print("Loaded wearable with pid %s" % (self.get_pid()))
 
         # Creates the experiment day and set it the initial hour to be midnight
         self.change_start_hour_for_experiment_day(0)
@@ -192,6 +192,9 @@ class Wearable(object):
         # Flag them as invalid
         if len(invalid_days):
             self.data.loc[self.data[self.experiment_day_col].isin(invalid_days), self.invalid_col] = True
+
+    def invalidate_all(self):
+        self.data[self.invalid_col] = True
 
     def get_total_sleep_time_per_day(self, sleep_col: str = None, based_on_diary: bool = False):
         """

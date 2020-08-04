@@ -11,6 +11,11 @@ class Diary(object):
 
     def from_file(self, file_path):
         self.data = pd.read_csv(file_path)
+        if "pid" not in self.data.keys():
+            # TODO: decide if we can allow the user to specify it.
+            raise KeyError("Diary needs to have a 'pid' column.")
+
+        self.data["pid"] = self.data["pid"].astype(str)
         return self
 
     def from_dataframe(self, dataframe):
