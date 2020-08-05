@@ -269,7 +269,7 @@ class Wearable(object):
     def view_signals(self, signals: list = ["activity", "hr", "pa_intensity", "sleep"],
                      others: list = [],
                      frequency: str = "60S",
-                     sleep_col: str = None):
+                     sleep_cols: str = None):
         # TODO: finish implementing it!
         # TODO: probably we should move it to another viz package.
         import matplotlib.pyplot as plt
@@ -293,9 +293,10 @@ class Wearable(object):
                             cols.append(pa)
 
             elif signal == "sleep":
-                if sleep_col not in self.data.keys():
-                    raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
-                cols.append(sleep_col)
+                for sleep_col in sleep_cols:
+                    if sleep_col not in self.data.keys():
+                        raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
+                    cols.append(sleep_col)
 
             elif signal == "diary" and self.diary_event in self.data.keys():
                 cols.append(self.diary_event)
@@ -363,12 +364,18 @@ class Wearable(object):
                                       label='sedentary', edgecolor='palegoldenrod')
 
             if "sleep" in signals:
-                maxy = 1000
-                sleeping = df2_h[sleep_col]  # TODO: get a method instead of an attribute
-                ax1[idx].fill_between(df2_h.index, 0, maxy, where=sleeping, facecolor='royalblue',
-                                      alpha=1, label='sleep')
-                # ax1[idx].fill_between(df2_h.index, 0, (df2_h['wake_window_0.4']) * 200, facecolor='cyan', alpha=1,
-                #                   label='wake')
+                facecolors = ['royalblue', 'green', 'orange']
+                maxy = 10000
+                endy = 0
+                addition = (maxy / len(facecolors))
+                for i, sleep_col in enumerate(sleep_cols):
+                    starty = endy
+                    endy = endy + addition
+                    sleeping = df2_h[sleep_col]  # TODO: get a method instead of an attribute
+                    ax1[idx].fill_between(df2_h.index, starty, endy, where=sleeping, facecolor=facecolors[i],
+                                          alpha=1, label=sleep_col)
+                    # ax1[idx].fill_between(df2_h.index, 0, (df2_h['wake_window_0.4']) * 200, facecolor='cyan', alpha=1,
+                    #                   label='wake')
 
             if "diary" in signals and self.diary_event in df2_h.keys():
                 diary_event = df2_h[df2_h[self.diary_event] == True].index
