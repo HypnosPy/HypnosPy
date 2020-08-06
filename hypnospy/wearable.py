@@ -38,7 +38,8 @@ class Wearable(object):
         self.hr_col = None
         # Diary
         self.diary = None
-        self.diary_event = "hyp_diary_event"
+        self.diary_onset = "hyp_diary_onset"
+        self.diary_offset = "hyp_diary_offset"
         self.diary_sleep = "hyp_diary_sleep"
 
         if isinstance(input, str):
@@ -175,9 +176,10 @@ class Wearable(object):
     def add_diary(self, d: Diary):
         d.data = d.data[d.data["pid"] == self.get_pid()]
         self.diary = d
-        self.data[self.diary_event] = False
-        self.data.loc[self.data[self.time_col].isin(self.diary.data["sleep_onset"]), self.diary_event] = True
-        self.data.loc[self.data[self.time_col].isin(self.diary.data["sleep_offset"]), self.diary_event] = True
+        self.data[self.diary_onset] = False
+        self.data[self.diary_offset] = False
+        self.data.loc[self.data[self.time_col].isin(self.diary.data["sleep_onset"]), self.diary_onset] = True
+        self.data.loc[self.data[self.time_col].isin(self.diary.data["sleep_offset"]), self.diary_offset] = True
 
         self.data[self.diary_sleep] = False
         for _, row in self.diary.data.iterrows():
@@ -235,7 +237,7 @@ class Wearable(object):
         if based_on_diary:
             if self.diary is None:
                 raise ValueError("Diary not found. Add a diary with ``add_diary``.")
-            event = self.data[self.data[self.diary_event] == True]
+            event = self.data[self.data[self.diary_onset] == True]
         else:
             if sleep_col not in self.data.keys():
                 raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
@@ -258,7 +260,7 @@ class Wearable(object):
         if based_on_diary:
             if self.diary is None:
                 raise ValueError("Diary not found. Add a diary with ``add_diary``.")
-            event = self.data[self.data[self.diary_event] == True]
+            event = self.data[self.data[self.diary_offset] == True]
         else:
             if sleep_col not in self.data.keys():
                 raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
@@ -298,8 +300,9 @@ class Wearable(object):
                         raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
                     cols.append(sleep_col)
 
-            elif signal == "diary" and self.diary_event in self.data.keys():
-                cols.append(self.diary_event)
+            elif signal == "diary" and self.diary_onset in self.data.keys() and self.diary_offset in self.data.keys():
+                cols.append(self.diary_onset)
+                cols.append(self.diary_offset)
 
             else:
                 cols.append(signal)
@@ -377,8 +380,8 @@ class Wearable(object):
                     # ax1[idx].fill_between(df2_h.index, 0, (df2_h['wake_window_0.4']) * 200, facecolor='cyan', alpha=1,
                     #                   label='wake')
 
-            if "diary" in signals and self.diary_event in df2_h.keys():
-                diary_event = df2_h[df2_h[self.diary_event] == True].index
+            if "diary" in signals and self.diary_onset in df2_h.keys() and self.diary_offset in df2_h.keys():
+                diary_event = df2_h[(df2_h[self.diary_onset] == True) | (df2_h[self.diary_offset] == True)].index
                 ax1[idx].vlines(x=diary_event, ymin=0, ymax=10000, facecolor='black', alpha=1, label='Diary',
                                 linestyles="dashed")
 
