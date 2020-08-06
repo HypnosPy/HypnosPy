@@ -655,9 +655,8 @@ class TimeSeriesProcessing(object):
         print("Wearable now has a %s col for the non wear flag" % self.wearing_col)
         wearable.data["%s" % self.wearing_col] = non_wear_vector
 
-    def check_valid_days(self, min_activity_threshold: int = 0, max_non_wear_min_per_day: int = 180,
-                         check_sleep_period: bool = True, sleep_period_col: str = None,
-                         check_diary: bool = True):
+    def check_valid_days(self, min_activity_threshold: int = 0, max_non_wear_minutes_per_day: int = 180,
+                         check_sleep_period: bool = True, sleep_period_col: str = None, check_diary: bool = True):
         """
             Tasks:
             (1) Mark as invalid epochs in which the activity is smaller than the ``min_activity_threshold``.
@@ -677,7 +676,7 @@ class TimeSeriesProcessing(object):
             epochs_in_minute = wearable.get_epochs_in_min()
 
             minutes_in_a_day = 1440 * epochs_in_minute
-            max_non_wear_min_per_day *= epochs_in_minute
+            max_non_wear_minutes_per_day *= epochs_in_minute
 
             if wearable.experiment_day_col not in wearable.data.keys():
                 # If it was not configured yet, we start the experiment day from midnight.
@@ -688,7 +687,7 @@ class TimeSeriesProcessing(object):
                     "Col %s not found in wearable (pid=%s). Did you forget to run ``detect_non_wear(...)``?" % (
                         self.wearing_col, wearable.get_pid()))
 
-            min_non_wear_min_to_invalid = minutes_in_a_day - max_non_wear_min_per_day
+            min_non_wear_min_to_invalid = minutes_in_a_day - max_non_wear_minutes_per_day
             wearable.data[wearable.invalid_col] = wearable.data.groupby([wearable.experiment_day_col])[
                                                       self.wearing_col].transform(
                 lambda x: x.sum()) <= min_non_wear_min_to_invalid
