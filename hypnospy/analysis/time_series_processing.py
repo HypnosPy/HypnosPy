@@ -268,8 +268,8 @@ class TimeSeriesProcessing(object):
             df_time["hyp_act_z"].rolling(five_min).median().fillna(0.0)
 
             df_time["hyp_angle_z"] = (np.arctan(
-                df_time["hyp_rolling_z"] / (df_time['hyp_rolling_y'] ** 2 + df_time['hyp_rolling_x'] ** 2) ** (
-                            1 / 2))) * 180 / np.pi
+                df_time["hyp_rolling_z"] / ((df_time['hyp_rolling_y'] ** 2 + df_time['hyp_rolling_x'] ** 2) ** (
+                            1 / 2)))) * 180 / np.pi
             # Step 2:
             df_time["hyp_angle_z"] = df_time["hyp_angle_z"].fillna(0.0)
             # Step 3:
@@ -289,11 +289,15 @@ class TimeSeriesProcessing(object):
             # Paper's Step 5
             df_time["hyp_" + col + '_5mm'] = df_time["hyp_" + col + '_diff'].rolling(five_min).median().fillna(0.0)
             # Paper's Step 6
-            df_time["hyp_" + col + '_10pct'] = df_time["hyp_" + col + '_5mm'].resample('24H', base=start_hour).quantile(q_sleep)
+            quantiles_per_day = df_time["hyp_" + col + '_5mm'].resample('24H', base=start_hour).quantile(q_sleep)
+            df_time["hyp_" + col + '_10pct'] = quantiles_per_day
+            if quantiles_per_day.index[0] < df_time.index[0]:
+                df_time.loc[df_time.index[0], "hyp_" + col + '_10pct'] = quantiles_per_day.iloc[0]
+
             df_time["hyp_" + col + '_10pct'] = df_time["hyp_" + col + '_10pct'].fillna(method='ffill').fillna(method='bfill')
 
             df_time["hyp_" + col + '_bin'] = np.where(
-                (df_time["hyp_" + col + '_5mm'] - df_time["hyp_" + col + '_10pct'] * factor) > 0, 0, 1)
+                (df_time["hyp_" + col + '_5mm'] - (df_time["hyp_" + col + '_10pct'] * factor)) > 0, 0, 1)
             df_time["hyp_" + col + '_len'], _ = misc.get_consecutive_serie(df_time, "hyp_" + col + '_bin')
 
             # Paper's Step 7
