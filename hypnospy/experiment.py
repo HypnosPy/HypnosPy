@@ -66,7 +66,7 @@ class Experiment(object):
             # raise KeyError("Unknown PID %s." % pid)
 
     def get_all_wearables(self):
-        return self.wearables.values()
+        return list(self.wearables.values())
 
     def set_freq_in_secs(self, freq: int):
         for wearable in self.get_all_wearables():
