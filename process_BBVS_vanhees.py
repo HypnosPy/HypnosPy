@@ -15,7 +15,6 @@ from argparse import ArgumentParser
 from sklearn.metrics import mean_squared_error, cohen_kappa_score
 
 
-# +
 def load_experiment(data_path, diary_path):
     # Configure an Experiment
     exp = Experiment()
@@ -82,7 +81,7 @@ if __name__ == "__main__":
                     tsp = TimeSeriesProcessing(exp)
                     tsp.fill_no_activity(-0.0001)
                     tsp.detect_non_wear(strategy="none")
-                    tsp.check_valid_days(min_activity_threshold=0, max_non_wear_min_per_day=180,
+                    tsp.check_valid_days(min_activity_threshold=0, max_non_wear_minutes_per_day=180,
                                          check_sleep_period=False)
                     tsp.drop_invalid_days()
                     tsp.detect_sleep_boundaries(strategy="adapted_van_hees",

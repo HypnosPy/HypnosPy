@@ -35,11 +35,7 @@ def load_experiment(data_path, diary_path, start_hour):
                            strftime="%d-%b-%Y %H:%M:%S",
                            # Participant information
                            col_for_pid="id")
-        # pp.data["hyp_act_x"] = (pp.data["hyp_act_x"]/0.0060321) + 0.057
-
         pp.data["hyp_act_x"] = pp.data["hyp_act_x"] - 1.0  # adjust for the BBVA dataset
-
-        # stdMET_highIC_Branch
 
         w = Wearable(pp)  # Creates a wearable from a pp object
         exp.add_wearable(w)
@@ -55,114 +51,130 @@ def load_experiment(data_path, diary_path, start_hour):
 
     return exp
 
-
 if __name__ == "__main__":
-
-    #data_path = "./data/small_collection_bvs/olds/Dummy*.csv"
-    #diary_path = "./data/diaries/NewBVSdiaries.csv"
 
     diary_path = "./data/diaries/BBVS_new_diary.csv"
     data_path = "./data/small_collection_bvs/BVS*.csv"
 
     hr_volarity = 5
     exp_id = 0
-    quantiles = [0.75] # , 0.375, 0.4, 0.425, 0.45, 0.475, 0.5, 0.525]
-    window_lengths = [5] # , 27.5, 30, 32.5, 35, 37.5, 40, 42.5, 45, 47.5, 50]
-    time_merge_blocks = [60] # , 120, 180, 240, 300, 360]
-    start_hour = 21
-    end_hour = 10
+    # full day HR
+    fd_hr_quantile = 0.50
+    fd_hr_window_length = 50
+    fd_hr_time_merge_block = 60
+    fd_hr_start_hour = 15
+    fd_hr_end_hour = 15
+
+    # night only HR
+    no_hr_quantile = 0.50
+    no_hr_window_length = 50
+    no_hr_time_merge_block = 60
+    no_hr_start_hour = 21
+    no_hr_end_hour = 11
 
     with tempfile.TemporaryDirectory() as output_path:
-        for hr_quantile in quantiles:
-            for hr_merge_blocks in time_merge_blocks:
-                for hr_min_window_length in window_lengths:
 
-                    exp = load_experiment(data_path, diary_path, start_hour)
+        exp = load_experiment(data_path, diary_path, 15)
 
-                    tsp = TimeSeriesProcessing(exp)
-                    tsp.fill_no_activity(-0.0001)
-                    tsp.detect_non_wear(strategy="none")
-                    tsp.check_valid_days(min_activity_threshold=0, max_non_wear_minutes_per_day=180,
-                                         check_sleep_period=False)
-                    tsp.drop_invalid_days()
+        tsp = TimeSeriesProcessing(exp)
+        tsp.fill_no_activity(-0.0001)
+        tsp.detect_non_wear(strategy="none")
+        tsp.check_valid_days(min_activity_threshold=0, max_non_wear_minutes_per_day=180,
+                             check_sleep_period=False)
+        tsp.drop_invalid_days()
 
-                    tsp.detect_sleep_boundaries(strategy="hr", output_col="hyp_sleep_period_hr",
-                                                hr_quantile=hr_quantile,
-                                                hr_volarity_threshold=hr_volarity,
-                                                hr_volatility_window_in_minutes=10,
-                                                hr_rolling_win_in_minutes=5,
-                                                hr_sleep_search_window=(start_hour, end_hour),
-                                                hr_min_window_length_in_minutes=hr_min_window_length,
-                                                hr_merge_blocks_delta_time_in_min=hr_merge_blocks,
-                                                hr_sleep_only_in_sleep_search_window=True,
-                                                hr_only_largest_sleep_period=True,
-                                                )
+        tsp.detect_sleep_boundaries(strategy="hr", output_col="hyp_sleep_period_hr_fullday",
+                                    hr_quantile=fd_hr_quantile,
+                                    hr_volarity_threshold=hr_volarity,
+                                    hr_volatility_window_in_minutes=10,
+                                    hr_rolling_win_in_minutes=5,
+                                    hr_sleep_search_window=(fd_hr_start_hour, fd_hr_end_hour),
+                                    hr_min_window_length_in_minutes=fd_hr_window_length,
+                                    hr_merge_blocks_delta_time_in_min=fd_hr_time_merge_block,
+                                    hr_sleep_only_in_sleep_search_window=True,
+                                    hr_only_largest_sleep_period=True,
+                                    )
 
-                    # Dont change the intevals below: we're using 1.5, 3 and 6.
-                    # Removed the -1 when creating the wearable
-                    pa = PhysicalActivity(exp, 1.5, 3, 6)
-                    pa.generate_pa_columns()
-                    mvpa_bouts = pa.get_mvpas(length_in_minutes=1, decomposite_bouts=False)
-                    lpa_bouts = pa.get_lpas(length_in_minutes=1, decomposite_bouts=False)
+        tsp.detect_sleep_boundaries(strategy="hr", output_col="hyp_sleep_period_hr_night",
+                                    hr_quantile=no_hr_quantile,
+                                    hr_volarity_threshold=hr_volarity,
+                                    hr_volatility_window_in_minutes=10,
+                                    hr_rolling_win_in_minutes=5,
+                                    hr_sleep_search_window=(no_hr_start_hour, no_hr_end_hour),
+                                    hr_min_window_length_in_minutes=no_hr_window_length,
+                                    hr_merge_blocks_delta_time_in_min=no_hr_time_merge_block,
+                                    hr_sleep_only_in_sleep_search_window=True,
+                                    hr_only_largest_sleep_period=True,
+                                    )
 
-                    df_acc = []
-                    mses = {}
-                    cohens = {}
+        df_acc = []
+        mses = {}
+        cohens = {}
 
-                    print("Calculating evaluation measures...")
-                    for w in exp.get_all_wearables():
-                        # w.data = w.data[w.data["hyp_exp_day"].isin([5])]
+        print("Calculating evaluation measures...")
+        for w in exp.get_all_wearables():
 
-                        diary_sleep = w.data[w.diary_sleep].astype(int)
-                        hr_sleep = w.data["hyp_sleep_period_hr"].astype(int)
+            sleep = {}
+            sleep["diary"] = w.data[w.diary_sleep].astype(int)
+            sleep["hrfullday"] = w.data["hyp_sleep_period_hr_fullday"].astype(int)
+            sleep["hrnight"] = w.data["hyp_sleep_period_hr_night"].astype(int)
+            #sleep["vanhees"] = w.data["hyp_sleep_period_vanhees"].astype(int)
 
-                        if diary_sleep.shape[0] == 0 or hr_sleep.shape[0] == 0:
-                            continue
+            if sleep["diary"].shape[0] == 0:
+                continue
 
-                        mses["diary_hr"] = mean_squared_error(diary_sleep, hr_sleep)
-                        cohens["diary_hr"] = cohen_kappa_score(diary_sleep, hr_sleep)
+            for comb in ["diary_hrfullday", "diary_hrnight"]: # , "diary_vanhees"]:
+                a, b = comb.split("_")
+                mses[comb] = mean_squared_error(sleep[a], sleep[b])
+                cohens[comb] = cohen_kappa_score(sleep[a], sleep[b])
 
-                        tst_diary = w.get_total_sleep_time_per_day(based_on_diary=True)
-                        tst_hr = w.get_total_sleep_time_per_day(sleep_col="hyp_sleep_period_hr")
+            tst_diary = w.get_total_sleep_time_per_day(based_on_diary=True)
+            tst_hrfullday = w.get_total_sleep_time_per_day(sleep_col="hyp_sleep_period_hr_fullday")
+            tst_hrnight = w.get_total_sleep_time_per_day(sleep_col="hyp_sleep_period_hr_night")
 
-                        onset_diary = w.get_onset_sleep_time_per_day(based_on_diary=True)
-                        onset_diary.name = "onset_diary"
-                        onset_hr = w.get_onset_sleep_time_per_day(sleep_col="hyp_sleep_period_hr")
-                        onset_hr.name = "onset_hr"
+            onset_diary = w.get_onset_sleep_time_per_day(based_on_diary=True)
+            onset_diary.name = "onset_diary"
+            onset_hrfullday = w.get_onset_sleep_time_per_day(sleep_col="hyp_sleep_period_hr_fullday")
+            onset_hrfullday.name = "onset_hrfullday"
+            onset_hrnight = w.get_onset_sleep_time_per_day(sleep_col="hyp_sleep_period_hr_night")
+            onset_hrnight.name = "onset_hrnight"
 
-                        offset_diary = w.get_offset_sleep_time_per_day(based_on_diary=True)
-                        offset_diary.name = "offset_diary"
-                        offset_hr = w.get_offset_sleep_time_per_day(sleep_col="hyp_sleep_period_hr")
-                        offset_hr.name = "offset_hr"
+            offset_diary = w.get_offset_sleep_time_per_day(based_on_diary=True)
+            offset_diary.name = "offset_diary"
+            offset_hrfullday = w.get_offset_sleep_time_per_day(sleep_col="hyp_sleep_period_hr_fullday")
+            offset_hrfullday.name = "offset_hrfullday"
+            offset_hrnight = w.get_offset_sleep_time_per_day(sleep_col="hyp_sleep_period_hr_night")
+            offset_hrnight.name = "offset_hrnight"
 
-                        df_res = pd.concat((onset_hr, onset_diary, 
-                                            offset_hr, offset_diary,
-                                            tst_diary, tst_hr), axis=1)
+            df_res = pd.concat((onset_diary, onset_hrfullday, onset_hrnight,
+                                offset_diary, offset_hrfullday, offset_hrnight,
+                                tst_diary, tst_hrfullday, tst_hrnight), axis=1)
 
-                        df_res["pid"] = w.get_pid()
-                        for comb in ["diary_hr"]:
-                            df_res["mse_" + comb] = mses[comb]
-                            df_res["cohens_" + comb] = cohens[comb]
+            df_res["pid"] = w.get_pid()
+            for comb in ["diary_hrfullday", "diary_hrnight"]: #, "diary_vanhees"]:
+                df_res["mse_" + comb] = mses[comb]
+                df_res["cohens_" + comb] = cohens[comb]
 
-                        # View signals
-                        # w.change_start_hour_for_experiment_day(0)
-                        w.view_signals(["activity", "hr", "pa_intensity", "sleep", "diary"], sleep_cols=["hyp_sleep_period_hr"])
+            # View signals
+            # w.change_start_hour_for_experiment_day(0)
+            # w.view_signals(["activity", "hr", "pa_intensity", "sleep", "diary"], sleep_cols=["hyp_sleep_period_hr"])
 
-                        df_acc.append(df_res)
+            df_acc.append(df_res)
 
-                    exp_id += 1
-                    df_acc = pd.concat(df_acc)
-                    df_acc["exp_id"] = exp_id
-                    df_acc["quantile"] = hr_quantile
-                    df_acc["window_lengths"] = hr_min_window_length
-                    df_acc["time_merge_blocks"] = hr_merge_blocks
+        exp_id += 1
+        df_acc = pd.concat(df_acc)
+        df_acc["exp_id"] = exp_id
+        # TODO: need to upate these parameters
+        df_acc["quantile"] = fd_hr_quantile
+        df_acc["window_lengths"] = fd_hr_window_length
+        df_acc["time_merge_blocks"] = fd_hr_time_merge_block
 
-                    df_acc.to_csv(os.path.join(output_path, "exp_%d.csv" % (exp_id)), index=False)
+        df_acc.to_csv(os.path.join(output_path, "exp_%d.csv" % (exp_id)), index=False)
 
         # Cleaning up: Merge all experiments and
         dfs = glob(output_path + "/*")
         bigdf = pd.concat([pd.read_csv(f) for f in dfs])
-        bigdf.to_csv("results_BBVS_hr.csv.gz", index=False)
+        bigdf.to_csv("results_BBVS_everything.csv.gz", index=False)
 
     print("DONE!")
 

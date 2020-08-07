@@ -69,8 +69,8 @@ if __name__ == "__main__":
     quantiles = [0.75] # , 0.375, 0.4, 0.425, 0.45, 0.475, 0.5, 0.525]
     window_lengths = [5] # , 27.5, 30, 32.5, 35, 37.5, 40, 42.5, 45, 47.5, 50]
     time_merge_blocks = [60] # , 120, 180, 240, 300, 360]
-    start_hour = 15
-    end_hour = start_hour - 1
+    start_hour = 21
+    end_hour = 10
 
     with tempfile.TemporaryDirectory() as output_path:
         for hr_quantile in quantiles:
@@ -82,7 +82,8 @@ if __name__ == "__main__":
                     tsp = TimeSeriesProcessing(exp)
                     tsp.fill_no_activity(-0.0001)
                     tsp.detect_non_wear(strategy="none")
-                    tsp.check_valid_days(min_activity_threshold=0, max_non_wear_min_per_day=180, check_sleep_period=False)
+                    tsp.check_valid_days(min_activity_threshold=0, max_non_wear_minutes_per_day=180,
+                                         check_sleep_period=False)
                     tsp.drop_invalid_days()
 
                     tsp.detect_sleep_boundaries(strategy="hr", output_col="hyp_sleep_period_hr",
