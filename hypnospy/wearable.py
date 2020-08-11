@@ -377,6 +377,8 @@ class Wearable(object):
                     sleeping = df2_h[sleep_col]  # TODO: get a method instead of an attribute
                     ax1[idx].fill_between(df2_h.index, starty, endy, where=sleeping, facecolor=facecolors[i],
                                           alpha=1, label=sleep_col)
+                    ax1[idx].fill_between(df2_h.index, starty, endy, where=~sleeping, facecolor="black",
+                                          alpha=1, label=sleep_col)
                     # ax1[idx].fill_between(df2_h.index, 0, (df2_h['wake_window_0.4']) * 200, facecolor='cyan', alpha=1,
                     #                   label='wake')
 
