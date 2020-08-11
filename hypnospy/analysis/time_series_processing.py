@@ -86,7 +86,7 @@ class TimeSeriesProcessing(object):
         # We set the hr_col to nan for the time outside the search win in order to find the quantile below ignoring nans
         df_time.loc[idx, hr_col] = np.nan
 
-        quantiles_per_day = df_time[hr_col].resample('24H', base=start_time).quantile(quantile)
+        quantiles_per_day = df_time[hr_col].resample('24H', base=start_time).quantile(quantile).dropna()
         df_time["hyp_sleep"] = quantiles_per_day
         if quantiles_per_day.index[0] < df_time.index[0]:
             df_time.loc[df_time.index[0],"hyp_sleep"] = quantiles_per_day.iloc[0]
@@ -167,11 +167,14 @@ class TimeSeriesProcessing(object):
             new_sleep_onset = look_sleep_onset[look_sleep_onset["hyp_sleep_vard"] > volarity_threshold]
             new_sleep_offset = look_sleep_offset[look_sleep_offset["hyp_sleep_vard"] > volarity_threshold]
 
-            new_start = new_sleep_onset.index[-1] if new_sleep_onset.shape[0] > 0 else start_time
-            new_end = new_sleep_offset.index[0] if new_sleep_offset.shape[0] > 0 else end_time
+            new_start = new_sleep_onset.index[-1] if not new_sleep_onset.empty else start_time
+            new_end = new_sleep_offset.index[0] if not new_sleep_offset.empty else end_time
 
             df.loc[new_start:new_end, "hyp_seq_id"] = sleep_seg_id
             df.loc[new_start:new_end, "hyp_sleep_candidate"] = 1
+
+        # Need to reorganize the sequences.
+        df["hyp_seq_length"], df["hyp_seq_id"] = misc.get_consecutive_serie(df, "hyp_sleep_candidate")
 
         # new_sleep_segments = df[df[col_win_night + '_sleep_candidate'] == 1][col_win_night + '_grpid'].unique()
         wearable.data = df.reset_index()
@@ -184,7 +187,9 @@ class TimeSeriesProcessing(object):
             grps = wearable.data.groupby(wearable.experiment_day_col)
             tmp_df = []
             for grp_id, grp_df in grps:
-                df_out = misc.find_largest_sequence(grp_df, "hyp_sleep_candidate", output_col)
+                gdf = grp_df.copy()
+                gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_serie(gdf, "hyp_sleep_candidate")
+                df_out = misc.find_largest_sequence(gdf, "hyp_sleep_candidate", output_col).replace(-1, False)
                 tmp_df.append(df_out)
             wearable.data[output_col] = pd.concat(tmp_df)
             wearable.change_start_hour_for_experiment_day(saved_hour_start_day)
@@ -232,7 +237,9 @@ class TimeSeriesProcessing(object):
         grps = wearable.data.groupby(wearable.experiment_day_col)
         tmp_df = []
         for grp_id, grp_df in grps:
-            df_out = misc.find_largest_sequence(grp_df, "hyp_sleep_candidate", output_col)
+            gdf = grp_df.copy()
+            gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_serie(gdf, "hyp_sleep_candidate")
+            df_out = misc.find_largest_sequence(gdf, "hyp_sleep_candidate", output_col).replace(-1, False)
             tmp_df.append(df_out)
         wearable.data[output_col] = pd.concat(tmp_df)
 
@@ -289,7 +296,7 @@ class TimeSeriesProcessing(object):
             # Paper's Step 5
             df_time["hyp_" + col + '_5mm'] = df_time["hyp_" + col + '_diff'].rolling(five_min).median().fillna(0.0)
             # Paper's Step 6
-            quantiles_per_day = df_time["hyp_" + col + '_5mm'].resample('24H', base=start_hour).quantile(q_sleep)
+            quantiles_per_day = df_time["hyp_" + col + '_5mm'].resample('24H', base=start_hour).quantile(q_sleep).dropna()
             df_time["hyp_" + col + '_10pct'] = quantiles_per_day
             if quantiles_per_day.index[0] < df_time.index[0]:
                 df_time.loc[df_time.index[0], "hyp_" + col + '_10pct'] = quantiles_per_day.iloc[0]
@@ -324,7 +331,9 @@ class TimeSeriesProcessing(object):
         grps = wearable.data.groupby(wearable.experiment_day_col)
         tmp_df = []
         for grp_id, grp_df in grps:
-            df_out = misc.find_largest_sequence(grp_df, "hyp_sleep_candidate", output_col)
+            gdf = grp_df.copy()
+            gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_serie(gdf, "hyp_sleep_candidate")
+            df_out = misc.find_largest_sequence(gdf, "hyp_sleep_candidate", output_col).replace(-1, False)
             tmp_df.append(df_out)
         wearable.data[output_col] = pd.concat(tmp_df)
 
