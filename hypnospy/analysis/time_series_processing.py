@@ -258,6 +258,7 @@ class TimeSeriesProcessing(object):
                                                  merge_tolerance_in_minutes: int = 180,
                                                  factor: int = 15,
                                                  operator: str = "or", # Either 'or' or 'and'
+                                                 only_largest_sleep_period: bool = False
         ):
 
         df_time = wearable.data.copy()
@@ -328,14 +329,22 @@ class TimeSeriesProcessing(object):
                                                      merge_tolerance_in_minutes)
 
         # Paper's Step 9
-        grps = wearable.data.groupby(wearable.experiment_day_col)
-        tmp_df = []
-        for grp_id, grp_df in grps:
-            gdf = grp_df.copy()
-            gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_serie(gdf, "hyp_sleep_candidate")
-            df_out = misc.find_largest_sequence(gdf, "hyp_sleep_candidate", output_col).replace(-1, False)
-            tmp_df.append(df_out)
-        wearable.data[output_col] = pd.concat(tmp_df)
+        if only_largest_sleep_period:  # If true, we keep only one sleep period per night.
+            saved_hour_start_day = wearable.hour_start_experiment
+            wearable.change_start_hour_for_experiment_day(start_hour)
+            grps = wearable.data.groupby(wearable.experiment_day_col)
+            tmp_df = []
+            for grp_id, grp_df in grps:
+                gdf = grp_df.copy()
+                gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_serie(gdf, "hyp_sleep_candidate")
+                df_out = misc.find_largest_sequence(gdf, "hyp_sleep_candidate", output_col).replace(-1, False)
+                tmp_df.append(df_out)
+            wearable.data[output_col] = pd.concat(tmp_df)
+            wearable.change_start_hour_for_experiment_day(saved_hour_start_day)
+        else:
+            # Save final output
+            wearable.data[output_col] = False
+            wearable.data.loc[wearable.data[(wearable.data["hyp_sleep_candidate"] == 1)].index, output_col] = True
 
         # Cleaning up...
         cols_to_drop = ["hyp_sleep_candidate", "hyp_seq_length", "hyp_seq_id"]
@@ -372,6 +381,7 @@ class TimeSeriesProcessing(object):
                                 vanhees_quantile: float = 0.1,
                                 vanhees_minimum_len_in_minutes: int = 30,
                                 vanhees_merge_tolerance_in_minutes: int = 180,
+                                vanhees_only_largest_sleep_period: bool = False,
                                 ):
         """
             Detected the sleep boundaries.
@@ -418,6 +428,7 @@ class TimeSeriesProcessing(object):
                                                               q_sleep=vanhees_quantile,
                                                               minimum_len_in_minutes=vanhees_minimum_len_in_minutes,
                                                               merge_tolerance_in_minutes=vanhees_merge_tolerance_in_minutes,
+                                                              only_largest_sleep_period=vanhees_only_largest_sleep_period,
                                                               )
 
 
