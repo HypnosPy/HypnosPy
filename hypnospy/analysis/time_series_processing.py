@@ -285,7 +285,6 @@ class TimeSeriesProcessing(object):
 
             cols += ["hyp_angle_z"]
 
-
         if operator == "or":
             df_time["hyp_sleep_candidate"] = False
         else:
@@ -680,6 +679,7 @@ class TimeSeriesProcessing(object):
         wearable.data["%s" % self.wearing_col] = non_wear_vector
 
     def check_valid_days(self, min_activity_threshold: int = 0, max_non_wear_minutes_per_day: int = 180,
+                         check_cols: list = [],
                          check_sleep_period: bool = True, sleep_period_col: str = None, check_diary: bool = True):
         """
             Tasks:
@@ -694,6 +694,12 @@ class TimeSeriesProcessing(object):
             # Task 1:
             wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col].where(
                 wearable.data[wearable.get_activity_col()] >= min_activity_threshold, True)
+
+            for col in check_cols:
+                if col not in wearable.data.keys():
+                    raise KeyError("Col %s is not available for PID %s" % (col, wearable.get_pid()))
+                wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col].where(
+                    ~(wearable.data[col].isnull()), True)
 
             # Task 2:
             freq_in_secs = wearable.get_frequency_in_secs()
@@ -712,9 +718,11 @@ class TimeSeriesProcessing(object):
                         self.wearing_col, wearable.get_pid()))
 
             min_non_wear_min_to_invalid = minutes_in_a_day - max_non_wear_minutes_per_day
-            wearable.data[wearable.invalid_col] = wearable.data.groupby([wearable.experiment_day_col])[
+            invalid_wearing = wearable.data.groupby([wearable.experiment_day_col])[
                                                       self.wearing_col].transform(
                 lambda x: x.sum()) <= min_non_wear_min_to_invalid
+
+            wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col] | invalid_wearing
 
             # Task 3:
             if check_sleep_period:
