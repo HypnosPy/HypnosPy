@@ -657,9 +657,7 @@ class TimeSeriesProcessing(object):
 
             # Task 2:
             epochs_in_minute = wearable.get_epochs_in_min()
-
-            minutes_in_a_day = 1440 * epochs_in_minute
-            max_non_wear_minutes_per_day *= epochs_in_minute
+            max_non_wear_epochs_per_day = max_non_wear_minutes_per_day * epochs_in_minute
 
             if wearable.experiment_day_col not in wearable.data.keys():
                 # If it was not configured yet, we start the experiment day from midnight.
@@ -670,9 +668,10 @@ class TimeSeriesProcessing(object):
                     "Col %s not found in wearable (pid=%s). Did you forget to run ``detect_non_wear(...)``?" % (
                         self.wearing_col, wearable.get_pid()))
 
+            epochs_in_a_day = (1440 * epochs_in_minute)
             invalid_wearing = wearable.data.groupby([wearable.experiment_day_col])[
                                                       self.wearing_col].transform(
-                lambda x: x.sum()) <= max_non_wear_minutes_per_day
+                lambda x: x.sum()) <= (epochs_in_a_day - max_non_wear_epochs_per_day)
 
             wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col] | invalid_wearing
 
