@@ -113,10 +113,6 @@ class TimeSeriesProcessing(object):
         wearable.data = pd.concat(tmp_df)
         wearable.change_start_hour_for_experiment_day(saved_hour_start_day)
 
-        # df["hyp_sleep_candidate"], df["hyp_seq_id"], df["hyp_seq_length"] = misc.merge_windows(df, wearable.time_col,
-        #                                                                                          "hyp_sleep_candidate",
-        #                                                                                        tolerance_minutes=merge_blocks_gap_time_in_min)
-
         df = df.set_index(wearable.time_col)
         new_sleep_segments = df[df["hyp_sleep_candidate"] == 1]["hyp_seq_id"].unique()
 
