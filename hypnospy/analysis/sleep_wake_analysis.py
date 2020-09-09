@@ -42,7 +42,7 @@ class SleepWakeAnalysis(object):
 
         return act
 
-    def run_sleep_algorithm(self, algname, activityIdx=None, rescoring=False, **kargs):
+    def run_sleep_algorithm(self, algname, activityIdx=None, rescoring=False, inplace=False, **kargs):
         """ Function that chooses sleep algorithm from a list of heuristic (non-data driven) approaches
             Function takes in algorithm (1) choice, (2) resolution (30s or 60s) currently available
             and (3) activity index method. Currently counts and ENMO (universally derivable across triaxial
@@ -117,6 +117,9 @@ class SleepWakeAnalysis(object):
 
             if rescoring:
                 result = self.webster_rescoring_rules(result)
+
+            if inplace:
+                wearable.data[algname] = result
 
             results[wearable.get_pid()] = result
 
