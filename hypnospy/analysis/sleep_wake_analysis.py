@@ -8,20 +8,13 @@ class SleepWakeAnalysis(object):
 
     def __init__(self, input: {Wearable, Experiment}):
 
+        # TODO: we should have the option to only run sleep algorithms in the "hyp_night" period
+
         if type(input) is Wearable:
             self.wearables = [input]
         elif type(input) is Experiment:
             self.wearables = input.get_all_wearables()
 
-        # Get activity col configuration from wearable
-        # TODO: Assuming we are using only the first axis
-        # self.activityIdx = wearable.activitycols[0]
-        # print("Using col %s as activity index." % (self.activityIdx))
-
-        # if not self.wearable.is_act_count:
-        #    raise AttributeError("This device does not have activity counts. Sleep Formulas rely on activity counts.")
-
-        # TODO: we should have the option to only run sleep algorithms in the "hyp_night" period
 
     @staticmethod
     def __get_activity(wearable, activityIdx):
@@ -42,7 +35,7 @@ class SleepWakeAnalysis(object):
 
         return act
 
-    def run_sleep_algorithm(self, algname, activityIdx=None, rescoring=False, inplace=False, **kargs):
+    def run_sleep_algorithm(self, algname, activityIdx=None, rescoring=False, on_sleep_interval=False, inplace=False, **kargs):
         """ Function that chooses sleep algorithm from a list of heuristic (non-data driven) approaches
             Function takes in algorithm (1) choice, (2) resolution (30s or 60s) currently available
             and (3) activity index method. Currently counts and ENMO (universally derivable across triaxial
@@ -82,14 +75,14 @@ class SleepWakeAnalysis(object):
             activity = wearable.data[activityIdx]
 
             # Apply Scripps
-            if algname == "ScrippsClinic":
+            if algname.lower() == "scrippsclinic":
                 scaler = 0.204
                 if "scaler" in kargs:
                     scaler = kargs["scaler"]
                 result = self.__scripps_clinic_algorithm(activity, scaler)
 
             # Apply Sadeh
-            elif algname == "Sadeh":
+            elif algname.lower() == "sadeh":
                 params = {"min_threshold": 0, "minNat": 50, "maxNat": 100, "window_past": 6, "window_nat": 11,
                           "window_centered": 11}
                 for p in params:
@@ -98,19 +91,19 @@ class SleepWakeAnalysis(object):
                 result = self.__sadeh_algorithm(activity, **params)
 
             # Apply Oakley
-            elif algname == "Oakley10":
+            elif algname.lower() == "oakley":
                 threshold = 10
                 if "threshold" in kargs:
                     threshold = kargs["threshold"]
                 result = self.__oakley_algorithm(activity, threshold=threshold)
 
             # Apply Cole-Kripke
-            elif algname == "ColeKripke":
-                result = self.cole_kripke_algorithm(activityIdx)
+            elif algname.lower() in ["colekripke", "cole-kripke"]:
+                result = self.__cole_kripke_algorithm(activity)
 
             # Apply Sazonov
-            elif algname == "Sazonov":
-                result = self.sazonov_algorithm(activityIdx)
+            elif algname.lower() == "sazonov":
+                result = self.__sazonov_algorithm(activity)
 
             else:
                 print("ALGORITHM %s NOT IMPLEMENTED." % (algname))
@@ -126,7 +119,7 @@ class SleepWakeAnalysis(object):
         return results
 
     # %%
-    def run_all_sleep_algorithms(self, activityIdx=None, rescoring=False):
+    def run_all_sleep_algorithms(self, activityIdx=None, rescoring=False, inplace=False):
         """ This function runs the algorithm of choice"
         """
 
@@ -149,6 +142,10 @@ class SleepWakeAnalysis(object):
                 result["RescoredOakley10"] = self.webster_rescoring_rules(result["Oakley10"])
                 result["RescoredColeKripke"] = self.webster_rescoring_rules(result["ColeKripke"])
                 result["RescoredSazonov"] = self.webster_rescoring_rules(result["Sazonov"])
+
+            if inplace:
+                for col in result.keys():
+                    wearable.data[col] = result[col]
 
             results[wearable.get_pid()] = result
 
