@@ -29,7 +29,8 @@ class SleepMetrics(object):
             return sleep_quality
 
     @staticmethod
-    def calculate_awakening(df, wake_col, wake_delay=0, normalize_per_hour=False, epochs_in_hour=0):
+    def calculate_awakening(df_in, wake_col, wake_delay=0, normalize_per_hour=False, epochs_in_hour=0):
+        df = df_in.copy()
 
         df["consecutive_state"], df["gids"] = misc.get_consecutive_serie(df, wake_col)
 
