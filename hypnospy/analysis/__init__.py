@@ -3,3 +3,4 @@ from .sleep_wake_analysis import SleepWakeAnalysis
 from .time_series_processing import TimeSeriesProcessing
 from .phyisical_activity import PhysicalActivity
 from .sleep_metrics import SleepMetrics
+from .visualization import Viewer
