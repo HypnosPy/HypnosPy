@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 import pandas as pd
-from datetime import timedelta
+from datetime import datetime, timedelta
 import calendar
+import seaborn as sns
+
 
 from hypnospy import Wearable
 from hypnospy import Experiment
@@ -20,16 +22,22 @@ class Viewer(object):
 
     def view_signals(self, signal_categories: list = ["activity", "hr", "pa_intensity", "sleep"],
                      other_signals: list = [], signal_as_area: list = [], frequency: str = "60S", sleep_cols: str = None,
-                     select_days: list = None, colors: list = [], alpha: float = 1.0):
+                     select_days: list = None, colors: list = [], alpha: float = 1.0,
+                     zoom: tuple = ("00:00:00", "23:59:59")
+                     ):
 
         for wearable in self.wearables:
             Viewer.view_signals_wearable(wearable, signal_categories, other_signals, signal_as_area, frequency,
-                                         sleep_cols, select_days, colors, alpha)
+                                         sleep_cols, select_days, colors, alpha, zoom)
 
 
     @staticmethod
     def view_signals_wearable(wearable: Wearable, signal_categories: list, other_signals: list, signal_as_area: list,
-                              frequency: str, sleep_cols: str, select_days: list, colors: list, alpha: float):
+                              frequency: str, sleep_cols: str, select_days: list, colors: list, alpha: float,
+                              zoom: tuple):
+
+        sns.set_context("talk", font_scale=1.3, rc={"axes.linewidth": 2, 'image.cmap': 'plasma', })
+        plt.rc('font', family='serif')
 
         cols = []
 
@@ -73,6 +81,9 @@ class Viewer(object):
 
         df_plot = wearable.data[cols].set_index(wearable.time_col).resample(frequency).sum()
 
+        if zoom is not None:
+            df_plot = df_plot.between_time(zoom[0], zoom[1], include_start=True, include_end=True)
+
         # Daily version
         # dfs_per_day = [pd.DataFrame(group[1]) for group in df_plot.groupby(df_plot.index.day)]
         # Based on the experiment day gives us the correct chronological order of the days
@@ -96,23 +107,30 @@ class Viewer(object):
         for idx in range(len(dfs_per_day)):
             maxy = 2
 
-            # Resampling: hourly
             df2_h = dfs_per_day[idx]
             ax1[idx].tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=True, rotation=0)
             ax1[idx].set_facecolor('snow')
-            # ax1[idx].set_ylim(0, max(df_plot[self.get_activity_col()] / 10))
-            ax1[idx].set_xlim(
-                dfs_per_day[idx].index[0] - timedelta(hours=dfs_per_day[idx].index[0].hour - wearable.hour_start_experiment,
-                                                      minutes=dfs_per_day[idx].index[0].minute,
-                                                      seconds=dfs_per_day[idx].index[0].second),
-                dfs_per_day[idx].index[0] - timedelta(hours=dfs_per_day[idx].index[0].hour - wearable.hour_start_experiment,
-                                                      minutes=dfs_per_day[idx].index[0].minute,
-                                                      seconds=dfs_per_day[idx].index[0].second) + timedelta(
-                    minutes=1439))
+
+            if zoom[0] == "00:00:00" and zoom[1] == "23:59:59": # Default options, we use hour_start_experiment
+                new_start_datetime = dfs_per_day[idx].index[0] - timedelta(hours=dfs_per_day[idx].index[0].hour - wearable.hour_start_experiment,
+                                                      minutes=dfs_per_day[idx].index[0].minute, seconds=dfs_per_day[idx].index[0].second),
+                new_end_datetime = dfs_per_day[idx].index[0] - timedelta(hours=dfs_per_day[idx].index[0].hour - wearable.hour_start_experiment,
+                                                      minutes=dfs_per_day[idx].index[0].minute, seconds=dfs_per_day[idx].index[0].second) + timedelta(minutes=1439)
+
+            else:
+                new_start_date = dfs_per_day[idx].index[0].date()
+                new_start_datetime = datetime(new_start_date.year, new_start_date.month, new_start_date.day, int(zoom[0][0:2]), int(zoom[0][3:5]), int(zoom[0][6:8]))
+                new_start_datetime = pd.to_datetime(new_start_datetime)
+
+                new_end_date = dfs_per_day[idx].index[-1].date()
+                new_end_datetime = datetime(new_end_date.year, new_end_date.month, new_end_date.day, int(zoom[1][0:2]), int(zoom[1][3:5]), int(zoom[1][6:8]))
+                new_end_datetime = pd.to_datetime(new_end_datetime)
+
+            ax1[idx].set_xlim(new_start_datetime, new_end_datetime)
 
             if "activity" in signal_categories:
                 maxy = max(maxy, df2_h[wearable.get_activity_col()].max())
-                ax1[idx].plot(df2_h.index, df2_h[wearable.get_activity_col()], label='Activity', linewidth=1,
+                ax1[idx].plot(df2_h.index, df2_h[wearable.get_activity_col()], label='Activity', linewidth=2,
                               color='black', alpha=alpha)
 
             if "pa_intensity" in signal_categories:
@@ -197,5 +215,6 @@ class Viewer(object):
         # ax.figure.savefig('%s_signals.pdf' % (self.get_pid()))
         # fig.suptitle("%s" % self.get_pid(), fontsize=16)
 
-        fig.legend(handles, labels, loc='lower center', ncol=len(cols), fontsize=12)
-        fig.savefig('%s_signals.pdf' % (wearable.get_pid()))
+        fig.legend(handles, labels, loc='lower center', ncol=len(cols), fontsize=14, shadow=True)
+        fig.savefig('%s_signals.pdf' % (wearable.get_pid()), dpi=300, transparent=True, bbox_inches='tight')
+
