@@ -1,9 +1,8 @@
 from hypnospy import Wearable
 from hypnospy import Experiment
-import numpy as np
-import pandas as pd
 from hypnospy import misc
 
+from sklearn import metrics
 
 class SleepMetrics(object):
 
@@ -67,7 +66,36 @@ class SleepMetrics(object):
 
         return sri
 
-    def get_sleep_quality(self, wake_col, sleep_period_col, strategy="sleepEfficiencyAll", wake_delay_in_minutes=10):
+    def compare(self, ground_truth, wake_sleep_alg, sleep_period_col=None):
+
+        results = {}
+
+        for wearable in self.wearables:
+            print("Sleep Metrics for:", wearable.get_pid())
+            df = wearable.data
+            result = {}
+
+            for day, block in df.groupby(wearable.experiment_day_col):
+
+                # filter where we should calculate the sleep metric
+                if sleep_period_col is not None:
+                    block = block[block[sleep_period_col] == True]
+
+                gt, pred = block[ground_truth], block[wake_sleep_alg]
+
+                result["accuracy"] = metrics.accuracy_score(gt, pred)
+                result["precision"] = metrics.precision_score(gt, pred)
+                result["recall"] = metrics.recall_score(gt, pred)
+                result["f1_score"] = metrics.f1_score(gt, pred)
+                result["roc_auc"] = metrics.roc_auc_score(gt, pred)
+                result["cohens_kappa"] = metrics.cohen_kappa_score(gt, pred)
+
+            results[wearable.get_pid()] = result
+
+        return results
+
+
+    def get_sleep_quality(self, wake_col, sleep_period_col=None, metric="sleepEfficiency", wake_delay_in_minutes=10):
         """
             This function implements different notions of sleep quality.
             For far strategy can be:
@@ -97,42 +125,42 @@ class SleepMetrics(object):
                 if sleep_period_col is not None:
                     block = block[block[sleep_period_col] == True]
 
-                if strategy.lower() in ["sleepefficiency", "se"]:
+                if metric.lower() in ["sleepefficiency", "se"]:
                     result[wearable.get_pid()][day] = SleepMetrics.calculate_sleep_efficiency(block, wake_col,
                                                                                               wake_delay_in_epochs)
 
-                elif strategy == "awakening":
+                elif metric.lower() in ["awakening", "awakenings"]:
                     result[wearable.get_pid()][day] = SleepMetrics.calculate_awakening(block, wake_col,
                                                                                        wake_delay_in_epochs,
                                                                                        normalize_per_hour=False)
 
-                elif strategy == "awakeningIndex":
+                elif metric == "awakeningIndex":
                     result[wearable.get_pid()][day] = SleepMetrics.calculate_awakening(block, wake_col,
                                                                                        wake_delay_in_epochs,
                                                                                        normalize_per_hour=True,
                                                                                        epochs_in_hour=wearable.get_epochs_in_hour())
 
-                elif strategy == "arousal":
+                elif metric == "arousal":
                     result[wearable.get_pid()][day] = SleepMetrics.calculate_arousals(block, wake_col,
                                                                                       wake_delay_in_epochs,
                                                                                       normalize_per_hour=False)
 
-                elif strategy == "arousalIndex":
+                elif metric == "arousalIndex":
                     result[wearable.get_pid()][day] = SleepMetrics.calculate_arousals(block, wake_col,
                                                                                       wake_delay_in_epochs,
                                                                                       normalize_per_hour=True,
                                                                                       epochs_in_hour=wearable.get_epochs_in_hour())
 
-                elif strategy == "totalTimeInBed":
+                elif metric == "totalTimeInBed":
                     result[wearable.get_pid()][day] = block.shape[0] / wearable.get_epochs_in_hour()
 
-                elif strategy == "totalSleepTime":
+                elif metric == "totalSleepTime":
                     result[wearable.get_pid()][day] = ((block[wake_col] == 0).sum()) / wearable.get_epochs_in_hour()
 
-                elif strategy == "totalWakeTime":
+                elif metric == "totalWakeTime":
                     result[wearable.get_pid()][day] = (block[wake_col].sum()) / wearable.get_epochs_in_hour()
 
-                elif strategy.lower() in ["sri"]:
+                elif metric.lower() in ["sri"]:
                     if first_day:
                         first_day = False
                         prev_day_id = day
@@ -144,6 +172,6 @@ class SleepMetrics(object):
                     prev_block = block
 
                 else:
-                    ValueError("Strategy %s is unknown." % strategy)
+                    ValueError("Metric %s is unknown." % metric)
 
         return result

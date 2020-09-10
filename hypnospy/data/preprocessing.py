@@ -157,7 +157,7 @@ class RawProcessing(object):
                 break
         else:
             raise ValueError("Could not find correct range for dataframe. "
-                             "Please check if parameter ``datatime_col'' is correct.")
+                             "Please check if parameter ``datatime_col'' (=%s) is correct and has all its entries valid." % col_for_datatime)
 
     def export_hypnospy(self, filename):
         """
@@ -206,7 +206,7 @@ class RawProcessing(object):
             # here ask for which device: ={ "applewatch":"Apple Watch","apple" [...] "actiwatch"[...]
             # ask if the data is raw or not--> if not--> move down the pecking order
             return self.__process_actigraph(filename)
-        elif f.endswith('.csv'):
+        elif f.endswith('.csv') or f.endswith('.csv.gz'):
             return self.__process_csv(filename)
         else:
             print("ERROR: Wearable format not supported for file: " + filename)
