@@ -3,6 +3,8 @@ from hypnospy import Experiment
 from hypnospy import misc
 
 from sklearn import metrics
+import pandas as pd
+
 
 class SleepMetrics(object):
 
@@ -95,7 +97,6 @@ class SleepMetrics(object):
 
         return results
 
-
     def get_sleep_quality(self, wake_col, sleep_period_col=None, metric="sleepEfficiency", wake_delay_in_minutes=10):
         """
             This function implements different notions of sleep quality.
@@ -168,11 +169,89 @@ class SleepMetrics(object):
                         prev_block = block
                         continue
 
-                    result[wearable.get_pid()]["%d-%d" % (prev_day_id,day)] = SleepMetrics.calculate_sri(prev_block, block, wake_col)
+                    result[wearable.get_pid()]["%d-%d" % (prev_day_id, day)] = SleepMetrics.calculate_sri(prev_block,
+                                                                                                          block,
+                                                                                                          wake_col)
                     prev_day_id = day
                     prev_block = block
 
                 else:
                     ValueError("Metric %s is unknown." % metric)
+
+        return result
+
+    def __evaluate_sleep_boundaries_pair(self, ground_truth, other):
+
+        df_acc = []
+        expid = 0
+
+        for w in self.wearables:
+
+            if w.data.empty:
+                print("Data for PID %s is empty!" % w.get_pid())
+                continue
+
+            if ground_truth not in w.data:
+                print("Column %s not in dataset for PID %s." % (ground_truth, w.get_pid()))
+                continue
+
+            if other not in w.data:
+                print("Column %s not in dataset for PID %s." % (other, w.get_pid()))
+                continue
+
+            sleep = {}
+            sleep[ground_truth] = w.data[ground_truth].astype(int)
+            sleep[other] = w.data[other].astype(int)
+
+            if sleep[ground_truth].shape[0] == 0:
+                continue
+
+            mse = metrics.mean_squared_error(sleep[ground_truth], sleep[other])
+            cohen = metrics.cohen_kappa_score(sleep[ground_truth], sleep[other])
+
+            tst_gt = w.get_total_sleep_time_per_day(sleep_col=ground_truth)
+            tst_gt.rename(columns={ground_truth: "tst_" + ground_truth}, inplace=True)
+            tst_other = w.get_total_sleep_time_per_day(sleep_col=other)
+            tst_other.rename(columns={other: "tst_" + other}, inplace=True)
+
+            onset_gt = w.get_onset_sleep_time_per_day(sleep_col=ground_truth)
+            onset_gt.name = "onset_" + ground_truth
+            onset_other = w.get_onset_sleep_time_per_day(sleep_col=other)
+            onset_other.name = "onset_" + other
+
+            offset_gt = w.get_offset_sleep_time_per_day(sleep_col=ground_truth)
+            offset_gt.name = "offset_" + ground_truth
+            offset_other = w.get_offset_sleep_time_per_day(sleep_col=other)
+            offset_other.name = "offset_" + other
+
+            df_res = pd.concat((onset_gt, onset_other, offset_gt, offset_other, tst_gt, tst_other), axis=1)
+            df_res["pid"] = w.get_pid()
+            df_res["mse_" + ground_truth + "&" + other] = mse
+            df_res["cohens_" + ground_truth + "&" + other] = cohen
+            df_res = df_res.reset_index()
+            expid += 1
+
+            df_acc.append(df_res)
+
+        df_acc = pd.concat(df_acc)
+
+        # Drop invalid rows:
+        for col in ["onset_", "offset_", "tst_"]:
+            df_acc = df_acc[~df_acc[col + ground_truth].isnull()]
+
+        return df_acc
+
+    def evaluate_sleep_boundaries(self, ground_truth, others):
+        dfs = []
+        for other in others:
+            dfs.append(self.__evaluate_sleep_boundaries_pair(ground_truth, other))
+
+        if len(dfs) == 0:
+            return None
+
+        result = dfs[0]
+        for other in dfs[1:]:
+            common_keys = list(set(result.keys()).intersection(other.keys()))
+            result = result.merge(other, on=common_keys)
 
         return result
