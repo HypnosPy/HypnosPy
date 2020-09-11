@@ -113,7 +113,7 @@ class TimeSeriesProcessing(object):
         wearable.data = pd.concat(tmp_df)
         wearable.change_start_hour_for_experiment_day(saved_hour_start_day)
 
-        df = df.set_index(wearable.time_col)
+        df = wearable.data.set_index(wearable.time_col)
         new_sleep_segments = df[df["hyp_sleep_candidate"] == 1]["hyp_seq_id"].unique()
 
         # Check if we can modify the sleep onset/offset
