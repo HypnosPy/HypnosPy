@@ -65,6 +65,9 @@ class Experiment(object):
             return None
             # raise KeyError("Unknown PID %s." % pid)
 
+    def size(self):
+        return len(self.wearables)
+
     def get_all_wearables(self):
         return list(self.wearables.values())
 
