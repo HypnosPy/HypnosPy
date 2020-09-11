@@ -217,7 +217,7 @@ class TimeSeriesProcessing(object):
 
     def __sleep_boundaries_with_adapted_van_hees(self, wearable: Wearable, output_col: str,
                                                  start_hour: int = 15,
-                                                 cols: list = ["pitch_mean_dw", "roll_mean_dw"],
+                                                 cols: list = [],
                                                  use_triaxial_activity=False,
                                                  q_sleep: float = 0.1,
                                                  minimum_len_in_minutes: int = 30,
@@ -331,18 +331,18 @@ class TimeSeriesProcessing(object):
                                 hr_volatility_window_in_minutes: int = 10, hr_merge_blocks_gap_time_in_min: int = 240,
                                 hr_sleep_only_in_sleep_search_window: bool = False,
                                 hr_only_largest_sleep_period: bool = False,
-                                vanhees_cols: list = ["pitch_mean_dw", "roll_mean_dw"],
-                                vanhees_use_triaxial_activity: bool = False, vanhees_start_hour: int = 15,
-                                vanhees_quantile: float = 0.1, vanhees_minimum_len_in_minutes: int = 30,
-                                vanhees_merge_tolerance_in_minutes: int = 180,
-                                vanhees_only_largest_sleep_period: bool = True):
+                                angle_cols: list = [],
+                                angle_use_triaxial_activity: bool = False, angle_start_hour: int = 15,
+                                angle_quantile: float = 0.1, angle_minimum_len_in_minutes: int = 30,
+                                angle_merge_tolerance_in_minutes: int = 180,
+                                angle_only_largest_sleep_period: bool = True):
         """
             Detected the sleep boundaries.
 
             param
             -----
 
-            strategy: "annotation", "hr", "adapted_van_hees"
+            strategy: "annotation", "hr", "angle"
 
             Creates a new col (output_col, default: 'hyp_sleep_period')
             which has value 1 if inside the sleep boundaries and 0 otherwise.
@@ -372,16 +372,16 @@ class TimeSeriesProcessing(object):
                                                 hr_merge_blocks_gap_time_in_min, hr_sleep_only_in_sleep_search_window,
                                                 hr_only_largest_sleep_period)
 
-            elif strategy == "adapted_van_hees":
+            elif strategy.lower() in ["adapted_van_hees", "angle"]:
                 self.__sleep_boundaries_with_adapted_van_hees(wearable,
                                                               output_col=output_col,
-                                                              cols=vanhees_cols,
-                                                              use_triaxial_activity=vanhees_use_triaxial_activity,
-                                                              start_hour=vanhees_start_hour,
-                                                              q_sleep=vanhees_quantile,
-                                                              minimum_len_in_minutes=vanhees_minimum_len_in_minutes,
-                                                              merge_tolerance_in_minutes=vanhees_merge_tolerance_in_minutes,
-                                                              only_largest_sleep_period=vanhees_only_largest_sleep_period,
+                                                              cols=angle_cols,
+                                                              use_triaxial_activity=angle_use_triaxial_activity,
+                                                              start_hour=angle_start_hour,
+                                                              q_sleep=angle_quantile,
+                                                              minimum_len_in_minutes=angle_minimum_len_in_minutes,
+                                                              merge_tolerance_in_minutes=angle_merge_tolerance_in_minutes,
+                                                              only_largest_sleep_period=angle_only_largest_sleep_period,
                                                               )
 
 
@@ -453,7 +453,7 @@ class TimeSeriesProcessing(object):
         Estimate non-wear time based on Choi 2011 paper:
         Med Sci Sports Exerc. 2011 Feb;43(2):357-64. doi: 10.1249/MSS.0b013e3181ed61a3.
         Validation of accelerometer wear and nonwear time classification algorithm.
-        Choi L1, Liu Z, Matthews CE, Buchowski MS.
+        Leena Choi, Zhouwen Liu, Charles Matthews, Maciej Buchowski.
         Description from the paper:
         1-min time intervals with consecutive zero counts for at least 90-min time window (window 1), allowing a short time intervals with nonzero counts lasting up to 2 min (allowance interval)
         if no counts are detected during both the 30 min (window 2) of upstream and downstream from that interval; any nonzero counts except the allowed short interval are considered as wearing
@@ -634,7 +634,7 @@ class TimeSeriesProcessing(object):
 
     def check_valid_days(self, min_activity_threshold: int = 0, max_non_wear_minutes_per_day: int = 180,
                          check_cols: list = [],
-                         check_sleep_period: bool = True, sleep_period_col: str = None, check_diary: bool = True):
+                         check_sleep_period: bool = True, sleep_period_col: str = None, check_diary: bool = False):
         """
             Tasks:
             (1) Mark as invalid epochs in which the activity is smaller than the ``min_activity_threshold``.
