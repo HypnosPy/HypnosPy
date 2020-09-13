@@ -426,7 +426,7 @@ class TimeSeriesProcessing(object):
                 if wearable.has_no_activity():
                     # TODO: another way to deal with it is marking those as invalid right away
                     warnings.warn(
-                        "It seems pid %s has removed their device. We will run ``fill_no_activity(-0.0001)`` here.")
+                        "It seems pid %s has removed their device. We will fill no activity with -0.0001." % wearable.get_pid())
                     wearable.fill_no_activity(-0.0001)
 
                 self.__choi_2011(wearable, activity_threshold, min_period_len_minutes, spike_tolerance,
@@ -511,7 +511,8 @@ class TimeSeriesProcessing(object):
         if use_vector_magnitude:
             # calculate vectore
             # TODO: missing implementation
-            act_data = calculate_vector_magnitude(act_data, minus_one=False, round_negative_to_zero=False)
+            pass
+            #act_data = calculate_vector_magnitude(act_data, minus_one=False, round_negative_to_zero=False)
         # else:
         # if not set to true, then use axis 1, which is the X-axis, located at index 0
         # act_data = act_data[:,0]
@@ -634,7 +635,7 @@ class TimeSeriesProcessing(object):
 
     def check_valid_days(self, min_activity_threshold: int = 0, max_non_wear_minutes_per_day: int = 180,
                          check_cols: list = [],
-                         check_sleep_period: bool = True, sleep_period_col: str = None, check_diary: bool = False):
+                         check_sleep_period: bool = False, sleep_period_col: str = None, check_diary: bool = False):
         """
             Tasks:
             (1) Mark as invalid epochs in which the activity is smaller than the ``min_activity_threshold``.
