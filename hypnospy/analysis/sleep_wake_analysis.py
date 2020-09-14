@@ -25,7 +25,7 @@ class SleepWakeAnalysis(object):
         if activityIdx is not None:
 
             if activityIdx in wearable.data.keys():
-                act = wearable.data[activityIdx]
+                return activityIdx
             else:
                 raise ValueError("Activity %s not found in the dataset. "
                                  "Options are: %s" % (activityIdx, ','.join(wearable.data.keys())))
