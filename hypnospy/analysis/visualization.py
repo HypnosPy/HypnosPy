@@ -437,3 +437,26 @@ class Viewer(object):
                         transparent=True, pad_inches=0.01)
 
         return plt
+
+    @staticmethod
+    def plot_two_sleep_metrics(metric_a, metric_b, label_a, label_b, color="blue", alpha=1.0): #
+
+        # Convert TST to dataframe
+        dfa = pd.DataFrame(metric_a)
+
+        # Convert SRI to dataframe
+        dfb = pd.DataFrame(metric_b)
+
+        # Drops NA and gets data that is in common
+        merged = pd.merge(dfa, dfb, on=["pid", "expday"]).dropna()
+
+        merged[label_a] = merged["value_x"]
+        merged[label_b] = merged["value_y"]
+
+
+        g = sns.jointplot(x=label_a, y=label_b, data=merged,
+                          kind="reg", truncate=False, joint_kws = {'scatter_kws':dict(alpha=alpha)},
+                          color=color, height=10)
+
+        g.savefig('%s_by_%s.pdf' % (label_a, label_b), dpi=300, transparent=True, bbox_inches='tight')
+
