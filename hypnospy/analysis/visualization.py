@@ -233,7 +233,7 @@ class Viewer(object):
             ax1[idx].set_facecolor('snow')
 
             # If the user has not specified a zoom...
-            if zoom_start == time(0, 0, 0) and zoom_end == time(23, 59, 59):
+            if Viewer.__is_default_zoom(zoom_start, zoom_end):
                 new_start_datetime = df_panel.index[0] - timedelta(
                     hours=(df_panel.index[0].hour - wearable.hour_start_experiment) % 24,
                     minutes=df_panel.index[0].minute, seconds=df_panel.index[0].second),
@@ -292,116 +292,131 @@ class Viewer(object):
         fig.legend(handles, labels, loc='lower center', ncol=len(cols), fontsize=14, shadow=True)
         fig.savefig('%s_signals.pdf' % (wearable.get_pid()), dpi=300, transparent=True, bbox_inches='tight')
 
+    @staticmethod
+    def __is_default_zoom(zoom_start, zoom_end):
+        return zoom_start.time() == time(0, 0, 0) and zoom_end.time() == time(23, 59, 59)
 
-    def view_signals_multipanel(self, wearable, signals: list,
-                                signals_as_area: list,
+    def view_signals_multipanel(self, signals: list,
                                 select_day,
+                                signals_as_area: list = [],
+                                dashes_across: list = [],
                                 resample_to: str = None, zoom: list = ["00:00:00", "23:59:59"],
                                 alphas: dict = None, colors: dict = None, edgecolors: dict = None, labels: dict = None,
                                 ):
 
         # One single day -- multiple panels
+        for wearable in self.wearables:
 
-        # Convert zoom to datatime object:
-        assert len(zoom) == 2
-        zoom_start = datetime.strptime(zoom[0], '%H:%M:%S')
-        zoom_end = datetime.strptime(zoom[1], '%H:%M:%S')
+            # Convert zoom to datatime object:
+            assert len(zoom) == 2
+            zoom_start = datetime.strptime(zoom[0], '%H:%M:%S')
+            zoom_end = datetime.strptime(zoom[1], '%H:%M:%S')
 
-        changed_experiment_hour = False
-        if zoom_start.hour != wearable.hour_start_experiment:
-            changed_experiment_hour = True
-            saved_start_hour = wearable.hour_start_experiment
-            wearable.change_start_hour_for_experiment_day(zoom_start.hour)
+            changed_experiment_hour = False
+            if not Viewer.__is_default_zoom(zoom_start, zoom_end) and zoom_start.hour != wearable.hour_start_experiment:
+                changed_experiment_hour = True
+                saved_start_hour = wearable.hour_start_experiment
+                wearable.change_start_hour_for_experiment_day(zoom_start.hour)
 
-        df_plot = wearable.data[wearable.data[wearable.experiment_day_col] == select_day]
+            df_plot = wearable.data[wearable.data[wearable.experiment_day_col] == select_day]
 
-        if df_plot.empty:
-            raise ValueError("Invalid day selection: no remaining data to show. Possible days are:",
-                             df_plot[wearable.experiment_day_col].unique)
+            if df_plot.empty:
+                raise ValueError("Invalid day selection: no remaining data to show. Possible days are:",
+                                 df_plot[wearable.experiment_day_col].unique)
 
-        cols = list(set(signals + signals_as_area)) + [wearable.time_col]
-        df_plot = df_plot[cols].set_index(wearable.time_col)
+            nplots = len(signals) + len(signals_as_area)
+            cols = list(set(signals + signals_as_area + dashes_across)) + [wearable.time_col]
+            df_plot = df_plot[cols].set_index(wearable.time_col)
 
-        if resample_to is not None:
-            df_plot = df_plot.resample(resample_to).mean()
+            if resample_to is not None:
+                df_plot = df_plot.resample(resample_to).mean()
 
-        if changed_experiment_hour:
-            wearable.change_start_hour_for_experiment_day(saved_start_hour)
+            if changed_experiment_hour:
+                wearable.change_start_hour_for_experiment_day(saved_start_hour)
 
-        fig, ax = plt.subplots(len(signals) + len(signals_as_area), 1, figsize=(14, 8))
+            fig, ax = plt.subplots(len(signals) + len(signals_as_area), 1, figsize=(14, 8))
 
-        if len(signals) == 1:
-            ax = [ax]
+            if len(signals) == 1:
+                ax = [ax]
 
-        for idx in range(len(signals)):
-            signal = signals[idx]
-            maxy = 2
+            for idx in range(len(signals)):
+                signal = signals[idx]
+                maxy = 2
 
-            alpha, color, edgecolor, label = self.__get_details(alphas, colors, edgecolors, labels, "signal", idx)
+                alpha, color, edgecolor, label = self.__get_details(alphas, colors, edgecolors, labels, "signal", idx)
 
-            maxy = max(maxy, df_plot[signal].max())
-            ax[idx].plot(df_plot.index, df_plot[signal], label=label, linewidth=2, color=color, alpha=alpha)
+                maxy = max(maxy, df_plot[signal].max())
+                ax[idx].plot(df_plot.index, df_plot[signal], label=label, linewidth=2, color=color, alpha=alpha)
 
-            ax[idx].set_xticks([])
-            ax[idx].set_yticks([])
+                ax[idx].set_xticks([])
+                ax[idx].set_yticks([])
 
-            ax[idx].set_ylabel("%s" % label, rotation=0, horizontalalignment="right", verticalalignment="center")
+                ax[idx].set_ylabel("%s" % label, rotation=0, horizontalalignment="right", verticalalignment="center")
 
-        plot_idx = len(signals)
+            plot_idx = len(signals)
 
-        for idx in range(len(signals_as_area)):
-            signal = signals_as_area[idx]
+            for idx in range(len(signals_as_area)):
+                signal = signals_as_area[idx]
 
-            alpha, color, edgecolor, label = self.__get_details(alphas, colors, edgecolors, labels, "area", idx)
+                alpha, color, edgecolor, label = self.__get_details(alphas, colors, edgecolors, labels, "area", idx)
 
-            idx = idx + plot_idx  # shifts idx to the point to the correct panel
+                idx = idx + plot_idx  # shifts idx to the point to the correct panel
 
-            maxy = max(maxy, df_plot[signal].max())
-            ax[idx].fill_between(df_plot.index, 0, maxy, where=df_plot[signal], facecolor=color, alpha=alpha,
-                                 label=label, edgecolor=edgecolor)
+                maxy = max(maxy, df_plot[signal].max())
+                ax[idx].fill_between(df_plot.index, 0, maxy, where=df_plot[signal], facecolor=color, alpha=alpha,
+                                     label=label, edgecolor=edgecolor)
 
-            ax[idx].set_xticks([])
-            ax[idx].set_yticks([])
+                ax[idx].set_xticks([])
+                ax[idx].set_yticks([])
 
-            ax[idx].set_ylabel("%s" % label, rotation=0, horizontalalignment="right", verticalalignment="center")
+                ax[idx].set_ylabel("%s" % label, rotation=0, horizontalalignment="right", verticalalignment="center")
 
-        if zoom_start == time(0, 0, 0) and zoom_end == time(23, 59, 59):  # Default options, we use hour_start_experiment
-            new_start_datetime = df_plot.index[0] - timedelta(
-                hours=(df_plot.index[0].hour - wearable.hour_start_experiment) % 24,
-                minutes=df_plot.index[0].minute, seconds=df_plot.index[0].second),
-            new_end_datetime = df_plot.index[0] - timedelta(
-                hours=(df_plot.index[0].hour - wearable.hour_start_experiment) % 24,
-                minutes=df_plot.index[0].minute, seconds=df_plot.index[0].second) + timedelta(minutes=1439)
+            for idx in range(nplots):
+                for dashes in dashes_across:
 
-        else:
-            new_start_date = df_plot.index[0].date()
-            new_start_datetime = datetime(new_start_date.year, new_start_date.month, new_start_date.day,
-                                          zoom_start.hour, zoom_start.minute, zoom_start.second)
+                    alpha, color, edgecolor, label = self.__get_details(alphas, colors, edgecolors, labels, "dashes_across", idx)
 
-            new_end_date = df_plot.index[-1].date()
-            new_end_datetime = datetime(new_end_date.year, new_end_date.month, new_end_date.day, zoom_end.hour,
-                                        zoom_end.minute, zoom_end.second)
+                    block = df_plot[df_plot[dashes] == True]
+                    dash_event = [block.index[0], block.index[-1]]
+                    ax[idx].vlines(x=dash_event, ymin=0, ymax=maxy, colors=color, alpha=alpha, label=label,
+                                        linestyles="dashed")
 
-            if new_end_datetime < new_start_datetime:
-                print("Changing it here")
-                new_end_datetime = datetime(new_end_date.year, new_end_date.month, new_end_date.day + 1,
-                                            zoom_end.hour, zoom_end.minute, zoom_end.second)
+            # Default options, we use hour_start_experiment
+            if Viewer.__is_default_zoom(zoom_start, zoom_end):
+                new_start_datetime = df_plot.index[0] - timedelta(
+                    hours=(df_plot.index[0].hour - wearable.hour_start_experiment) % 24,
+                    minutes=df_plot.index[0].minute, seconds=df_plot.index[0].second),
+                new_end_datetime = df_plot.index[0] - timedelta(
+                    hours=(df_plot.index[0].hour - wearable.hour_start_experiment) % 24,
+                    minutes=df_plot.index[0].minute, seconds=df_plot.index[0].second) + timedelta(minutes=1439)
 
-        new_start_datetime = pd.to_datetime(new_start_datetime)
-        new_end_datetime = pd.to_datetime(new_end_datetime)
+            else:
+                new_start_date = df_plot.index[0].date()
+                new_start_datetime = datetime(new_start_date.year, new_start_date.month, new_start_date.day,
+                                              zoom_start.hour, zoom_start.minute, zoom_start.second)
 
-        print(new_start_datetime, new_end_datetime)
+                new_end_date = df_plot.index[-1].date()
+                new_end_datetime = datetime(new_end_date.year, new_end_date.month, new_end_date.day, zoom_end.hour,
+                                            zoom_end.minute, zoom_end.second)
 
-        for idx in range(len(cols) - 1):
-            ax[idx].set_xlim(new_start_datetime, new_end_datetime)
+                if new_end_datetime < new_start_datetime:
+                    print("Changing it here")
+                    new_end_datetime = datetime(new_end_date.year, new_end_date.month, new_end_date.day + 1,
+                                                zoom_end.hour, zoom_end.minute, zoom_end.second)
 
-        ax[0].set_title("PID = %s" % wearable.get_pid(), fontsize=16)
-        ax[-1].set_xlabel('Time')
-        ax[-1].xaxis.set_minor_locator(dates.HourLocator(interval=4))  # every 4 hours
-        ax[-1].xaxis.set_minor_formatter(dates.DateFormatter('%H:%M'))  # hours and minutes
+            new_start_datetime = pd.to_datetime(new_start_datetime)
+            new_end_datetime = pd.to_datetime(new_end_datetime)
 
-        #fig.legend(loc='lower center', ncol=len(cols)-1, fontsize=14, shadow=True)
-        fig.savefig('%s_signals.pdf' % (wearable.get_pid()), dpi=300, transparent=True, bbox_inches='tight')
+            for idx in range(nplots):
+                ax[idx].set_xlim(new_start_datetime, new_end_datetime)
+
+            ax[0].set_title("PID = %s" % wearable.get_pid(), fontsize=16)
+            ax[-1].set_xlabel('Time')
+            ax[-1].xaxis.set_minor_locator(dates.HourLocator(interval=4))  # every 4 hours
+            ax[-1].xaxis.set_minor_formatter(dates.DateFormatter('%H:%M'))  # hours and minutes
+
+            #fig.legend(loc='lower center', ncol=nplots, fontsize=14, shadow=True)
+            fig.savefig('%s_signals.pdf' % (wearable.get_pid()), dpi=300, transparent=True, bbox_inches='tight')
 
 
     @staticmethod
