@@ -62,7 +62,7 @@ class SleepMetrics(object):
 
         if prev_block.shape[0] != current_block.shape[0]:
             print("Unable to calculate SRI.")
-            return -1.0
+            return None
 
         same = (prev_block[wake_col].values == current_block[wake_col].values).sum()
         sri = -100 + (200 / prev_block.shape[0]) * same
@@ -112,73 +112,79 @@ class SleepMetrics(object):
             - SRI (Sleep Regularity Index, in percentage %)
         """
 
-        result = {}
+        results = []
         for wearable in self.wearables:
             print("Sleep Metrics for:", wearable.get_pid())
             df = wearable.data
-            result[wearable.get_pid()] = {}
             wake_delay_in_epochs = wearable.get_epochs_in_min() * wake_delay_in_minutes
             first_day = True
             prev_block = None
 
             for day, block in df.groupby(wearable.experiment_day_col):
 
+                row = {"pid": wearable.get_pid(), "expday": day}
+
                 # filter where we should calculate the sleep metric
                 if sleep_period_col is not None:
                     block = block[block[sleep_period_col] == True]
 
                 if metric.lower() in ["sleepefficiency", "se"]:
-                    result[wearable.get_pid()][day] = SleepMetrics.calculate_sleep_efficiency(block, wake_col,
-                                                                                              wake_delay_in_epochs)
+                    row["metric"] = "sleepefficiency"
+                    row["value"] = SleepMetrics.calculate_sleep_efficiency(block, wake_col,
+                                                                           wake_delay_in_epochs)
 
                 elif metric.lower() in ["awakening", "awakenings"]:
-                    result[wearable.get_pid()][day] = SleepMetrics.calculate_awakening(block, wake_col,
-                                                                                       wake_delay_in_epochs,
-                                                                                       normalize_per_hour=False)
+                    row["metric"] = "awakening"
+                    row["value"] = SleepMetrics.calculate_awakening(block, wake_col,
+                                                                    wake_delay_in_epochs,
+                                                                    normalize_per_hour=False)
 
                 elif metric == "awakeningIndex":
-                    result[wearable.get_pid()][day] = SleepMetrics.calculate_awakening(block, wake_col,
-                                                                                       wake_delay_in_epochs,
-                                                                                       normalize_per_hour=True,
-                                                                                       epochs_in_hour=wearable.get_epochs_in_hour())
+                    row["metric"] = "awakeningIndex"
+                    row["value"] = SleepMetrics.calculate_awakening(block, wake_col, wake_delay_in_epochs,
+                                                                    normalize_per_hour=True,
+                                                                    epochs_in_hour=wearable.get_epochs_in_hour())
 
                 elif metric == "arousal":
-                    result[wearable.get_pid()][day] = SleepMetrics.calculate_arousals(block, wake_col,
-                                                                                      wake_delay_in_epochs,
-                                                                                      normalize_per_hour=False)
+                    row["metric"] = "arousal"
+                    row["value"] = SleepMetrics.calculate_arousals(block, wake_col, wake_delay_in_epochs,
+                                                                   normalize_per_hour=False)
 
                 elif metric == "arousalIndex":
-                    result[wearable.get_pid()][day] = SleepMetrics.calculate_arousals(block, wake_col,
-                                                                                      wake_delay_in_epochs,
-                                                                                      normalize_per_hour=True,
-                                                                                      epochs_in_hour=wearable.get_epochs_in_hour())
-
+                    row["metric"] = "arousalIndex"
+                    row["value"] = SleepMetrics.calculate_arousals(block, wake_col, wake_delay_in_epochs,
+                                                                   normalize_per_hour=True,
+                                                                   epochs_in_hour=wearable.get_epochs_in_hour())
                 elif metric == "totalTimeInBed":
-                    result[wearable.get_pid()][day] = block.shape[0] / wearable.get_epochs_in_hour()
+                    row["metric"] = "totalTimeInBed"
+                    row["value"] = block.shape[0] / wearable.get_epochs_in_hour()
 
                 elif metric == "totalSleepTime":
-                    result[wearable.get_pid()][day] = ((block[wake_col] == 0).sum()) / wearable.get_epochs_in_hour()
+                    row["metric"] = "totalSleepTime"
+                    row["value"] = ((block[wake_col] == 0).sum()) / wearable.get_epochs_in_hour()
 
                 elif metric == "totalWakeTime":
-                    result[wearable.get_pid()][day] = (block[wake_col].sum()) / wearable.get_epochs_in_hour()
+                    row["metric"] = "totalWakeTime"
+                    row["value"] = (block[wake_col].sum()) / wearable.get_epochs_in_hour()
 
-                elif metric.lower() in ["sri"]:
+                elif metric.lower() in ["sri", "sleep_regularity_index", "sleepregularityindex"]:
                     if first_day:
                         first_day = False
                         prev_day_id = day
                         prev_block = block
                         continue
 
-                    result[wearable.get_pid()]["%d-%d" % (prev_day_id, day)] = SleepMetrics.calculate_sri(prev_block,
-                                                                                                          block,
-                                                                                                          wake_col)
+                    row["metric"] = "totalWakeTime"
+                    row["value"] = SleepMetrics.calculate_sri(prev_block, block, wake_col)
                     prev_day_id = day
                     prev_block = block
 
                 else:
-                    ValueError("Metric %s is unknown." % metric)
+                    raise ValueError("Metric %s is unknown." % metric)
 
-        return result
+                results.append(row)
+
+        return results
 
     def __evaluate_sleep_boundaries_pair(self, ground_truth, other):
 
