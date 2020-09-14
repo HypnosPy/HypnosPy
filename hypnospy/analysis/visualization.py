@@ -13,10 +13,13 @@ class Viewer(object):
 
     def __init__(self, input: {Wearable, Experiment}):
 
-        if type(input) is Wearable:
+        if input is None:
+            raise ValueError("Invalid value for input.")
+        elif type(input) is Wearable:
             self.wearables = [input]
         elif type(input) is Experiment:
             self.wearables = input.get_all_wearables()
+
 
         sns.set_context("talk", font_scale=1.3, rc={"axes.linewidth": 2, 'image.cmap': 'plasma', })
         plt.rcParams['font.size'] = 18
