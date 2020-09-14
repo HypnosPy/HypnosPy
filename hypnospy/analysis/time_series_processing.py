@@ -176,6 +176,7 @@ class TimeSeriesProcessing(object):
                                             annotation_col,
                                             hour_to_start_search=18,
                                             merge_tolerance_in_minutes=20,
+                                            only_largest_sleep_period=True
                                             ):
 
         if annotation_col is None and self.annotation_col is None:
@@ -190,7 +191,7 @@ class TimeSeriesProcessing(object):
         if annotation_col is None:
             annotation_col = self.annotation_col
 
-        wearable.data["hyp_sleep_candidate"] = wearable.data[annotation_col]
+        wearable.data["hyp_sleep_candidate"] = wearable.data[annotation_col].copy()
 
         # Annotates the sequences of sleep_candidate
         wearable.data["hyp_seq_length"], wearable.data["hyp_seq_id"] = misc.get_consecutive_serie(wearable.data,
@@ -200,14 +201,19 @@ class TimeSeriesProcessing(object):
             "hyp_seq_length"] = misc.merge_windows(wearable.data, wearable.time_col, "hyp_sleep_candidate",
                                                  merge_tolerance_in_minutes)
 
-        grps = wearable.data.groupby(wearable.experiment_day_col)
-        tmp_df = []
-        for grp_id, grp_df in grps:
-            gdf = grp_df.copy()
-            gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_serie(gdf, "hyp_sleep_candidate")
-            df_out = misc.find_largest_sequence(gdf, "hyp_sleep_candidate", output_col).replace(-1, False)
-            tmp_df.append(df_out)
-        wearable.data[output_col] = pd.concat(tmp_df)
+        if only_largest_sleep_period:
+            grps = wearable.data.groupby(wearable.experiment_day_col)
+            tmp_df = []
+            for grp_id, grp_df in grps:
+                gdf = grp_df.copy()
+                gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_serie(gdf, "hyp_sleep_candidate")
+                df_out = misc.find_largest_sequence(gdf, "hyp_sleep_candidate", output_col).replace(-1, False)
+                tmp_df.append(df_out)
+            wearable.data[output_col] = pd.concat(tmp_df)
+        else:
+            wearable.data[output_col] = False
+            wearable.data.loc[wearable.data[(wearable.data["hyp_sleep_candidate"] == 1)].index, output_col] = True
+
 
         del wearable.data["hyp_seq_id"]
         del wearable.data["hyp_seq_length"]
@@ -325,10 +331,12 @@ class TimeSeriesProcessing(object):
 
     def detect_sleep_boundaries(self, strategy: str, output_col: str = "hyp_sleep_period",
                                 annotation_hour_to_start_search: int = 18, annotation_col: str = None,
-                                annotation_merge_tolerance_in_minutes: int = 20, hr_quantile: float = 0.4,
-                                hr_volarity_threshold: int = 5, hr_rolling_win_in_minutes: int = 5,
-                                hr_sleep_search_window: tuple = (20, 12), hr_min_window_length_in_minutes: int = 40,
-                                hr_volatility_window_in_minutes: int = 10, hr_merge_blocks_gap_time_in_min: int = 240,
+                                annotation_merge_tolerance_in_minutes: int = 20,
+                                annotation_only_largest_sleep_period: bool = True,
+                                hr_quantile: float = 0.4, hr_volarity_threshold: int = 5,
+                                hr_rolling_win_in_minutes: int = 5, hr_sleep_search_window: tuple = (20, 12),
+                                hr_min_window_length_in_minutes: int = 40, hr_volatility_window_in_minutes: int = 10,
+                                hr_merge_blocks_gap_time_in_min: int = 240,
                                 hr_sleep_only_in_sleep_search_window: bool = False,
                                 hr_only_largest_sleep_period: bool = False,
                                 angle_cols: list = [],
@@ -364,7 +372,8 @@ class TimeSeriesProcessing(object):
             if strategy == "annotation":
                 self.__sleep_boundaries_with_annotations(wearable, output_col, annotation_col,
                                                          annotation_hour_to_start_search,
-                                                         annotation_merge_tolerance_in_minutes)
+                                                         annotation_merge_tolerance_in_minutes,
+                                                         annotation_only_largest_sleep_period)
             elif strategy == "hr":
                 self.__sleep_boundaries_with_hr(wearable, output_col, hr_quantile, hr_volarity_threshold,
                                                 hr_rolling_win_in_minutes, hr_sleep_search_window,
@@ -426,7 +435,7 @@ class TimeSeriesProcessing(object):
                 if wearable.has_no_activity():
                     # TODO: another way to deal with it is marking those as invalid right away
                     warnings.warn(
-                        "It seems pid %s has removed their device. We will fill no activity with -0.0001." % wearable.get_pid())
+                        "It seems pid %s has removed their device. Filling no activity with -0.0001." % wearable.get_pid())
                     wearable.fill_no_activity(-0.0001)
 
                 self.__choi_2011(wearable, activity_threshold, min_period_len_minutes, spike_tolerance,
