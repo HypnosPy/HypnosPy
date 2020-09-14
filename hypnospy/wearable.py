@@ -130,9 +130,10 @@ class Wearable(object):
         """
         self.hour_start_experiment = hour_start_experiment
         day_zero = self.data.iloc[0][self.time_col].toordinal()
-        self.data[self.experiment_day_col] = (
-                self.data[self.time_col] - pd.DateOffset(hours=hour_start_experiment)
-        ).apply(lambda x: x.toordinal() - day_zero)
+        new_exp_day = (self.data[self.time_col] - pd.DateOffset(hours=hour_start_experiment)).apply(
+            lambda x: x.toordinal() - day_zero)
+
+        self.data[self.experiment_day_col] = new_exp_day
 
     def get_activity_col(self):
         return self.activitycols[0]
@@ -167,7 +168,7 @@ class Wearable(object):
 
     def drop_invalid_days(self):
         valid_days = self.get_valid_days()
-        self.data = self.data[self.data[self.experiment_day_col].isin(valid_days)]
+        self.data = self.data[self.data[self.experiment_day_col].isin(valid_days)].copy()
 
     def add_diary(self, d: Diary):
         d.data = d.data[d.data["pid"] == self.get_pid()]
