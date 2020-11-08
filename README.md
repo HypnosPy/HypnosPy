@@ -47,13 +47,13 @@ pp.export_hypnospy("dummy.hpy") # -> [ typeOfDevice (triaxial, hr, counts), type
 
 Here we'll iput a breakdown of the software architecture
 
-<p style="text-align:center;"><img src ="docs/SoftwareArchitecture.pdf" width = "550" alt="centered image"></p>
+<p style="text-align:center;"><img src ="docs/SoftwareArchitecture.png" width = "550" alt="centered image"></p>
 
 Ignacio to provide a breakdown of the main software functionalities here
 
 Circadian
 
-<p style="text-align:center;"><img src ="docs/Circadian.pdf" width = "550" alt="centered image"></p>
+<p style="text-align:center;"><img src ="docs/Circadian.png" width = "550" alt="centered image"></p>
 
 
 HR algorithm (update)
