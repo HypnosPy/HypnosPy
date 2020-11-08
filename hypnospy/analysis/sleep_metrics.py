@@ -120,7 +120,6 @@ class SleepMetrics(object):
 
         # Usual evaluation metrics such as Accuracy, Precision, F1....
         for wearable in self.wearables:
-            print("Sleep Metrics for:", wearable.get_pid())
             df = wearable.data
             result = {"accuracy" : [], "precision": [], "recall": [], "f1_score": [], "roc_auc": [], "cohens_kappa": []}
 
@@ -160,7 +159,6 @@ class SleepMetrics(object):
 
         results = []
         for wearable in self.wearables:
-            print("Sleep Metrics for:", wearable.get_pid())
             df = wearable.data
             wake_delay_in_epochs = wearable.get_epochs_in_min() * wake_delay_in_minutes
             first_day = True
