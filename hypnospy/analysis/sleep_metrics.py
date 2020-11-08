@@ -58,14 +58,14 @@ class SleepMetrics(object):
             return arousals
 
     @staticmethod
-    def calculate_sri(prev_block, current_block, wake_col, normalize_per_hour=False, epochs_in_hour=0):
+    def calculate_sri(prev_block, current_block, wake_col):
 
         if prev_block.shape[0] != current_block.shape[0]:
             print("Unable to calculate SRI.")
             return None
 
         same = (prev_block[wake_col].values == current_block[wake_col].values).sum()
-        sri = -100 + (200 / prev_block.shape[0]) * same
+        sri = (same / prev_block.shape[0]) * 100.
 
         return sri
 
@@ -76,7 +76,7 @@ class SleepMetrics(object):
         for wearable in self.wearables:
             print("Sleep Metrics for:", wearable.get_pid())
             df = wearable.data
-            result = {}
+            result = {"accuracy" : [], "precision": [], "recall": [], "f1_score": [], "roc_auc": [], "cohens_kappa": []}
 
             for day, block in df.groupby(wearable.experiment_day_col):
 
@@ -147,13 +147,11 @@ class SleepMetrics(object):
 
                 elif metric == "arousal":
                     row["metric"] = "arousal"
-                    row["value"] = SleepMetrics.calculate_arousals(block, wake_col, wake_delay_in_epochs,
-                                                                   normalize_per_hour=False)
+                    row["value"] = SleepMetrics.calculate_arousals(block, wake_col, normalize_per_hour=False)
 
                 elif metric == "arousalIndex":
                     row["metric"] = "arousalIndex"
-                    row["value"] = SleepMetrics.calculate_arousals(block, wake_col, wake_delay_in_epochs,
-                                                                   normalize_per_hour=True,
+                    row["value"] = SleepMetrics.calculate_arousals(block, wake_col, normalize_per_hour=True,
                                                                    epochs_in_hour=wearable.get_epochs_in_hour())
                 elif metric == "totalTimeInBed":
                     row["metric"] = "totalTimeInBed"
@@ -170,13 +168,11 @@ class SleepMetrics(object):
                 elif metric.lower() in ["sri", "sleep_regularity_index", "sleepregularityindex"]:
                     if first_day:
                         first_day = False
-                        prev_day_id = day
                         prev_block = block
                         continue
 
-                    row["metric"] = "totalWakeTime"
+                    row["metric"] = "sri"
                     row["value"] = SleepMetrics.calculate_sri(prev_block, block, wake_col)
-                    prev_day_id = day
                     prev_block = block
 
                 else:
@@ -184,7 +180,7 @@ class SleepMetrics(object):
 
                 results.append(row)
 
-        return results
+        return pd.DataFrame(results)
 
     def __evaluate_sleep_boundaries_pair(self, ground_truth, other):
 
