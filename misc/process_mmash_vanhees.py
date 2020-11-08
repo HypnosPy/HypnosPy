@@ -61,33 +61,22 @@ def one_loop(hparam):
                          check_diary=True)
     tsp.drop_invalid_days()
 
-    tsp.detect_sleep_boundaries(strategy="hr", output_col="hyp_sleep_period_hr",
-                                hr_quantile=0.35,
-                                hr_volarity_threshold=hr_volarity,
-                                hr_volatility_window_in_minutes=10,
-                                hr_rolling_win_in_minutes=5,
-                                hr_sleep_search_window=(start_hour, end_hour),
-                                hr_min_window_length_in_minutes=32.50,
-                                hr_merge_blocks_delta_time_in_min=240,
-                                hr_sleep_only_in_sleep_search_window=True,
-                                hr_only_largest_sleep_period=True,
-                                )
+    tsp.detect_sleep_boundaries(strategy="hr", output_col="hyp_sleep_period_hr", hr_quantile=0.35,
+                                hr_volarity_threshold=hr_volarity, hr_rolling_win_in_minutes=5,
+                                hr_sleep_search_window=(start_hour, end_hour), hr_min_window_length_in_minutes=32.50,
+                                hr_volatility_window_in_minutes=10, hr_merge_blocks_gap_time_in_min=240,
+                                hr_sleep_only_in_sleep_search_window=True, hr_only_largest_sleep_period=True)
 
-    tsp.detect_sleep_boundaries(strategy="adapted_van_hees", output_col="hyp_sleep_period_vanhees",
-                                vanhees_cols=[], vanhees_use_triaxial_activity=True,
-                                vanhees_start_hour=start_hour,
-                                vanhees_quantile=vh_quantile,
-                                vanhees_minimum_len_in_minutes=vh_min_window_length,
-                                vanhees_merge_tolerance_in_minutes=vh_merge_blocks,
-                                )
+    tsp.detect_sleep_boundaries(strategy="adapted_van_hees", output_col="hyp_sleep_period_vanhees", angle_cols=[],
+                                angle_use_triaxial_activity=True, angle_start_hour=start_hour,
+                                angle_quantile=vh_quantile, angle_minimum_len_in_minutes=vh_min_window_length,
+                                angle_merge_tolerance_in_minutes=vh_merge_blocks)
 
     tsp.detect_sleep_boundaries(strategy="adapted_van_hees", output_col="hyp_sleep_period_vanheespr",
-                                vanhees_cols=["pitch", "roll"], vanhees_use_triaxial_activity=False,
-                                vanhees_start_hour=start_hour,
-                                vanhees_quantile=vh_quantile,
-                                vanhees_minimum_len_in_minutes=vh_min_window_length,
-                                vanhees_merge_tolerance_in_minutes=vh_merge_blocks,
-                                )
+                                angle_cols=["pitch", "roll"], angle_use_triaxial_activity=False,
+                                angle_start_hour=start_hour, angle_quantile=vh_quantile,
+                                angle_minimum_len_in_minutes=vh_min_window_length,
+                                angle_merge_tolerance_in_minutes=vh_merge_blocks)
 
     df_acc = []
     mses = {}

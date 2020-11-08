@@ -34,7 +34,7 @@ if __name__ == "__main__":
     tsp.invalidate_day_if_no_sleep()
     print("Valid days:", tsp.get_valid_days())
 
-    tsp.check_valid_days(max_non_wear_min_per_day=180, min_activity_threshold=0)
+    tsp.check_valid_days(min_activity_threshold=0, max_non_wear_minutes_per_day=180)
     print("Valid days:", tsp.get_valid_days())
     print("Invalid days:", tsp.get_invalid_days())
 
@@ -45,9 +45,6 @@ if __name__ == "__main__":
     pa.generate_pa_columns()
     mvpa_bouts = pa.get_mvpas(length_in_minutes=1, decomposite_bouts=False)
     lpa_bouts = pa.get_lpas(length_in_minutes=1, decomposite_bouts=False)
-
-    #pa_bins = pa.get_binned_pa_representation()
-    #pa_stats = pa.get_stats_pa_representation()
 
     print("DONE")
     
