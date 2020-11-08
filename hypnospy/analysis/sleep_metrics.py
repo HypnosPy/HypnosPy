@@ -61,8 +61,7 @@ class SleepMetrics(object):
     def calculate_sri(prev_block, current_block, wake_col):
 
         if prev_block.shape[0] != current_block.shape[0]:
-            print("Unable to calculate SRI.")
-            return None
+            raise ValueError("Unable to calculate SRI.")
 
         same = (prev_block[wake_col].values == current_block[wake_col].values).sum()
         sri = (same / prev_block.shape[0]) * 100.
@@ -216,7 +215,12 @@ class SleepMetrics(object):
                         continue
 
                     row["metric"] = "sri"
-                    row["value"] = SleepMetrics.calculate_sri(prev_block, block, wake_col)
+                    try:
+                        sri = SleepMetrics.calculate_sri(prev_block, block, wake_col)
+                    except ValueError:
+                        print("Unable to calculate SRI for day %d (PID = %s)." % (day, wearable.get_pid()))
+                        sri = None
+                    row["value"] = sri
                     prev_block = block
 
                 else:
