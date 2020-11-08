@@ -112,7 +112,6 @@ class SleepMetrics(object):
         else:
             return pd.concat(results, axis=1).T.to_dict('records')
 
-
     def compare(self, ground_truth, wake_sleep_alg, sleep_period_col=None):
 
         results = {}
@@ -120,7 +119,7 @@ class SleepMetrics(object):
         # Usual evaluation metrics such as Accuracy, Precision, F1....
         for wearable in self.wearables:
             df = wearable.data
-            result = {"accuracy" : [], "precision": [], "recall": [], "f1_score": [], "roc_auc": [], "cohens_kappa": []}
+            result = {"accuracy": [], "precision": [], "recall": [], "f1_score": [], "roc_auc": [], "cohens_kappa": []}
 
             for day, block in df.groupby(wearable.experiment_day_col):
 
