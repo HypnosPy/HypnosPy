@@ -102,11 +102,11 @@ class SleepWakeAnalysis(object):
                 result = self.__cole_kripke_algorithm(activity)
 
             # Apply Sazonov
-            elif algname.lower() == "sazonov":
+            elif algname.lower() in ["sazonov", "saznov"]:
                 result = self.__sazonov_algorithm(activity)
 
             else:
-                print("ALGORITHM %s NOT IMPLEMENTED." % (algname))
+                raise ValueError("Algorithm %s is unknown." % (algname))
 
             if rescoring:
                 result = self.webster_rescoring_rules(result)
