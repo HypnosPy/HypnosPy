@@ -476,3 +476,51 @@ class Viewer(object):
 
         g.savefig('%s_by_%s.pdf' % (label_a, label_b), dpi=300, transparent=True, bbox_inches='tight')
 
+    @staticmethod
+    def plot_sleep_wake_by_metrics_metrics(results,
+                                           new_name_alg2="Sleep/Wake Algorithm",
+                                           new_name_metric="Sleep Metric",
+                                           annotation_format=".2f",
+                                           include_percentage=False,
+                                           rename_metrics={"arousal": "Arousal", "awakening": "Awakening",
+                                                           "sleepEfficiency": "Sleep Efficiency",
+                                                           "totalSleepTime": "Total Sleep Time",
+                                                           "totalWakeTime": "Total Wake Time"},
+                                           figname='heatmap_sleepalg_metrics.pdf'
+                                           ):
+        """
+        This function is expected to be used with the output of 'SleepMetrics.compare_sleep_metrics'.
+        results will be transformed into a dataframe like:
+
+        #     pid  expday                 metric      value alg1         alg2
+        # 0  5847       0  delta_sleepefficiency -20.827943   gt  Cole-Kripke
+        # 1  3086       0  delta_sleepefficiency -54.469854   gt  Cole-Kripke
+        # 2   211       0  delta_sleepefficiency -16.666667   gt  Cole-Kripke
+
+        """
+
+        # Load results into a dataframe
+        df = pd.DataFrame(results)
+
+        # Rename and reshufle the data for plotting
+        df["metric"] = df["metric"].str.replace("delta_", "Δ ")
+        df["metric"] = df["metric"].str.replace("pearson_", "")
+        for old_name, new_name in rename_metrics.items():
+            df["metric"] = df["metric"].str.replace(old_name, new_name)
+
+        df = df.rename(columns={"alg2": new_name_alg2, "metric": new_name_metric})
+        view = df.groupby([new_name_metric, new_name_alg2])["value"].mean()
+        heatmap_data = view.reset_index().pivot(index=new_name_metric, columns=new_name_alg2, values="value")
+
+        # Plots the heatmap
+        hm = sns.heatmap(heatmap_data, cmap=sns.diverging_palette(200, 200, s=200, n=9, l=10, as_cmap=True),
+                         annot=True, fmt=annotation_format, linewidths=.5, square=1, center=0.0)
+        hm.set_xticklabels(hm.get_xticklabels(), rotation=45)
+
+        if include_percentage:
+            for t in hm.texts: t.set_text(t.get_text() + "%")
+
+        figure = hm.get_figure()
+        figure.savefig(figname, dpi=300, transparent=True, bbox_inches='tight')
+
+        return figure
