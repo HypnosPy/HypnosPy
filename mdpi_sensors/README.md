@@ -1,4 +1,4 @@
-<img src ="docs/HypnosPy.png" width = "350" class ="center" >
+<img src ="../docs/HypnosPy.png" width = "350" class ="center" >
 
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python3-1f425f.svg)](https://www.python.org/)
 [![PyPI download month](https://img.shields.io/pypi/dm/hypnospy.svg)](https://pypi.python.org/pypi/hypnospy/)
