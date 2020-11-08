@@ -45,9 +45,24 @@ pp.export_hypnospy("dummy.hpy") # -> [ typeOfDevice (triaxial, hr, counts), type
 
 # Under the hood :mag_right:
 
+Here we'll iput a breakdown of the software architecture
 
+<p style="text-align:center;"><img src ="docs/SoftwareArchitecture.pdf" width = "550" alt="centered image"></p>
+
+Ignacio to provide a breakdown of the main software functionalities here
+
+Circadian
+
+<p style="text-align:center;"><img src ="docs/Circadian.pdf" width = "550" alt="centered image"></p>
+
+
+HR algorithm (update)
 We found that HR quantiles offered a personalized method to direct our sleeping window search as observed in the figure bellow:
 <p style="text-align:center;"><img src ="docs/HRCDF.png" width = "550" alt="centered image"></p>
+
+Example
+
+<p style="text-align:center;"><img src ="docs/examplesubject.png" width = "550" alt="centered image"></p>
 
 
 
@@ -73,7 +88,7 @@ This project is released under a BSD 2-Clause Licence (see LICENCE file)
 * **Ignacio Perez-Pozuelo (Cambridge)** @ippozuelo *main developer*
 # Research that uses HypnosPy :rocket:
 
-* 
+* Perez-Pozuelo, I., Posa, M., Spathis, D., Westgate, K., Wareham, N., Mascolo, C., ... & Palotti, J. (2020). Detecting sleep in free-living conditions without sleep-diaries: a device-agnostic, wearable heart rate sensing approach. medRxiv.
 
 * 
 
