@@ -94,7 +94,7 @@ class TestWearable(TestCase):
         #  We now force some an invalid day
         tsp = TimeSeriesProcessing(self.w_5day_invalid5hours)
         tsp.detect_non_wear(strategy="choi2011")
-        tsp.check_valid_days(max_non_wear_min_per_day=60, min_activity_threshold=0)
+        tsp.check_valid_days(min_activity_threshold=0, max_non_wear_minutes_per_day=60)
 
         invalid_days = self.w_5day_invalid5hours.get_invalid_days()
         self.assertSetEqual(invalid_days, set({5}))

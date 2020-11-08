@@ -84,14 +84,11 @@ if __name__ == "__main__":
                     tsp.check_valid_days(min_activity_threshold=0, max_non_wear_minutes_per_day=180,
                                          check_sleep_period=False)
                     tsp.drop_invalid_days()
-                    tsp.detect_sleep_boundaries(strategy="adapted_van_hees",
-                                                output_col="hyp_sleep_period_vanhees",
-                                                vanhees_cols=["pitch_mean_dw", "roll_mean_dw"],
-                                                vanhees_start_hour=start_hour,
-                                                vanhees_quantile=quantile,
-                                                vanhees_minimum_len_in_minutes=min_window_length,
-                                                vanhees_merge_tolerance_in_minutes=merge_blocks,
-                    )
+                    tsp.detect_sleep_boundaries(strategy="adapted_van_hees", output_col="hyp_sleep_period_vanhees",
+                                                angle_cols=["pitch_mean_dw", "roll_mean_dw"],
+                                                angle_start_hour=start_hour, angle_quantile=quantile,
+                                                angle_minimum_len_in_minutes=min_window_length,
+                                                angle_merge_tolerance_in_minutes=merge_blocks)
 
                     # Dont change the intevals below: we're using 1.5, 3 and 6.
                     # Removed the -1 when creating the wearable
