@@ -69,10 +69,56 @@ class SleepMetrics(object):
 
         return sri
 
+    def compare_sleep_metrics(self, ground_truth, wake_sleep_alg, sleep_metrics=["sleepEfficiency", "awakening", "SRI",
+                                                                                 "arousal", "totalTimeInBed",
+                                                                                 "totalSleepTime", "totalWakeTime"],
+                              how="relative_difference"):
+
+        results = []
+        for sleep_metric in sleep_metrics:
+
+            gt = self.get_sleep_quality(wake_col=ground_truth, metric=sleep_metric)
+            other = self.get_sleep_quality(wake_col=wake_sleep_alg, metric=sleep_metric)
+
+            gtdf = pd.DataFrame(gt)
+            otherdf = pd.DataFrame(other)
+            merged = pd.merge(gtdf, otherdf, on=["pid", "expday", "metric"], suffixes=["_gt", "_other"])
+
+            if how == "relative_difference":
+                merged["value"] = merged[["value_gt", "value_other"]].apply(
+                    lambda x: ((x["value_gt"] - x["value_other"]) / x["value_other"]) * 100. if x[
+                                                                                                    "value_other"] is not None and
+                                                                                                x[
+                                                                                                    "value_other"] > 0 else 0,
+                    axis=1)
+                merged["metric"] = "delta_" + merged["metric"]
+                merged["alg1"] = ground_truth
+                merged["alg2"] = wake_sleep_alg
+                del merged["value_gt"]
+                del merged["value_other"]
+
+                results.append(merged)
+
+            elif how == "pearson":
+                value = merged[["value_gt", "value_other"]].corr("pearson")["value_gt"]["value_other"]
+
+                s = pd.Series({"value": value, "metric": "pearson_" + sleep_metric,
+                               "alg1": ground_truth, "alg2": wake_sleep_alg})
+                results.append(s)
+
+        if how == "relative_difference":
+            concated = pd.concat(results)
+            return concated.to_dict('records')
+
+        else:
+            return pd.concat(results, axis=1).T.to_dict('records')
+
+
     def compare(self, ground_truth, wake_sleep_alg, sleep_period_col=None):
 
         results = {}
 
+        # Usual evaluation metrics such as Accuracy, Precision, F1....
         for wearable in self.wearables:
             print("Sleep Metrics for:", wearable.get_pid())
             df = wearable.data
@@ -80,18 +126,18 @@ class SleepMetrics(object):
 
             for day, block in df.groupby(wearable.experiment_day_col):
 
-                # filter where we should calculate the sleep metric
+                # Filter where we should calculate the sleep metric
                 if sleep_period_col is not None:
                     block = block[block[sleep_period_col] == True]
 
                 gt, pred = block[ground_truth], block[wake_sleep_alg]
 
-                result["accuracy"] = metrics.accuracy_score(gt, pred)
-                result["precision"] = metrics.precision_score(gt, pred)
-                result["recall"] = metrics.recall_score(gt, pred)
-                result["f1_score"] = metrics.f1_score(gt, pred)
-                result["roc_auc"] = metrics.roc_auc_score(gt, pred)
-                result["cohens_kappa"] = metrics.cohen_kappa_score(gt, pred)
+                result["accuracy"].append(metrics.accuracy_score(gt, pred))
+                result["precision"].append(metrics.precision_score(gt, pred))
+                result["recall"].append(metrics.recall_score(gt, pred))
+                result["f1_score"].append(metrics.f1_score(gt, pred))
+                result["roc_auc"].append(metrics.roc_auc_score(gt, pred))
+                result["cohens_kappa"].append(metrics.cohen_kappa_score(gt, pred))
 
             results[wearable.get_pid()] = result
 
