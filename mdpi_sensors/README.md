@@ -15,6 +15,6 @@ A Device-Agnostic, Open-Source Python Software for Wearable Circadian Rhythm and
 
 - General usage of Hypnospy is shown [here](https://github.com/ippozuelo/HypnosPy/blob/master/mdpi_sensors/hypnospy_general_code.ipynb).
 - The main scientific finding in this paperis examplified in this [notebook](https://github.com/ippozuelo/HypnosPy/blob/master/mdpi_sensors/hypnospy_sleepmetrics_by_sleepwakealgs.ipynb), showing how different sleep/awake algorithms correlate with sleep metrics. Note that the results shown in the current notebook are different from the ones in the paper because we are running it here only with a small fraction of the whole MESA sleep cohort.
-
+- [Here](hypnospy_mmash_sleep_on_off_set.ipynb), we demonstrate the use of our software in a multimodal setting ([MMASH cohort](https://physionet.org/content/mmash/1.0.0/)) where participants wore triaxial accelerometers and HR sensors concurrently 
 
 
