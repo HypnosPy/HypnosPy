@@ -142,7 +142,7 @@ class Viewer(object):
         cols.append(wearable.experiment_day_col)
 
         changed_experiment_hour = False
-        if zoom_start.hour != wearable.hour_start_experiment:
+        if not Viewer.__is_default_zoom(zoom_start, zoom_end) and zoom_start.hour != wearable.hour_start_experiment:
             changed_experiment_hour = True
             saved_start_hour = wearable.hour_start_experiment
             wearable.change_start_hour_for_experiment_day(zoom_start.hour)
