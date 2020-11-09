@@ -57,6 +57,8 @@ Circadian
 
 
 HR algorithm (update)
+<p style="text-align:center;"><img src ="docs/HRdescriptioncropped.png" width = "650" alt="centered image"></p>
+
 We found that HR quantiles offered a personalized method to direct our sleeping window search as observed in the figure bellow:
 <p style="text-align:center;"><img src ="docs/HRCDF.png" width = "550" alt="centered image"></p>
 
@@ -90,10 +92,7 @@ This project is released under a BSD 2-Clause Licence (see LICENCE file)
 
 * Perez-Pozuelo, I., Posa, M., Spathis, D., Westgate, K., Wareham, N., Mascolo, C., ... & Palotti, J. (2020). Detecting sleep in free-living conditions without sleep-diaries: a device-agnostic, wearable heart rate sensing approach. medRxiv.
 
-* 
 
 # Acknowledgements :pray:
 
-* 
-
-* 
+* We thank the MRC Epidemiology Unit at Cambridge for supporting some of the research associated to this work as well as QCRI and MIT.
