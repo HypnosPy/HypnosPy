@@ -526,14 +526,14 @@ class Viewer(object):
 
         return figure
 
-    def view_ssa(self, num_sub_timeseries):
+    def view_ssa(self):
         for wearable in self.wearables:
-            Viewer.view_ssa_wearable(wearable, num_sub_timeseries)
+            Viewer.view_ssa_wearable(wearable)
 
 
 
     @staticmethod
-    def view_ssa_wearable(df, num_sub_timeseries):
+    def view_ssa_wearable(df):
 
         if not df.ssa:
             raise ValueError("Wearable has no SSA object. Please run CircadianAnalysis.run_SSA() first.")
@@ -546,7 +546,7 @@ class Viewer(object):
         sub_timeseries = df.ssa['hyp_act_x']['gk'].T
 
         # sum some of the timeseries to obtain trend of original timeseries
-        y = np.sum(sub_timeseries[:, :num_sub_timeseries], axis=1)
+        y = np.sum(sub_timeseries[:, :2], axis=1)
 
         # draw ssa
         ax1.plot(df.ssa['hyp_act_x']['df'].index, 
