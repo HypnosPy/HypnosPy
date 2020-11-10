@@ -201,7 +201,8 @@ class Viewer(object):
             if "sleep" in signal_categories:
                 facecolors = ['royalblue', 'green', 'orange']
                 endy = 0
-                addition = (maxy / len(sleep_cols))
+                alpha = 1
+                addition = (maxy / len(sleep_cols)) if len(sleep_cols) > 0 else maxy
                 for i, sleep_col in enumerate(sleep_cols):
                     starty = endy
                     endy = endy + addition
