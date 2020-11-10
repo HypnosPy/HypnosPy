@@ -146,6 +146,8 @@ class CircadianAnalysis(object):
         return (r, l, gkList, wMatrix); 
 
 
+        
+    
     def run_cosinor():
         # apply cosinor method
         pass

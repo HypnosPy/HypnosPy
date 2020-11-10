@@ -92,7 +92,7 @@ This project is released under a BSD 2-Clause Licence (see LICENCE file)
 
 * Perez-Pozuelo, I., Posa, M., Spathis, D., Westgate, K., Wareham, N., Mascolo, C., ... & Palotti, J. (2020). Detecting sleep in free-living conditions without sleep-diaries: a device-agnostic, wearable heart rate sensing approach. medRxiv.
 
-
 # Acknowledgements :pray:
 
 * We thank the MRC Epidemiology Unit at Cambridge for supporting some of the research associated to this work as well as QCRI and MIT.
+
