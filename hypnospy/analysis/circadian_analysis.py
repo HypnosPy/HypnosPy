@@ -1,16 +1,14 @@
 import numpy as np
 import pandas as pd
-import math   # math module
+import math
 
 from hypnospy import Wearable, Experiment
-from scipy import signal
 from scipy.stats import entropy
-from scipy import linalg # linear algebra (matrix) processing package
-from os import path
+from scipy import linalg  # linear algebra (matrix) processing package
 from tqdm import tqdm, trange
-from datetime import datetime, date, time, timedelta
 from collections import defaultdict
 from tensorflow.keras.preprocessing import timeseries_dataset_from_array
+
 
 class CircadianAnalysis(object):
 
@@ -33,50 +31,49 @@ class CircadianAnalysis(object):
             w = self._get_SSA(w)
             self.wearables[idx] = w
 
-        
-    #Extract SSA parameters, partial variances stored in ssa_io_pv, other stored in dict ssa, read from files in folder for
-    #convenience, as full analysis takes a long time for each subject
+    # Extract SSA parameters, partial variances stored in ssa_io_pv, other stored in dict ssa, read from files in folder for
+    # convenience, as full analysis takes a long time for each subject
     def _get_SSA(self, w, cols=['hyp_act_x'], freqs=['15T']):
         ssa = defaultdict(dict)
         for col in cols:
+            df = w.data[['hyp_exp_day', 'hyp_time_col', 'hyp_act_x']].resample('1T', on='hyp_time_col').mean()
+            df = df['hyp_act_x']
+            ssa[col]['r'], ssa[col]['pv'], ssa[col]['gk'], ssa[col]['wm'] = self._get_SSA_par(df, L=1440)
+            ssa[col]['df'] = df
+
+            pd.DataFrame(ssa[col]['gk'][:10, :]).to_csv('ssa_gk_' + 'self.filename' + col + '.csv', index=False)
+            pd.DataFrame(ssa[col]['wm']).to_csv('ssa_wm_' + 'self.filename' + col + '.csv', index=False)
+            pd.DataFrame(ssa[col]['pv']).to_csv('ssa_pv_' + 'self.filename' + col + '.csv', index=False)
+            for freq in freqs:
+                df_1 = pd.DataFrame(np.transpose(ssa[col]['gk']))
+
+                # if self.data freq is different than df.resample, then the below line will cause an error
+                # df_1 = df_1.set_index(self.data.index)
                 df = w.data[['hyp_exp_day', 'hyp_time_col', 'hyp_act_x']].resample('1T', on='hyp_time_col').mean()
                 df = df['hyp_act_x']
-                ssa[col]['r'], ssa[col]['pv'], ssa[col]['gk'], ssa[col]['wm'] = self._get_SSA_par(df,L=1440)
                 ssa[col]['df'] = df
 
-                pd.DataFrame(ssa[col]['gk'][:10,:]).to_csv('ssa_gk_'+'self.filename'+col+'.csv', index=False)
-                pd.DataFrame(ssa[col]['wm']).to_csv('ssa_wm_'+'self.filename'+col+'.csv', index=False)
-                pd.DataFrame(ssa[col]['pv']).to_csv('ssa_pv_'+'self.filename'+col+'.csv', index=False)
-                for freq in freqs:
-                    df_1 = pd.DataFrame(np.transpose(ssa[col]['gk']))
-                    
-                    # if self.data freq is different than df.resample, then the below line will cause an error
-                    # df_1 = df_1.set_index(self.data.index)
-                    df = w.data[['hyp_exp_day', 'hyp_time_col', 'hyp_act_x']].resample('1T', on='hyp_time_col').mean()
-                    df = df['hyp_act_x']
-                    ssa[col]['df'] = df
-                    
-                    # df_1 = df_1.set_index(df.index)
-                    df_1 = df_1.set_index(ssa[col]['df'].index)
-                    
-                    df_2 = df_1.between_time('06:00','23:00', include_start=True, include_end=True)
-                    df_gk = df_2[0]+df_2[1]
-                    #Get SSA acrophases
-                    ssa[col]['acrophase'] = df_gk.resample('24H').agg(lambda x : np.nan if x.count() == 0 else x.idxmax())
-                    #Get vectors of coarse-grain params for ML
-                    ssa[col]['gksum'+freq] = df_gk.resample(freq).mean()
-                    #Get trend i.e. mesor
-                    ssa[col]['trend'] = df_1[0].resample('24H').mean()
-                    #Get period in minutes
-                    ssa[col]['period'] = (ssa[col]['acrophase'] - ssa[col]['acrophase'].shift(1)).astype('timedelta64[m]')      
+                # df_1 = df_1.set_index(df.index)
+                df_1 = df_1.set_index(ssa[col]['df'].index)
+
+                df_2 = df_1.between_time('06:00', '23:00', include_start=True, include_end=True)
+                df_gk = df_2[0] + df_2[1]
+                # Get SSA acrophases
+                ssa[col]['acrophase'] = df_gk.resample('24H').agg(lambda x: np.nan if x.count() == 0 else x.idxmax())
+                # Get vectors of coarse-grain params for ML
+                ssa[col]['gksum' + freq] = df_gk.resample(freq).mean()
+                # Get trend i.e. mesor
+                ssa[col]['trend'] = df_1[0].resample('24H').mean()
+                # Get period in minutes
+                ssa[col]['period'] = (ssa[col]['acrophase'] - ssa[col]['acrophase'].shift(1)).astype('timedelta64[m]')
         w.ssa = ssa
         return w
 
     @staticmethod
-    def _get_SSA_par(df, L=1440): # 2 <= L <= N/2
-        N=len(df)
-        K=N-L+1    
-        
+    def _get_SSA_par(df, L=1440):  # 2 <= L <= N/2
+        N = len(df)
+        K = N - L + 1
+
         dataset = timeseries_dataset_from_array(
             data=df,
             targets=None,
@@ -86,85 +83,85 @@ class CircadianAnalysis(object):
             batch_size=len(df)
         )
 
-
         X = list(dataset.as_numpy_iterator())[0]
         print(X.shape)
-        
+
         try:
             U, s, V = linalg.svd(X,
-                                 full_matrices=True, 
-                                 compute_uv=True, 
-                                 overwrite_a=False, 
-                                 check_finite=True, 
+                                 full_matrices=True,
+                                 compute_uv=True,
+                                 overwrite_a=False,
+                                 check_finite=True,
                                  lapack_driver='gesvd')
         except:
             U, s, V = linalg.svd(X,
-                                 full_matrices=True, 
-                                 compute_uv=True, 
-                                 overwrite_a=False, 
-                                 check_finite=True, 
+                                 full_matrices=True,
+                                 compute_uv=True,
+                                 overwrite_a=False,
+                                 check_finite=True,
                                  lapack_driver='gesvd')
-        
-        l=s**2 # partial variances
-        r=len(s)#np.linalg.matrix_rank(X) # matrix rank and total number of components
+
+        l = s ** 2  # partial variances
+        r = len(s)  # np.linalg.matrix_rank(X) # matrix rank and total number of components
         ### time-series components ###
-        gkList=np.zeros(shape=(r,N)) # zero matrix in whose rows SSA components will be saved
-        
+        gkList = np.zeros(shape=(r, N))  # zero matrix in whose rows SSA components will be saved
+
         print('input:', X.shape)
         print('U:', U.shape)
         print('s:', s.shape)
         print('V:', V.shape)
-        
+
         print('r:', r)
         print('gkList:', gkList.shape)
-        
-        for k in trange(r, position=0, leave=True):
-            Uk=U[:,k] # k-th order column singular vector
-            Vk=V[k,:] # k-th order row singular vector
-            Xk=s[k]*np.outer(Uk,Vk) # k-th order matrix component
-            gk=[] # empty array in which to save successive k-th order component values 
-            for i in range(min(K-1,L-1),-max(K-1,L-1)-1,-1): # loop over diagonals
-                gki=np.mean(np.diag(np.fliplr(Xk),i)) # successive time.series values
-                gk.append(gki)
-            gkList[k]=gk # k-th order component
-        
-        ### w-corr matrix ###
-        w=[] # empty array to which to add successive weights
-        LL=min(L,K)
-        KK=max(L,K)
-        for ll in range(1,LL+1): # first 1/3 part of weights
-            w.append(ll)
-        for ll in range(LL+1,KK+1): # second 1/3 part of weights
-            w.append(LL)
-        for ll in range(KK+1,N+1): # third 1/3 part of weights
-            w.append(N-ll)
-        kMin=kkMin=0 # show w-corr matrix for first 20 index values
-        kMax=kkMax=20
-     
-        wMatrix = [[sum(w*gkList[k]*gkList[kk])/(math.sqrt(sum(w*gkList[k]*gkList[k]))*math.sqrt(sum(w*gkList[kk]*gkList[kk]))) for k in range(kMin,kMax)] for kk in range(kkMin,kkMax)]
-        wMatrix = np.array(wMatrix)
-        return (r, l, gkList, wMatrix); 
 
+        for k in trange(r, position=0, leave=True):
+            Uk = U[:, k]  # k-th order column singular vector
+            Vk = V[k, :]  # k-th order row singular vector
+            Xk = s[k] * np.outer(Uk, Vk)  # k-th order matrix component
+            gk = []  # empty array in which to save successive k-th order component values
+            for i in range(min(K - 1, L - 1), -max(K - 1, L - 1) - 1, -1):  # loop over diagonals
+                gki = np.mean(np.diag(np.fliplr(Xk), i))  # successive time.series values
+                gk.append(gki)
+            gkList[k] = gk  # k-th order component
+
+        ### w-corr matrix ###
+        w = []  # empty array to which to add successive weights
+        LL = min(L, K)
+        KK = max(L, K)
+        for ll in range(1, LL + 1):  # first 1/3 part of weights
+            w.append(ll)
+        for ll in range(LL + 1, KK + 1):  # second 1/3 part of weights
+            w.append(LL)
+        for ll in range(KK + 1, N + 1):  # third 1/3 part of weights
+            w.append(N - ll)
+        kMin = kkMin = 0  # show w-corr matrix for first 20 index values
+        kMax = kkMax = 20
+
+        wMatrix = [[sum(w * gkList[k] * gkList[kk]) / (
+                    math.sqrt(sum(w * gkList[k] * gkList[k])) * math.sqrt(sum(w * gkList[kk] * gkList[kk]))) for k in
+                    range(kMin, kMax)] for kk in range(kkMin, kkMax)]
+        wMatrix = np.array(wMatrix)
+        return (r, l, gkList, wMatrix);
 
     def run_cosinor():
         # apply cosinor method
         pass
-        
+
     def run_PSD():
-        #apply power spectral density analysis
-        
+        # apply power spectral density analysis
+
         df['PSD'] = PSD
         pass
-    
+
     def run_entropy(df, bins=20):
         bins = int(bins)
         hist, bin_edges = np.histogram(df, bins=bins)
-        p = hist/float(hist.sum())
+        p = hist / float(hist.sum())
         ent = entropy(p)
         df['ent'] = ent
-        return ent 
-   
-## Simpler Implementation perhaps?
+        return ent
+
+    ## Simpler Implementation perhaps?
     def run_LIDS(timestamp, ENMO):
         """
         [1] Winnebeck, E. C., Fischer, D., Leise, T., & Roenneberg, T. (2018).
@@ -173,21 +170,22 @@ class CircadianAnalysis(object):
         """
 
         # Read data 
-        #df = pd.concat((timestamp, pd.Series(ENMO)), axis=1)
-        #df.columns = ['timestamp','ENMO']
-        #df.set_index('timestamp', inplace=True)
+        # df = pd.concat((timestamp, pd.Series(ENMO)), axis=1)
+        # df.columns = ['timestamp','ENMO']
+        # df.set_index('timestamp', inplace=True)
 
         # Set threshold
-        df['ENMO_thresh'] = np.where(ENMO < 0.02, 0, ENMO-0.02) # assuming ENMO is in g
+        df['ENMO_thresh'] = np.where(ENMO < 0.02, 0, ENMO - 0.02)  # assuming ENMO is in g
         # 10-minute rolling sum
         ENMO_sub_smooth = df['ENMO_thresh'].rolling('10m').sum()
         df['LIDS_unfiltered'] = 100.0 / (ENMO_sub_smooth + 1.0)
         # 30-minute rolling average
         LIDS = df['LIDS_unfiltered'].rolling('30m').mean().values
         return LIDS
-    
+
     ## FOUND THE FOLLOWING FUNCTION ONLINE FROM ANOTHER PAPER (Really intersting but potentially an overkill)
     ## Will delete after as its not mine, good for now to check the structure  
+
 
 class LIDS():
     """
@@ -201,11 +199,11 @@ class LIDS():
     fit_func_list = ['cosine', 'chirp', 'modchirp']
 
     def __init__(
-        self,
-        lids_func='lids',
-        fit_func='cosine',
-        fit_obj_func='residuals',
-        fit_params=None
+            self,
+            lids_func='lids',
+            fit_func='cosine',
+            fit_obj_func='residuals',
+            fit_params=None
     ):
 
         # LIDS functions
@@ -251,7 +249,7 @@ class LIDS():
             fit_params = Parameters()
             # Default parameters for the cosine fit function
             fit_params.add('amp', value=50, min=0, max=100)
-            fit_params.add('phase', value=0.0, min=-2*np.pi, max=2*np.pi)
+            fit_params.add('phase', value=0.0, min=-2 * np.pi, max=2 * np.pi)
             fit_params.add('period', value=9, min=0)  # Dummy value
             # Introduce inequality amp+offset < 100
             fit_params.add('delta', value=60, max=100, vary=True)
@@ -319,7 +317,7 @@ class LIDS():
         '''
 
         def duration(s):
-            return s.index[-1]-s.index[0]
+            return s.index[-1] - s.index[0]
 
         td_min = pd.Timedelta(duration_min)
         td_max = pd.Timedelta(duration_max)
@@ -354,7 +352,7 @@ class LIDS():
             return lids
 
     def lids_transform(
-        self, ts, method='mva', win_td='30min', resampling_freq=None
+            self, ts, method='mva', win_td='30min', resampling_freq=None
     ):
         r'''Apply LIDS transformation to activity data
         This transformation comprises:
@@ -396,7 +394,7 @@ class LIDS():
 
         # Series with a DateTimeIndex don't accept 'time-aware' centered window
         # Convert win_size (TimeDelta) into a number of time bins
-        win_size = int(pd.Timedelta(win_td)/self.__freq)
+        win_size = int(pd.Timedelta(win_td) / self.__freq)
 
         # Smooth LIDS-transformed data
         smooth_lids = self.__smooth(lids, method=method, win_size=win_size)
@@ -404,14 +402,14 @@ class LIDS():
         return smooth_lids
 
     def lids_fit(
-        self,
-        lids,
-        method='leastsq',
-        scan_period=True,
-        bounds=('30min', '180min'),
-        step='5min',
-        nan_policy='raise',
-        verbose=False
+            self,
+            lids,
+            method='leastsq',
+            scan_period=True,
+            bounds=('30min', '180min'),
+            step='5min',
+            nan_policy='raise',
+            verbose=False
     ):
         r'''Fit oscillations of the LIDS data
         The fit is performed with a fixed period ranging from 30 min to 180 min
@@ -463,15 +461,15 @@ class LIDS():
         if scan_period:
 
             # Define bounds for the period
-            period_start = pd.Timedelta(bounds[0])/self.__freq
-            period_end = pd.Timedelta(bounds[1])/self.__freq
-            period_range = period_end-period_start
-            period_step = pd.Timedelta(step)/self.__freq
+            period_start = pd.Timedelta(bounds[0]) / self.__freq
+            period_end = pd.Timedelta(bounds[1]) / self.__freq
+            period_range = period_end - period_start
+            period_step = pd.Timedelta(step) / self.__freq
 
             test_periods = np.linspace(
                 period_start,
                 period_end,
-                num=int(period_range/period_step)+1
+                num=int(period_range / period_step) + 1
             )
 
             # Fit data for each test period
@@ -487,7 +485,7 @@ class LIDS():
                 fit_result_tmp = minimize(
                     self.__fit_obj_func,
                     self.__fit_initial_params,
-                    args=(x,  lids.values, self.lids_fit_func),
+                    args=(x, lids.values, self.lids_fit_func),
                     nan_policy=nan_policy,
                     reduce_fcn=self.__fit_reduc_func
                 )
@@ -520,7 +518,7 @@ class LIDS():
             fit_result = minimize(
                 self.__fit_obj_func,
                 self.__fit_initial_params,
-                args=(x,  lids.values, self.lids_fit_func),
+                args=(x, lids.values, self.lids_fit_func),
                 nan_policy=nan_policy,
                 reduce_fcn=self.__fit_reduc_func
             )
@@ -587,10 +585,10 @@ class LIDS():
         pearson_r = self.lids_pearson_r(lids, params)[0]
 
         # Oscillation range = [-A,+A] => 2*A
-        oscillation_range = 2*params['amp'].value
+        oscillation_range = 2 * params['amp'].value
 
         # MRI
-        mri = pearson_r*oscillation_range
+        mri = pearson_r * oscillation_range
 
         return mri
 
@@ -619,7 +617,7 @@ class LIDS():
             # TODO: evaluate if raise ValueError('') more appropriate
             return None
         else:
-            lids_period = self.lids_fit_results.params['period']*self.freq
+            lids_period = self.lids_fit_results.params['period'] * self.freq
             return lids_period.astype('timedelta64[{}]'.format(freq))
 
     def lids_phases(self, lids, step=.1):
@@ -657,17 +655,17 @@ class LIDS():
         # Index of the 1st maxima (i.e 1st maximum of the LIDS oscillations)
         first_max_idx = np.argmax(_extrema_points(df_dx, d2f_dx2))
         # Convert the index into a phase using the fitted period
-        onset_phase = (first_max_idx*step)/params['period']*360
+        onset_phase = (first_max_idx * step) / params['period'] * 360
 
         # Index of the last 'increasing' inflexion points in LIDS oscillations
         # before sleep offset
         last_inflex_idx = -1 * (
             # reverse order to find last
-            np.argmax(_inflexion_points(df_dx, d2f_dx2)[::-1]) +
-            1  # to account for index shifting during reverse (-1: 0th elem)
+                np.argmax(_inflexion_points(df_dx, d2f_dx2)[::-1]) +
+                1  # to account for index shifting during reverse (-1: 0th elem)
         )
         # Convert the index into a phase using the fitted period
-        offset_phase = np.abs(last_inflex_idx*step/params['period']*360)
+        offset_phase = np.abs(last_inflex_idx * step / params['period'] * 360)
 
         return onset_phase, offset_phase
 
@@ -695,11 +693,11 @@ class LIDS():
         )
 
         # Scaling factor, relative to the LIDS period, normalized to t_norm
-        scaling_factor = pd.Timedelta(t_norm)/self.lids_period()
+        scaling_factor = pd.Timedelta(t_norm) / self.lids_period()
 
         # Internal timeline (aka: external timeline, rescaled to LIDS period)
         # t_int = scaling_factor*t_ext
-        t_int = pd.TimedeltaIndex(scaling_factor*t_ext.values, freq='infer')
+        t_int = pd.TimedeltaIndex(scaling_factor * t_ext.values, freq='infer')
 
         # Construct a new Series with internal timeline as index
         lids_rescaled = pd.Series(lids.values, index=t_int)
@@ -748,11 +746,11 @@ class LIDS():
             mri = self.lids_mri(s)
 
             # Calculate the number of LIDS cycle (as sleep bout length/period):
-            ncycle = s.index.values.ptp()/np.timedelta64(1, 's')
+            ncycle = s.index.values.ptp() / np.timedelta64(1, 's')
             ncycle /= period.astype(float)
 
             if verbose:
-                print('-'*20)
+                print('-' * 20)
                 print('Sleep bout nr {}'.format(idx))
                 print('- Period: {!s}'.format(period))
                 print('- MRI: {}'.format(mri))
@@ -770,7 +768,7 @@ class LIDS():
         lids_profile = reduce(
             (lambda x, y: x.add(y, fill_value=0)),
             ilids
-        )/len(ilids)
+        ) / len(ilids)
 
         # Fit mean LIDS profile with a pol0
         fit_params = np.polyfit(

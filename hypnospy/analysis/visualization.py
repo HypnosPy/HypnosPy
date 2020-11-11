@@ -133,6 +133,9 @@ class Viewer(object):
         if len(cols) == 0:
             raise ValueError("Aborting: Empty list of signals to show.")
 
+        if wearable.data.empty:
+            raise ValueError("Aborting: Dataframe is empty.")
+
         cols.append(wearable.time_col)
         for col in set(other_signals + signal_as_area):
             cols.append(col)
