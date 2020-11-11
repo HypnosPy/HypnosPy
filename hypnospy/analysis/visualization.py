@@ -107,10 +107,13 @@ class Viewer(object):
                     raise KeyError("HR is not available for PID %s" % wearable.get_pid())
 
             elif signal == "pa_intensity":
-                if hasattr(wearable, 'pa_intensity_cols'):
-                    for pa in wearable.pa_intensity_cols:
+                if hasattr(wearable, 'pa_cutoffs') and hasattr(wearable, 'pa_names'):
+                    for pa in wearable.pa_names:
                         if pa in wearable.data.keys():
                             cols.append(pa)
+                else:
+                    raise ValueError("PA Intensity levels not available for PID %s" % (wearable.get_pid()))
+
 
             elif signal == "sleep":
                 for sleep_col in sleep_cols:
@@ -185,18 +188,17 @@ class Viewer(object):
                               color=color, alpha=alpha)
 
             if "pa_intensity" in signal_categories:
-                ax1[idx].fill_between(df_panel.index, 0, maxy, where=df_panel['hyp_vpa'], facecolor='forestgreen',
-                                      alpha=alpha,
-                                      label='VPA', edgecolor='forestgreen')
-                only_mvpa = (df_panel['hyp_mvpa']) & (~df_panel['hyp_vpa'])
-                ax1[idx].fill_between(df_panel.index, 0, maxy, where=only_mvpa, facecolor='palegreen', alpha=alpha,
-                                      label='MVPA', edgecolor='palegreen')
-                only_lpa = (df_panel['hyp_lpa']) & (~df_panel['hyp_mvpa']) & (~df_panel['hyp_vpa'])
-                ax1[idx].fill_between(df_panel.index, 0, maxy, where=only_lpa, facecolor='honeydew', alpha=alpha,
-                                      label='LPA', edgecolor='honeydew')
-                ax1[idx].fill_between(df_panel.index, 0, maxy, where=df_panel['hyp_sed'], facecolor='palegoldenrod',
-                                      alpha=alpha,
-                                      label='sedentary', edgecolor='palegoldenrod')
+                #TODO: colors should not be limited to only these four
+                pa_predefined_colors = ["palegoldenrod", "honeydew", "palegreen", "forestgreen"]
+
+                for i in range(len(wearable.pa_names)):
+                    pa_filter = df_panel[wearable.pa_names[i]]
+                    for j in range(len(wearable.pa_names)):
+                        if i != j:
+                            pa_filter &= (~df_panel[wearable.pa_names[j]])
+
+                    ax1[idx].fill_between(df_panel.index, 0, maxy, where=pa_filter, label=wearable.pa_names[i],
+                                      alpha=alpha, facecolor=pa_predefined_colors[i], edgecolor=pa_predefined_colors[i])
 
             if "sleep" in signal_categories:
                 facecolors = ['royalblue', 'green', 'orange']
