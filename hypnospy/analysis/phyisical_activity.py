@@ -7,63 +7,93 @@ import pandas as pd
 
 class PhysicalActivity(object):
 
-    # TODO: activity is currently limited to one axis.
+    def __init__(self, input: {Experiment, Wearable}, cutoffs=None, names=None):
+        """
 
-    def __init__(self, input: {Experiment, Wearable}, lpa=None, mvpa=None, vpa=None):
+        :param input: Either an experiment or wearable object.
+        :param cutoffs: List of cut-offs
+        :param names: List of physical activity names associated with cut-offs.
+        Note: it is expected that len(names) will be len(cutoffs) + 1
+        """
 
         if type(input) is Wearable:
             self.wearables = [input]
         elif type(input) is Experiment:
             self.wearables = input.get_all_wearables()
 
-        self.sed_col = "hyp_sed"
-        self.lpa_col = "hyp_lpa"
-        self.mvpa_col = "hyp_mvpa"
-        self.vpa_col = "hyp_vpa"
+        self.set_cutoffs(cutoffs, names)
 
-        self.lpa_value = self.mvpa_value = self.vpa_value = None
-        self.set_pa_thresholds(lpa, mvpa, vpa)
+    def set_cutoffs(self, cutoffs, names):
+        """
+        This method is used to define physical activity cut-offs and their respective names.
 
-    def set_pa_thresholds(self, lpa=None, mvpa=None, vpa=None):
-        if lpa is not None:
-            self.lpa_value = lpa
-        if mvpa is not None:
-            self.mvpa_value = mvpa
-        if vpa is not None:
-            self.vpa_value = vpa
+        The cut-off values here are tightly related to the wearable device used.
+        We suggest the user to read the latest research on it.
+        Vincent van Hees' GGIR has a summarized documentation on this topic: see https://cran.r-project.org/web/packages/GGIR/vignettes/GGIR.html#published-cut-points-and-how-to-use-them
+
+
+        :param cutoffs: List of values
+        :param names:  List of names. Expected to have one element more than ``cutoffs``.
+        :return: None
+        """
+        if cutoffs is None and names is None:
+            return
+
+        # N cut-offs defined N+1 classes
+        assert len(cutoffs) == len(names) - 1
+
+        # Check if cutoffs are in increasing order
+        assert sorted(cutoffs) == cutoffs
+
+        self.cutoffs = cutoffs
+        self.names = names
 
     def generate_pa_columns(self, based_on="activity"):
-        if self.lpa_value is None or self.mvpa_value is None or self.vpa_value is None:
-            raise AttributeError("Please use `set_pa_thresholds` before using this method.")
+        """
+
+        :param based_on: Base column used to calculate the physical activity.
+        :return: None
+        """
+
+        if self.cutoffs is None or self.names is None:
+            raise AttributeError("Please use `set_cutoffs` before using this method.")
 
         for wearable in self.wearables:
-            if based_on.lower() == "activity":
-                col = wearable.get_activity_col()
-            elif based_on.lower() == "mets":
-                col = wearable.get_mets_col()
-            else:
-                col = based_on
+            # first cut-off
+            wearable.data[self.names[0]] = wearable.data[based_on] <= self.cutoffs[0]
+            # Other cut-ffs
+            for i in range(1, len(self.names)):
+                wearable.data[self.names[i]] = wearable.data[based_on] > self.cutoffs[i - 1]
 
-            # TODO: If we have a value that is VPA, is it also MVPA and LPA?
-            wearable.data[self.sed_col] = wearable.data[col] <= self.lpa_value
-            wearable.data[self.lpa_col] = wearable.data[col] > self.lpa_value
-            wearable.data[self.mvpa_col] = wearable.data[col] > self.mvpa_value
-            wearable.data[self.vpa_col] = wearable.data[col] > self.vpa_value
-            wearable.pa_intensity_cols = [self.sed_col, self.lpa_col, self.mvpa_col, self.vpa_col]
+            wearable.pa_cutoffs = self.cutoffs
+            wearable.pa_names = self.names
 
-    def __pa_cols_okay(self):
+    def get_bouts(self, pa_col, length_in_minutes, decomposite_bouts=False):
+        """
+
+        :param pa_col:              The name of the physical activity column in the dataframe.
+        :param length_in_minutes:   The minimal length of the activity in minutes
+        :param decomposite_bouts:   If True, we are going to count the number of subsequencies of ``length_in_minutes``.
+                                    For example, if ``length_in_minutes`` is 10 and we identified a continuous activity of 30 minutes,
+                                    if ``decomposite_bouts`` is True, we will count 3 bouts for this activity, otherwise only 1.
+        :return:                    A dictionary with <pid> keys and Series <day, bouts> as values.
+        """
+
+        if pa_col not in self.names:
+            raise ValueError("Unknown physical activity column %s. Please use ``set_cutoffs``.")
+
+        returning_dict = {}
         for wearable in self.wearables:
-            keys = wearable.data.keys()
-            if self.sed_col not in keys or self.lpa_col not in keys or \
-                    self.mvpa_col not in keys or self.vpa_col not in keys:
-                return False
-        return True
+            pid = wearable.get_pid()
+            epochs_per_minute = wearable.get_epochs_in_min()
+            returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
+                lambda x: self._get_bout(x, epochs_per_minute, pacol=pa_col, mins=length_in_minutes,
+                                         decomposite_bouts=decomposite_bouts)
+            )
+        return returning_dict
 
-    def mask_sleep_period(self, mask):
-        # TODO: missing implementation and finding a better name for this method.
-        df["X"] = df["activity"].where(~df["sleep_period"].astype(np.bool), 0)
-
-    def __get_bout(self, dd, epochs_per_minute, pacol, mins=10, decomposite_bouts=True):
+    @staticmethod
+    def _get_bout(dd, epochs_per_minute, pacol, mins=10, decomposite_bouts=True):
 
         dd["pa_len"], dd["pa_grp"] = misc.get_consecutive_serie(dd, pacol)
         bouts = dd[(dd[pacol] == True) & (dd["pa_len"] >= mins * epochs_per_minute)]
@@ -75,68 +105,9 @@ class PhysicalActivity(object):
         else:
             return len(bouts["pa_grp"].unique())
 
-    def get_vpas(self, length_in_minutes, decomposite_bouts=False):
-        if self.vpa_value is None:
-            raise ValueError("Please set VPA first by running ``set_pa_thresholds``.")
-        if not self.__pa_cols_okay():
-            raise AttributeError("Please use ``generate_pa_columns`` before using this function.")
-
-        returning_dict = {}
-        for wearable in self.wearables:
-            pid = wearable.get_pid()
-            epochs_per_minute = wearable.get_epochs_in_min()
-            returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
-                lambda x: self.__get_bout(x, epochs_per_minute, pacol=self.vpa_col, mins=length_in_minutes,
-                                          decomposite_bouts=decomposite_bouts)
-            )
-        return returning_dict
-
-    def get_mvpas(self, length_in_minutes, decomposite_bouts=False):
-        if self.mvpa_value is None:
-            raise ValueError("Please set MVPA first by running ``set_pa_thresholds``.")
-        if not self.__pa_cols_okay():
-            raise AttributeError("Please use ``generate_pa_columns`` before using this function.")
-
-        returning_dict = {}
-        for wearable in self.wearables:
-            pid = wearable.get_pid()
-            epochs_per_minute = wearable.get_epochs_in_min()
-            returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
-                lambda x: self.__get_bout(x, epochs_per_minute, pacol=self.mvpa_col, mins=length_in_minutes,
-                                          decomposite_bouts=decomposite_bouts)
-            )
-        return returning_dict
-
-    def get_lpas(self, length_in_minutes, decomposite_bouts=False):
-        if self.mvpa_value is None:
-            raise ValueError("Please set LPA first by running ``set_pa_thresholds``. ")
-        if not self.__pa_cols_okay():
-            raise AttributeError("Please use ``generate_pa_columns`` before using this function.")
-
-        returning_dict = {}
-        for wearable in self.wearables:
-            pid = wearable.get_pid()
-            epochs_per_minute = wearable.get_epochs_in_min()
-            returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
-                lambda x: self.__get_bout(x, epochs_per_minute, pacol=self.lpa_col, mins=length_in_minutes,
-                                          decomposite_bouts=decomposite_bouts)
-            )
-        return returning_dict
-
-    def get_seds(self, length_in_minutes, decomposite_bouts=False):
-        if self.lpa_value is None:
-            raise ValueError("Please set SED first by running ``set_pa_thresholds``. "
-                             "SED will be any value equal or small than LPA. ")
-
-        returning_dict = {}
-        for wearable in self.wearables:
-            pid = wearable.get_pid()
-            epochs_per_minute = wearable.get_epochs_in_min()
-            returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
-                lambda x: self.__get_bout(x, epochs_per_minute, pacol=self.sed_col, mins=length_in_minutes,
-                                          decomposite_bouts=decomposite_bouts)
-            )
-        return returning_dict
+    def mask_sleep_period(self, mask):
+        # TODO: missing implementation and finding a better name for this method.
+        df["X"] = df["activity"].where(~df["sleep_period"].astype(np.bool), 0)
 
     def get_binned_pa_representation(self):
         """
