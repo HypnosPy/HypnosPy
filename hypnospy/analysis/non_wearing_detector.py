@@ -25,7 +25,8 @@ class NonWearingDetector(object):
             self.wearables = input.get_all_wearables()
 
         # Those are the new cols that this module is going to generate
-        self.wearing_col = "hyp_wearing"  # after running detect
+        # self.wearing_col = "hyp_wearing"  # after running detect
+        self.wearing_col = []  # list of wearing_col after running strategies detect
         self.annotation_col = "hyp_annotation"  # 1 for sleep, 0 for awake
 
         self.sleep_period_col = "hyp_sleep_period"  # after running detect_sleep_boundaries
@@ -55,6 +56,7 @@ class NonWearingDetector(object):
 
     def detect_non_wear(self,
                         strategy,
+                        wearing_col_initial="hyp_wearing_",
                         activity_threshold=0,
                         min_period_len_minutes=90,
                         spike_tolerance=2,
@@ -62,25 +64,64 @@ class NonWearingDetector(object):
                         window_spike_tolerance=0,
                         use_vector_magnitude=False,
                         ):
-
+        # if it's one strategy, put it in a list
+        if(isinstance(strategy, str)):
+            strategy = [strategy]
         for wearable in self.wearables:
-            if strategy in ["choi", "choi2011", "choi11"]:
-                if wearable.has_no_activity():
-                    # TODO: another way to deal with it is marking those as invalid right away
-                    warnings.warn(
-                        "It seems pid %s has removed their device. Filling no activity with -0.0001." % wearable.get_pid())
-                    wearable.fill_no_activity(-0.0001)
+            for s in strategy:
+                if s in ["choi", "choi2011", "choi11"]:
+                    if wearable.has_no_activity():
+                        # TODO: another way to deal with it is marking those as invalid right away
+                        warnings.warn(
+                            "It seems pid %s has removed their device. Filling no activity with -0.0001." % wearable.get_pid())
+                        wearable.fill_no_activity(-0.0001)
 
-                self.__choi_2011(wearable, activity_threshold, min_period_len_minutes, spike_tolerance,
-                                 min_window_len_minutes, window_spike_tolerance, use_vector_magnitude)
-            elif strategy in ["none"]:
-                wearable.data["%s" % self.wearing_col] = True
+                    self.__choi_2011(wearable, wearing_col_initial + s, activity_threshold, min_period_len_minutes, spike_tolerance,
+                                     min_window_len_minutes, window_spike_tolerance, use_vector_magnitude)
+                    if(wearing_col_initial + s not in self.wearing_col):
+                        self.wearing_col.append(wearing_col_initial + s)
+                elif strategy in ["none"]:
+                    # wearable.data["%s" % self.wearing_col] = True
+                    wearable.data["%s" % wearing_col_initial + s] = True
+                    if(wearing_col_initial + s not in self.wearing_col):
+                        self.wearing_col.append(wearing_col_initial + s)
+                    print("Wearable now has a %s col for the non wear flag" % wearing_col_initial + s)
+                else:
+                    raise ValueError("Strategy %s not implemented yet." % s)    
 
-            else:
-                raise ValueError("Strategy %s not implemented yet." % strategy)
+    # func input must accept two lists of equal length x1, and x2. 
+    # if more than 2 strategies are to be combined, func will first
+    # combine the first two strategies, then will chain the result on the
+    # remaining strategies.
+    def combine_strategies(self, strategies, output_col="combined_strategy", func=np.logical_and):
+        if(len(strategies) < 2):
+            raise ValueError("strategies need to be 2 or more to combine them.")
+        if(not self.wearing_col):
+            raise KeyError(
+                "No wearing detection column found for wearables. Did you forget to run ``detect_non_wear(...)``?"
+            )
+        for strategy in strategies:
+            if(strategy not in self.wearing_col):
+                raise ValueError("Strategy %s not ran using ``detect_non_wear(...)``", strategy)
+        
+        for wearable in self.wearables:
+            l = wearable.data[strategies[:2]] # get the strategies from the dataframe
+            l = l.values.T # convert dataframe view to a list of strategies (each list contains)
+            combined_output = func(*l)
+            for i in range(2, len(strategies)): # if the user wants to combine more than 2 strategies, func will chain among the columns
+                combined_output = func(combined_output, wearable.data[strategies[i]].values)    
+
+            wearable.data[output_col] = combined_output
+
+
+        print("Wearables now have a %s col for the non wear flag" % output_col)
+        if(output_col not in self.wearing_col):
+            self.wearing_col.append(output_col)
+
 
     def __choi_2011(self,
                     wearable,
+                    wearing_col_name,
                     activity_threshold=0,
                     min_period_len_minutes=90,
                     spike_tolerance=2,
@@ -271,9 +312,9 @@ class NonWearingDetector(object):
 
         non_wear_vector = non_wear_vector.reshape(-1)
 
-        # TODO: Should we get col name by parameter?
-        print("Wearable now has a %s col for the non wear flag" % self.wearing_col)
-        wearable.data["%s" % self.wearing_col] = non_wear_vector
+        print("Wearable now has a %s col for the non wear flag" % wearing_col_name)
+        # wearable.data["%s" % self.wearing_col] = non_wear_vector
+        wearable.data["%s" % wearing_col_name] = True
 
     def check_valid_days(self, min_activity_threshold: int = 0, max_non_wear_minutes_per_day: int = 180,
                          check_cols: list = [],
@@ -287,6 +328,12 @@ class NonWearingDetector(object):
             (5) Mark as invalid days without diary entry.
 
         """
+
+        if(len(self.wearing_col) > 1):
+            warnings.warn("check_valid_days will take account of all strategies ran in ``detect_non_wear(...)``. \
+                If a day has invalid_wearing minutes less than max_non_wear_epochs_per_day from one strategy, \
+                then the day is removed.")
+
         for wearable in self.wearables:
             wearable.data[wearable.invalid_col] = False
 
@@ -309,17 +356,22 @@ class NonWearingDetector(object):
                 # If it was not configured yet, we start the experiment day from midnight.
                 wearable.change_start_hour_for_experiment_day(0)
 
-            if self.wearing_col not in wearable.data.keys():
+            # if self.wearing_col not in wearable.data.keys():
+            if not self.wearing_col:
                 raise KeyError(
-                    "Col %s not found in wearable (pid=%s). Did you forget to run ``detect_non_wear(...)``?" % (
-                        self.wearing_col, wearable.get_pid()))
+                    # "Col %s not found in wearable (pid=%s). Did you forget to run ``detect_non_wear(...)``?" % (
+                    #    self.wearing_col, wearable.get_pid()))
+                    "No wearing detection column found for wearable (pid=%s). Did you forget to run ``detect_non_wear(...)``?"  % (
+                        wearable.get_pid()))
 
             epochs_in_a_day = (1440 * epochs_in_minute)
-            invalid_wearing = wearable.data.groupby([wearable.experiment_day_col])[
-                                                      self.wearing_col].transform(
-                lambda x: x.sum()) <= (epochs_in_a_day - max_non_wear_epochs_per_day)
 
-            wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col] | invalid_wearing
+            for wearing_col in self.wearing_col:
+                invalid_wearing = wearable.data.groupby([wearable.experiment_day_col])[
+                                                          wearing_col].transform(
+                    lambda x: x.sum()) <= (epochs_in_a_day - max_non_wear_epochs_per_day)
+
+                wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col] | invalid_wearing
 
             # Task 4: Check sleep period
             if check_sleep_period:
