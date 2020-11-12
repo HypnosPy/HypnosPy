@@ -81,7 +81,7 @@ Hypnospy is implemented in Python with standard data science dependencies and us
 
 While all data analysis in HypnosPy can be performed on one single wearable, Hypnospy provides a layer of abstraction for experiments containing multiple wearables, namely, the **Experiment** module. All further data analysis can be performed on a single wearable or on a set of them (using the **Experimen** module). With Hypnospy, it is straightforward to perform complex data analysis, such as **sleep inferences, circadian analysis or non-wear detection, among many other weearable related functionalities**. At the core of HypnosPy is the modularity and choice of algorithms for these different purposes. A holistic overview of the software architecture is provided in the Figure bellow:
 
-<p style="text-align:center;"><img src ="docs/SoftwareArchitecture.png" width = "750" class="center" alt="centered image"></p>
+<p style="text-align:center;"><img src ="docs/SoftwareArchitecture.png" width = "950" class="center" alt="centered image"></p>
 
 **Hypnospy's** core functionalities can be summarized as follows:
 
@@ -95,14 +95,14 @@ While all data analysis in HypnosPy can be performed on one single wearable, Hyp
 
   * *Integration of sleep and physical activity in a chronobiology framework*: HypnosPy enables circadian rhythm analysis, supporting a variety of traditional methods like the cosinor approach as well as more recent ones like Singular Spectrum Analysis (SSA). These tools can be used with HypnosPy's built-in physical activity analysis toolkit to interface the influence of activities in both absolute and relative temporal frameworks. For example, in chronobiology, acrophase refers to a time when a certain biological function is at its periodic, usually daily, maximum. HypnosPy produces not only the physical activity acrophase using both cosinor and SSA, but also the delay between this acrophase and sleep onset and offset. For instance, the figure bellow showcases an example where the software is used in both activity and HR data:
   
-  <p style="text-align:center;"><img src ="docs/Circadian.png" width = "850" class="center" alt="centered image"></p>
+  <p style="text-align:center;"><img src ="docs/Circadian.png" width = "950" class="center" alt="centered image"></p>
 
   
-    * *Personalized health monitoring using research and commercial-grade device data*: HypnosPy facilitates the integration of a diverse range of wearables ranging from research grade tools to commercial, readily-available devices. Through this encompassing support, which will continue to grow over time, HypnosPy aims to enable comparative analysis across the growing number of tools available to both researchers and consumers. 
+   * *Personalized health monitoring using research and commercial-grade device data*: HypnosPy facilitates the integration of a diverse range of wearables ranging from research grade tools to commercial, readily-available devices. Through this encompassing support, which will continue to grow over time, HypnosPy aims to enable comparative analysis across the growing number of tools available to both researchers and consumers. 
     
       For example, here is a subject labelled with HypnosPy for physical activity and sleep:
    
-   <p style="text-align:center;"><img src ="docs/examplesubject.png" width = "850" class="center" alt="centered image"></p>
+   <p style="text-align:center;"><img src ="docs/examplesubject.png" width = "950" class="center" alt="centered image"></p>
 
 
 
