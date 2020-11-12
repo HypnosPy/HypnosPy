@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
+import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta, time
 import calendar
@@ -132,6 +133,9 @@ class Viewer(object):
         if len(cols) == 0:
             raise ValueError("Aborting: Empty list of signals to show.")
 
+        if wearable.data.empty:
+            raise ValueError("Aborting: Dataframe is empty.")
+
         cols.append(wearable.time_col)
         for col in set(other_signals + signal_as_area):
             cols.append(col)
@@ -203,7 +207,9 @@ class Viewer(object):
             if "sleep" in signal_categories:
                 facecolors = ['royalblue', 'green', 'orange']
                 endy = 0
-                addition = (maxy / len(sleep_cols))
+                alpha = 1
+                addition = (maxy / len(sleep_cols)) if len(sleep_cols) > 0 else maxy
+
                 for i, sleep_col in enumerate(sleep_cols):
                     starty = endy
                     endy = endy + addition
@@ -526,3 +532,53 @@ class Viewer(object):
         figure.savefig(figname, dpi=300, transparent=True, bbox_inches='tight')
 
         return figure
+
+
+    def view_ssa(self, num_sub_timeseries):
+        for wearable in self.wearables:
+            Viewer.view_ssa_wearable(wearable, num_sub_timeseries)
+
+
+    @staticmethod
+    def view_ssa_wearable(df, num_sub_timeseries):
+
+        if not df.ssa:
+            raise ValueError("Wearable has no SSA object. Please run CircadianAnalysis.run_SSA() first.")
+
+
+        fig, ax1 = plt.subplots(1, 1, figsize= (15, 7))
+
+
+        # collection of subtimeseries obtained from ssa
+        sub_timeseries = df.ssa['hyp_act_x']['gk'].T
+
+        # sum some of the timeseries to obtain trend of original timeseries
+        y = np.sum(sub_timeseries[:, :num_sub_timeseries], axis=1)
+
+        # draw ssa
+        ax1.plot(df.ssa['hyp_act_x']['df'].index, 
+                 y, 
+                 color='red',
+                 label='hyp_act_x_SSA')
+
+        # draw original timeseries
+        ax1.plot(df.data['hyp_time_col'].values, df.data['hyp_act_x']/5,color='blue',alpha=0.4,label='hyp_act_x')
+        ax1.set_ylim(0,max(df.data['hyp_act_x']/5))
+        ax1.set_ylabel('hyp_act_x (raw values scaled)')
+
+        # draw acrophase
+        for i in range(len(df.ssa['hyp_act_x']['acrophase'])):
+            ax1.axvline(x=df.ssa['hyp_act_x']['acrophase'][i],color='orange')
+
+        ax1.fill_between(df.data['hyp_time_col'],
+                         y1=ax1.get_ylim()[1],
+                         where=df.data['hyp_sleep_period'], 
+                         color='grey', 
+                         alpha=0.2)
+
+        fig.legend()
+        fig.suptitle('Circadian analysis for one wearable - grey spans are sleep windows, yellow vlines are daily acrophases')
+        plt.show()
+
+        return fig
+

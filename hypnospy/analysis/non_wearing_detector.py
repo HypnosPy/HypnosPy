@@ -281,28 +281,31 @@ class NonWearingDetector(object):
         """
             Tasks:
             (1) Mark as invalid epochs in which the activity is smaller than the ``min_activity_threshold``.
-            (2) Mark as invalid the whole day if the number of invalid minutes is bigger than ``max_non_wear_min_per_day``.
-            (3) Mark as invalid days with no sleep period (need to run ``detect_sleep_boundaries`` first)
+            (2) Use ``check_cols`` to invalidate Null elements in these col list.
+            (3) Mark as invalid the whole day if the number of invalid minutes is bigger than ``max_non_wear_min_per_day``.
+            (4) Mark as invalid days with no sleep period (need to run ``detect_sleep_boundaries`` first).
+            (5) Mark as invalid days without diary entry.
 
         """
         for wearable in self.wearables:
             wearable.data[wearable.invalid_col] = False
 
-            # Task 1:
+            # Task 1: Activity smaller than minimal
             wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col].where(
                 wearable.data[wearable.get_activity_col()] >= min_activity_threshold, True)
 
+            # Task 2: Check if value of col is Null
             for col in check_cols:
                 if col not in wearable.data.keys():
                     raise KeyError("Col %s is not available for PID %s" % (col, wearable.get_pid()))
                 wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col].where(
                     ~(wearable.data[col].isnull()), True)
 
-            # Task 2:
+            # Task 3: Check non-wear in day
             epochs_in_minute = wearable.get_epochs_in_min()
             max_non_wear_epochs_per_day = max_non_wear_minutes_per_day * epochs_in_minute
 
-            if wearable.experiment_day_col not in wearable.data.keys():
+            if wearable.get_experiment_day_col() is None:
                 # If it was not configured yet, we start the experiment day from midnight.
                 wearable.change_start_hour_for_experiment_day(0)
 
@@ -318,12 +321,13 @@ class NonWearingDetector(object):
 
             wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col] | invalid_wearing
 
-            # Task 3:
+            # Task 4: Check sleep period
             if check_sleep_period:
                 if sleep_period_col is None:
                     warnings.warn("Need to specify a column to check if sleep period is valid.")
                 self.invalidate_day_if_no_sleep(sleep_period_col)
 
+            # Task 5: Check diary entry
             if check_diary:
                 if wearable.diary is not None:
                     wearable.invalidate_days_without_diary()

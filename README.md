@@ -27,25 +27,59 @@ pip install -U hypnospy
 
 Dependencies include python 3.7 and the following packages:
 
+```
+NumPy,SciPy,Pandas,Matplotlib,Seaborn
+
+```
+
 
 # Usage :bulb:
 Here is a simple example of how you can use HypnosPy in your research:
 ```python
-from hypnospy import PreProcessing, TimeSeriesProcessing, SleepWakeAnalysis, Wearable
+from hypnospy import Wearable
+from hypnospy.data import MESAPreProcessing
+from hypnospy.analysis import SleepWakeAnalysis, Viewer, NonWearingDetector
 
-# Preprocessing...
-pp = PreProcessing()
-pp.load_file("dummy.dta", "dw")
+# MESAPreProcessing is a specialized class to preprocess csv files from Philips Actiwatch Spectrum devices used in the MESA Sleep experiment
+# MESA Sleep dataset can be found here: https://sleepdata.org/datasets/mesa/
+preprocessed = MESAPreProcessing("../data/examples_mesa/mesa-sample.csv")
 
-#If trixial→ collapse ENMO to (15’’,30’’)
-#Determine sampling rate (15’’, 30’’, 1’) → if not, ERROR (‘Device sampling rate not supported’)
-pp.export_hypnospy("dummy.hpy") # -> [ typeOfDevice (triaxial, hr, counts), typeOfStudy(full, night_only), location(dw,ndw,hip,chest,bw,bw_ch,bw_hp,hp_ch,all), additional(diary,anno,PSGlabel), df={ _pid, _time, _acc, _hr?, "PSGLabel"} ]
+# Wearable is the main object in HypnosPy.
+w = Wearable(preprocessed)
+
+# In HypnosPy, we have the concept of ``experiment day'' which by default starts at midnight (00 hours).
+# We can easily change it to any other time we wish. For example, lets run this script with experiment days
+# that start at 3pm (15h)
+w.change_start_hour_for_experiment_day(15)
+
+# Sleep Wake Analysis module
+sw = SleepWakeAnalysis(w)
+sw.run_sleep_algorithm("ScrippsClinic", inplace=True) # runs alg and creates new col named 'ScrippsClinic'
+sw.run_sleep_algorithm("Cole-Kripke", inplace=True)   # runs alg and creates new col named 'Cole-Kripke'
+
+# View results
+v = Viewer(w)
+v.view_signals(signal_categories=["activity"], signal_as_area=["ScrippsClinic", "Cole-Kripke", "Oakley"],
+               colors={"area": ["green", "red", "blue"]}, alphas={"area": 0.6})
+
+# Easily remove non-wearing epochs/days.
+nwd = NonWearingDetector(w)
+nwd.detect_non_wear(strategy="choi")
+nwd.check_valid_days(max_non_wear_minutes_per_day=180)
+nwd.drop_invalid_days()
 
 ```
+Some of the amazing features of HypnosPy are showcased [here](https://github.com/ippozuelo/HypnosPy/blob/master/mdpi_sensors/).
+Try it out! :test_tube:
+
 
 # Under the hood :mag_right:
 
-Here we'll iput a breakdown of the software architecture
+**HypnosPy** is a device-agnostic, open-source Python software library for the analysis and visualization of circadian rhythms and sleep using wearable sensors. HypnosPy centralizes most well-established algorithms for the analysis of sleep and circadian rhythms and provides ease of use while supporting a wide array of devices. Augmenting the work introduced by previous packages, HypnosPy allows for the analysis of various signal inputs at different sampling rates (i.e., acceleration, actigraphy and HR in its current release) while also providing with a comprehensive set of tools that allows users to chose how to analyze these signals.
+
+Hypnospy is implemented in Python with standard data science dependencies and uses the object-oriented paradigm. This makes Hypnospy an open-source framework that is both easy to use and to extend (please **join us** on this mission! :rocket:). Data inputs in HypnosPy rely only on the module called **PreProcessor** and its descendants. **PreProcessor** is used to translate the raw data captured by a wearable device (i.e., what is the input data format? A .csv file? What are the columns, if any, for the activity count or heart rate?) to Hypnospy's **Wearable** module. We already provide a set of pre-defined preprocessors for different open collections commonly used in research, such as the Multi-Ethnic Study of Atherosclerosis (MESA) and the Hispanic Community Health Study (HCHS) collections from http://www.sleepdata.org, which have been increasingly used in machine learning and epidemiological studies. Nevertheless, users can easily specific their own preprocessing module using or extending the **PrePreprocessor** module.
+
+While all data analysis in HypnosPy can be performed on one single wearable, Hypnospy provides a layer of abstraction for experiments containing multiple wearables, namely, the **Experiment** module. All further data analysis can be performed on a single wearable or on a set of them (using the **Experimen** module). With Hypnospy, it is straightforward to perform complex data analysis, such as **sleep inferences, circadian analysis or non-wear detection, among many other weearable related functionalities**. At the core of HypnosPy is the modularity and choice of algorithms for these different purposes. A holistic overview of the software architecture is provided in the Figure bellow:
 
 <p style="text-align:center;"><img src ="docs/SoftwareArchitecture.png" width = "550" alt="centered image"></p>
 
@@ -57,6 +91,8 @@ Circadian
 
 
 HR algorithm (update)
+<p style="text-align:center;"><img src ="docs/HRdescriptioncropped.png" width = "650" alt="centered image"></p>
+
 We found that HR quantiles offered a personalized method to direct our sleeping window search as observed in the figure bellow:
 <p style="text-align:center;"><img src ="docs/HRCDF.png" width = "550" alt="centered image"></p>
 
@@ -85,15 +121,13 @@ This project is released under a BSD 2-Clause Licence (see LICENCE file)
 ### Contributions :man_technologist: :woman_technologist:
 * **João Palotti (MIT)** @joaopalotti *main developer*
 * **Marius Posa (Cambridge)** @marius-posa *main developer*
+* ** Abdulaziz Al-Homaid (QCRI)** @abalhomaid *developer*
 * **Ignacio Perez-Pozuelo (Cambridge)** @ippozuelo *main developer*
 # Research that uses HypnosPy :rocket:
 
 * Perez-Pozuelo, I., Posa, M., Spathis, D., Westgate, K., Wareham, N., Mascolo, C., ... & Palotti, J. (2020). Detecting sleep in free-living conditions without sleep-diaries: a device-agnostic, wearable heart rate sensing approach. medRxiv.
 
-* 
-
 # Acknowledgements :pray:
 
-* 
+* We thank the MRC Epidemiology Unit at Cambridge for supporting some of the research associated to this work as well as QCRI and MIT.
 
-* 
