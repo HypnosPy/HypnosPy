@@ -133,7 +133,7 @@ This project is released under a BSD 2-Clause Licence (see LICENCE file)
 * **Ignacio Perez-Pozuelo (Cambridge)** @ippozuelo *main developer*
 # Research that uses HypnosPy :rocket:
 
-* Perez-Pozuelo, I., Posa, M., Spathis, D., Westgate, K., Wareham, N., Mascolo, C., ... & Palotti, J. (2020). Detecting sleep in free-living conditions without sleep-diaries: a device-agnostic, wearable heart rate sensing approach. medRxiv.
+* Perez-Pozuelo, I., Posa, M., Spathis, D., Westgate, K., Wareham, N., Mascolo, C., ... & Palotti, J. (2020). [Detecting sleep in free-living conditions without sleep-diaries: a device-agnostic, wearable heart rate sensing approach](https://www.medrxiv.org/content/10.1101/2020.09.05.20188367v1). medRxiv.
 
 # Acknowledgements :pray:
 
