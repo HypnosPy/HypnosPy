@@ -122,11 +122,14 @@ class PhysicalActivity(object):
                     wearable.get_activity_col()]
 
             pid = wearable.get_pid()
-            lpa = act_hour.apply(lambda x: (x <= self.mvpa_value).sum())
+            # lpa = act_hour.apply(lambda x: (x <= self.mvpa_value).sum())
+            lpa = act_hour.apply(lambda x: (x <= self.cutoffs[0]).sum())
             lpa.name = "LPA"
-            mvpa = act_hour.apply(lambda x: x.between(self.mvpa_value, self.vpa_value).sum())
+            # mvpa = act_hour.apply(lambda x: x.between(self.mvpa_value, self.vpa_value).sum())
+            mvpa = act_hour.apply(lambda x: x.between(self.cutoffs[0], self.cutoffs[1]).sum())
             mvpa.name = "MVPA"
-            vpa = act_hour.apply(lambda x: (x >= self.vpa_value).sum())
+            # vpa = act_hour.apply(lambda x: (x >= self.vpa_value).sum())
+            vpa = act_hour.apply(lambda x: (x >= self.cutoffs[1]).sum())
             vpa.name = "VPA"
 
             concatenated = pd.concat([lpa, mvpa, vpa], axis=1)
