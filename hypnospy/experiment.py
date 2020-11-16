@@ -16,6 +16,11 @@ class Experiment(object):
     def add_wearable(self, w):
         self.wearables[w.get_pid()] = w
 
+    def remove_wearable(self, w):
+        if w in self.wearables:
+            del self.wearables[w]
+
+
     def configure_experiment(self, datapath: str, device_location: str, cols_for_activity, col_for_mets: str = None,
                              is_emno: bool = False, is_act_count: bool = False, col_for_datetime: str = "time",
                              start_of_week: int = -1, strftime: str = None, col_for_pid: str = None, pid: int = -1,
@@ -82,3 +87,7 @@ class Experiment(object):
     def change_start_hour_for_experiment_day(self, hour):
         for wearable in self.get_all_wearables():
             wearable.change_start_hour_for_experiment_day(hour)
+
+    def fill_no_activity(self, value):
+        for wearable in self.wearables:
+            wearable.fill_no_activity(value)
