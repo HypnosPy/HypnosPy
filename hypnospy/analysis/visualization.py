@@ -8,7 +8,7 @@ import seaborn as sns
 
 from hypnospy import Wearable
 from hypnospy import Experiment
-
+import warnings
 
 class Viewer(object):
 
@@ -134,7 +134,8 @@ class Viewer(object):
             raise ValueError("Aborting: Empty list of signals to show.")
 
         if wearable.data.empty:
-            raise ValueError("Aborting: Dataframe is empty.")
+            warnings.warn("Aborting: Dataframe for PID %s is empty." % wearable.get_pid())
+            return
 
         cols.append(wearable.time_col)
         for col in set(other_signals + signal_as_area):
