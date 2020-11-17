@@ -73,8 +73,9 @@ class Validator(object):
         for wearable in self.wearables.values():
             if wearing_col not in wearable.data.keys():
                 raise KeyError(
-                    "No wearing detection column found for wearable (pid=%s). Did you forget to run ``NonWearingDetector.detect_non_wear(...)``?" % (
-                        wearable.get_pid()))
+                    "Column %s not found for wearable (pid=%s). Did you forget to run ``NonWearingDetector.detect_non_wear(...)``?" % (
+                        wearing_col, wearable.get_pid()))
+
             wearable.data.loc[wearable.data[wearing_col] == False, self.invalid_col] |= InvCode.FLAG_EPOCH_NON_WEARING
 
     def flag_day_sleep_length_less_than(self, sleep_period_col: str, min_sleep_in_minutes: int):
@@ -115,8 +116,9 @@ class Validator(object):
             epochs_in_minute = wearable.get_epochs_in_min()
             max_non_wear_epochs_per_day = max_non_wear_minutes_per_day * epochs_in_minute
 
-            wearable.data["_tmp_flag_"] = self._flag_list_OR(wearable, [InvCode.FLAG_EPOCH_PA, InvCode.FLAG_EPOCH_NON_WEARING,
-                                                                        InvCode.FLAG_EPOCH_NULL_VALUE])
+            wearable.data["_tmp_flag_"] = self._flag_list_OR(wearable,
+                                                             [InvCode.FLAG_EPOCH_PA, InvCode.FLAG_EPOCH_NON_WEARING,
+                                                              InvCode.FLAG_EPOCH_NULL_VALUE])
 
             invalid_wearing = wearable.data.groupby([wearable.experiment_day_col])["_tmp_flag_"].transform(
                 lambda x: x.sum()) >= max_non_wear_epochs_per_day
@@ -129,7 +131,7 @@ class Validator(object):
             epochs_in_minute = wearable.get_epochs_in_min()
             valid_epochs_per_day = valid_minutes_per_day * epochs_in_minute
 
-            wearable.data["_tmp_flag_"] = self._flag_list_OR(wearable, [InvCode.FLAG_OKAY])
+            wearable.data["_tmp_flag_"] = wearable.data[self.invalid_col] == InvCode.FLAG_OKAY
 
             invalid_epochs = wearable.data.groupby([wearable.experiment_day_col])["_tmp_flag_"].transform(
                 lambda x: x.sum()) <= valid_epochs_per_day
@@ -145,7 +147,8 @@ class Validator(object):
             # Flag them as invalid
             if len(invalid_days):
                 wearable.data.loc[
-                    wearable.data[wearable.get_experiment_day_col()].isin(invalid_days), self.invalid_col] |= InvCode.FLAG_DAY_WITHOUT_DIARY
+                    wearable.data[wearable.get_experiment_day_col()].isin(
+                        invalid_days), self.invalid_col] |= InvCode.FLAG_DAY_WITHOUT_DIARY
 
     def remove_flagged_days(self):
         """
@@ -201,12 +204,15 @@ class Validator(object):
 
         :return: None
         """
+        mark_for_removal = []
         for wearable in self.wearables.values():
             valid_days = self.get_valid_days(wearable.get_pid())[wearable.get_pid()]
             if len(valid_days) == 0:
-                print("Removing wearable %d." % (wearable.get_pid()))
-                self.remove_wearable(wearable.get_pid())
-            wearable.data = wearable.data[wearable.data[wearable.get_experiment_day_col()].isin(valid_days)].copy()
+                mark_for_removal.append(wearable.get_pid())
+
+        for pid in mark_for_removal:
+            print("Removing wearable %s." % pid)
+            self.remove_wearable(pid)
 
     def flag_day_if_not_enough_consecutive_days(self, min_number_days):
 
