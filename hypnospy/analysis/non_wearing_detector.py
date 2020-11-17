@@ -3,6 +3,7 @@ from hypnospy import Experiment
 import numpy as np
 import warnings
 
+
 class NonWearingDetector(object):
 
     def __init__(self, input: {Wearable, Experiment}):
@@ -14,12 +15,9 @@ class NonWearingDetector(object):
         elif type(input) is Experiment:
             self.wearables = input.get_all_wearables()
 
-        # Those are the new cols that this module is going to generate
-        self.wearing_col = []  # list of wearing_col after running strategies detect
-
     def detect_non_wear(self,
                         strategy,
-                        wearing_col_initial="hyp_wearing_",
+                        wearing_col="hyp_wearing",
                         activity_threshold=0,
                         min_period_len_minutes=90,
                         spike_tolerance=2,
@@ -27,71 +25,63 @@ class NonWearingDetector(object):
                         window_spike_tolerance=0,
                         use_vector_magnitude=False,
                         ):
-        # if it's one strategy, put it in a list
-        if(isinstance(strategy, str)):
-            strategy = [strategy]
-        for wearable in self.wearables:
-            for s in strategy:
-                if s in ["choi", "choi2011", "choi11"]:
-                    if wearable.has_no_activity():
-                        # TODO: another way to deal with it is marking those as invalid right away
-                        warnings.warn(
-                            "It seems pid %s has removed their device. Filling no activity with -0.0001." % wearable.get_pid())
-                        wearable.fill_no_activity(-0.0001)
 
-                    self.__choi_2011(wearable, wearing_col_initial + s, activity_threshold, min_period_len_minutes, spike_tolerance,
-                                     min_window_len_minutes, window_spike_tolerance, use_vector_magnitude)
-                    if(wearing_col_initial + s not in self.wearing_col):
-                        self.wearing_col.append(wearing_col_initial + s)
-                elif strategy in ["none"]:
-                    # wearable.data["%s" % self.wearing_col] = True
-                    wearable.data["%s" % wearing_col_initial + s] = True
-                    if(wearing_col_initial + s not in self.wearing_col):
-                        self.wearing_col.append(wearing_col_initial + s)
-                    print("Wearable now has a %s col for the non wear flag" % wearing_col_initial + s)
-                else:
-                    raise ValueError("Strategy %s not implemented yet." % s)    
+        for wearable in self.wearables:
+
+            if strategy in ["choi", "choi2011", "choi11"]:
+                if wearable.has_no_activity():
+                    # TODO: another way to deal with it is asking the user to fill the no activity elsewhere
+                    warnings.warn(
+                        "It seems pid %s has removed their device. Filling no activity with -0.0001." % wearable.get_pid())
+                    wearable.fill_no_activity(-0.0001)
+
+                wearable.data[wearing_col] = self._choi_2011(wearable, activity_threshold, min_period_len_minutes,
+                                                             spike_tolerance, min_window_len_minutes,
+                                                             window_spike_tolerance, use_vector_magnitude)
+
+            # TODO: Implement Troiano strategy
+            else:
+                raise ValueError("Unknown strategy %s." % strategy)
 
     # func input must accept two lists of equal length x1, and x2. 
     # if more than 2 strategies are to be combined, func will first
     # combine the first two strategies, then will chain the result on the
     # remaining strategies.
-    def combine_strategies(self, strategies, output_col="combined_strategy", func=np.logical_and):
-        if(len(strategies) < 2):
-            raise ValueError("strategies need to be 2 or more to combine them.")
-        if(not self.wearing_col):
-            raise KeyError(
-                "No wearing detection column found for wearables. Did you forget to run ``detect_non_wear(...)``?"
-            )
-        for strategy in strategies:
-            if(strategy not in self.wearing_col):
-                raise ValueError("Strategy %s not ran using ``detect_non_wear(...)``", strategy)
-        
+    def combine_non_wearing_strategies(self, strategies, output_col="combined_strategy", func=np.logical_and):
+
+        if len(strategies) < 2:
+            raise ValueError("Strategies need to be 2 or more to combine them.")
+
         for wearable in self.wearables:
-            l = wearable.data[strategies[:2]] # get the strategies from the dataframe
-            l = l.values.T # convert dataframe view to a list of strategies (each list contains)
+
+            for strategy in strategies:
+                if strategy not in wearable.data.keys():
+                    raise KeyError(
+                        "No wearing detection column found for wearables. Did you forget to run ``detect_non_wear(...)``?"
+                    )
+
+            l = wearable.data[strategies[:2]]  # get the strategies from the dataframe
+            l = l.values.T  # convert dataframe view to a list of strategies (each list contains)
             combined_output = func(*l)
-            for i in range(2, len(strategies)): # if the user wants to combine more than 2 strategies, func will chain among the columns
-                combined_output = func(combined_output, wearable.data[strategies[i]].values)    
+
+            # if the user wants to combine more than 2 strategies, func will chain among the columns
+            for i in range(2, len(strategies)):
+                combined_output = func(combined_output, wearable.data[strategies[i]].values)
 
             wearable.data[output_col] = combined_output
 
-
-        print("Wearables now have a %s col for the non wear flag" % output_col)
-        if(output_col not in self.wearing_col):
-            self.wearing_col.append(output_col)
+        print("Wearables now have a '%s' col for the non wear flag" % output_col)
 
 
-    def __choi_2011(self,
-                    wearable,
-                    wearing_col_name,
-                    activity_threshold=0,
-                    min_period_len_minutes=90,
-                    spike_tolerance=2,
-                    min_window_len_minutes=30,
-                    window_spike_tolerance=0,
-                    use_vector_magnitude=False,
-                    ):
+    @staticmethod
+    def _choi_2011(wearable,
+                   activity_threshold=0,
+                   min_period_len_minutes=90,
+                   spike_tolerance=2,
+                   min_window_len_minutes=30,
+                   window_spike_tolerance=0,
+                   use_vector_magnitude=False,
+                   ):
         """
         Current implementation is largely inspired by shaheen-syed:
         Originally from https://github.com/shaheen-syed/ActiGraph-ActiWave-Analysis/blob/master/algorithms/non_wear_time/choi_2011.py
@@ -158,7 +148,7 @@ class NonWearingDetector(object):
             # calculate vectore
             # TODO: missing implementation
             pass
-            #act_data = calculate_vector_magnitude(act_data, minus_one=False, round_negative_to_zero=False)
+            # act_data = calculate_vector_magnitude(act_data, minus_one=False, round_negative_to_zero=False)
         # else:
         # if not set to true, then use axis 1, which is the X-axis, located at index 0
         # act_data = act_data[:,0]
@@ -274,8 +264,5 @@ class NonWearingDetector(object):
             non_wear_vector[row[0]:row[1]] = 0
 
         non_wear_vector = non_wear_vector.reshape(-1)
-
-        print("Wearable now has a %s col for the non wear flag" % wearing_col_name)
-        # wearable.data["%s" % self.wearing_col] = non_wear_vector
-        wearable.data["%s" % wearing_col_name] = True
-
+        return non_wear_vector
+        
