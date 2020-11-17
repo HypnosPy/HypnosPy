@@ -86,3 +86,7 @@ class Experiment(object):
     def fill_no_activity(self, value):
         for wearable in self.wearables:
             wearable.fill_no_activity(value)
+
+    def stats(self):
+        # TODO: implement statistics about the number of wearables, number of (valid/invalid) days of each wearable
+        pass

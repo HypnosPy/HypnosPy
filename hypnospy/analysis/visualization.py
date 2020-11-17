@@ -21,7 +21,6 @@ class Viewer(object):
         elif type(input) is Experiment:
             self.wearables = input.get_all_wearables()
 
-
         sns.set_context("talk", font_scale=1.3, rc={"axes.linewidth": 2, 'image.cmap': 'plasma', })
         plt.rcParams['font.size'] = 18
         plt.rcParams['image.cmap'] = 'plasma'
@@ -303,6 +302,7 @@ class Viewer(object):
 
         fig.legend(handles, labels, loc='lower center', ncol=len(cols), fontsize=14, shadow=True)
         fig.savefig('%s_signals.pdf' % (wearable.get_pid()), dpi=300, transparent=True, bbox_inches='tight')
+        plt.close()
 
     @staticmethod
     def __is_default_zoom(zoom_start, zoom_end):
@@ -429,6 +429,7 @@ class Viewer(object):
 
             #fig.legend(loc='lower center', ncol=nplots, fontsize=14, shadow=True)
             fig.savefig('%s_signals.pdf' % (wearable.get_pid()), dpi=300, transparent=True, bbox_inches='tight')
+            plt.close()
 
 
     @staticmethod

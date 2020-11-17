@@ -169,7 +169,7 @@ class Wearable(object):
                              "(assuming you previously added a diary.")
         if based_on_diary:
             if self.diary is None:
-                raise ValueError("Diary not found for PID %s. Add a diary with ``add_diary``." % (self.get_pid()))
+                raise ValueError("Diary not found for PID %s. Add a diary with ``Wearable.add_diary``." % (self.get_pid()))
             return self.data.groupby(self.experiment_day_col)[[self.diary_sleep]].apply(
                 lambda x: x.sum() / self.get_epochs_in_min())
 
