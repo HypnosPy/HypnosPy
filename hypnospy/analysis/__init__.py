@@ -5,3 +5,4 @@ from .phyisical_activity import PhysicalActivity
 from .sleep_metrics import SleepMetrics
 from .visualization import Viewer
 from .sleep_boundary_detector import SleepBoudaryDetector
+from .validator import Validator

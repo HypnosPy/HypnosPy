@@ -20,7 +20,6 @@ class Experiment(object):
         if w in self.wearables:
             del self.wearables[w]
 
-
     def configure_experiment(self, datapath: str, device_location: str, cols_for_activity, col_for_mets: str = None,
                              is_emno: bool = False, is_act_count: bool = False, col_for_datetime: str = "time",
                              start_of_week: int = -1, strftime: str = None, col_for_pid: str = None, pid: int = -1,
@@ -79,10 +78,6 @@ class Experiment(object):
     def set_freq_in_secs(self, freq: int):
         for wearable in self.get_all_wearables():
             wearable.set_frequency_in_secs(freq)
-
-    def invalidate_days_without_diary(self):
-        for wearable in self.get_all_wearables():
-            wearable.invalidate_days_without_diary()
 
     def change_start_hour_for_experiment_day(self, hour):
         for wearable in self.get_all_wearables():

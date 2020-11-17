@@ -1,21 +1,11 @@
 from hypnospy import Wearable
 from hypnospy import Experiment
-from hypnospy import misc
 import numpy as np
-import pandas as pd
-from datetime import timedelta
 import warnings
 
 class NonWearingDetector(object):
 
     def __init__(self, input: {Wearable, Experiment}):
-        """ Here we need to load the data and determine:
-            potentially by fetching from class wearable
-            (1) what type of file is it
-            (2) is it multimodal
-            (3) length/type- night only/ full
-            (4) sampling rate
-            """
 
         if input is None:
             raise ValueError("Invalid value for input.")
@@ -25,34 +15,7 @@ class NonWearingDetector(object):
             self.wearables = input.get_all_wearables()
 
         # Those are the new cols that this module is going to generate
-        # self.wearing_col = "hyp_wearing"  # after running detect
         self.wearing_col = []  # list of wearing_col after running strategies detect
-        self.annotation_col = "hyp_annotation"  # 1 for sleep, 0 for awake
-
-        self.sleep_period_col = "hyp_sleep_period"  # after running detect_sleep_boundaries
-
-
-    def invalidate_day_if_no_sleep(self, sleep_period_col):
-
-        for wearable in self.wearables:
-            if sleep_period_col not in wearable.data.keys():
-                warnings.warn("%s is not a valid entry in the data. "
-                              "Maybe you need to run ``detect_sleep_boundaries(...)`` first. Aborting...." % (
-                                  sleep_period_col))
-                return
-            to_invalidate = wearable.data[sleep_period_col] == -1
-            if to_invalidate.sum() > 0:
-                print("Invalidating %d rows for pid %s." % (to_invalidate.sum(), wearable.get_pid()))
-            wearable.data.loc[to_invalidate, wearable.invalid_col] = True
-
-    def invalidate_day_if_sleep_smaller_than_X_hours(self, X):
-        # TODO: missing
-        # self.wearable.data.loc[self.wearable.data[self.sleep_period_col] == -1, "hyp_invalid"] = True
-        warnings.warn("Missing implementation.")
-
-    def fill_no_activity(self, value):
-        for wearable in self.wearables:
-            wearable.fill_no_activity(value)
 
     def detect_non_wear(self,
                         strategy,
@@ -316,152 +279,3 @@ class NonWearingDetector(object):
         # wearable.data["%s" % self.wearing_col] = non_wear_vector
         wearable.data["%s" % wearing_col_name] = True
 
-    def check_valid_days(self, min_activity_threshold: int = 0, max_non_wear_minutes_per_day: int = 180,
-                         check_cols: list = [],
-                         check_sleep_period: bool = False, sleep_period_col: str = None, check_diary: bool = False):
-        """
-            Tasks:
-            (1) Mark as invalid epochs in which the activity is smaller than the ``min_activity_threshold``.
-            (2) Use ``check_cols`` to invalidate Null elements in these col list.
-            (3) Mark as invalid the whole day if the number of invalid minutes is bigger than ``max_non_wear_min_per_day``.
-            (4) Mark as invalid days with no sleep period (need to run ``detect_sleep_boundaries`` first).
-            (5) Mark as invalid days without diary entry.
-
-        """
-
-        if(len(self.wearing_col) > 1):
-            warnings.warn("check_valid_days will take account of all strategies ran in ``detect_non_wear(...)``. \
-                If a day has invalid_wearing minutes less than max_non_wear_epochs_per_day from one strategy, \
-                then the day is removed.")
-
-        for wearable in self.wearables:
-            wearable.data[wearable.invalid_col] = False
-
-            # Task 1: Activity smaller than minimal
-            wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col].where(
-                wearable.data[wearable.get_activity_col()] >= min_activity_threshold, True)
-
-            # Task 2: Check if value of col is Null
-            for col in check_cols:
-                if col not in wearable.data.keys():
-                    raise KeyError("Col %s is not available for PID %s" % (col, wearable.get_pid()))
-                wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col].where(
-                    ~(wearable.data[col].isnull()), True)
-
-            # Task 3: Check non-wear in day
-            epochs_in_minute = wearable.get_epochs_in_min()
-            max_non_wear_epochs_per_day = max_non_wear_minutes_per_day * epochs_in_minute
-
-            if wearable.get_experiment_day_col() is None:
-                # If it was not configured yet, we start the experiment day from midnight.
-                wearable.change_start_hour_for_experiment_day(0)
-
-            # if self.wearing_col not in wearable.data.keys():
-            if not self.wearing_col:
-                raise KeyError(
-                    # "Col %s not found in wearable (pid=%s). Did you forget to run ``detect_non_wear(...)``?" % (
-                    #    self.wearing_col, wearable.get_pid()))
-                    "No wearing detection column found for wearable (pid=%s). Did you forget to run ``detect_non_wear(...)``?"  % (
-                        wearable.get_pid()))
-
-            epochs_in_a_day = (1440 * epochs_in_minute)
-
-            for wearing_col in self.wearing_col:
-                invalid_wearing = wearable.data.groupby([wearable.experiment_day_col])[
-                                                          wearing_col].transform(
-                    lambda x: x.sum()) <= (epochs_in_a_day - max_non_wear_epochs_per_day)
-
-                wearable.data[wearable.invalid_col] = wearable.data[wearable.invalid_col] | invalid_wearing
-
-            # Task 4: Check sleep period
-            if check_sleep_period:
-                if sleep_period_col is None:
-                    warnings.warn("Need to specify a column to check if sleep period is valid.")
-                self.invalidate_day_if_no_sleep(sleep_period_col)
-
-            # Task 5: Check diary entry
-            if check_diary:
-                if wearable.diary is not None:
-                    wearable.invalidate_days_without_diary()
-                else:
-                    warnings.warn("No diary for PID %s. All days will become invalid." % (wearable.get_pid()))
-                    wearable.invalidate_all()
-
-    def check_consecutive_days(self, min_number_days):
-        """
-        In case the number of consecutive days is smaller than ``min_number_days``, we mark all as invalid.
-        We also try to find any subset that has at least ``min_number_days``.
-
-        :param min_number_days:
-        :return:
-        """
-
-        # TODO: Found a problem here. If the days are 30, 31, 1, 2, 3 the sorted(days) below fails.
-        #  A work around is separating the concept of calendar_day and experiment_day
-
-        for wearable in self.wearables:
-            days = wearable.get_valid_days()
-            if len(days) == 0:
-                return
-
-            s = sorted(days)
-
-            consecutive = 1
-            last_value = s[0]
-            saved_so_far = [last_value]
-            okay = []
-
-            for actual in s[1:]:
-                if actual == last_value + 1:
-                    consecutive += 1
-                    last_value = actual
-                    saved_so_far.append(last_value)
-
-                else:
-                    # Ops! We found a gap in the sequence.
-                    # First we check if we already have enough days:
-                    if len(saved_so_far) >= min_number_days:
-                        okay.extend(saved_so_far)  # Cool! We have enough days.
-
-                    else:  # Otherwise we start over
-                        consecutive = 1
-                        last_value = actual
-                        saved_so_far = [last_value]
-
-            if len(saved_so_far) >= min_number_days:
-                okay.extend(saved_so_far)
-
-            # In okay we have all days that we can keep.
-            new_invalid = set(days) - set(okay)
-            if new_invalid:
-                print("Marking the following days as invalid for pid %s: %s" % (
-                    wearable.get_pid(), ','.join(map(str, new_invalid))))
-            wearable.data.loc[wearable.data[wearable.experiment_day_col].isin(new_invalid), wearable.invalid_col] = True
-
-    def get_valid_days(self):
-        return_dict = {}
-        for wearable in self.wearables:
-            pid = wearable.get_pid()
-            days = wearable.get_valid_days()
-            return_dict[pid] = days
-        return return_dict
-
-    def get_invalid_days(self):
-        return_dict = {}
-        for wearable in self.wearables:
-            pid = wearable.get_pid()
-            days = wearable.get_invalid_days()
-            if len(days) > 0:
-                return_dict[pid] = days
-        return return_dict
-
-    def drop_invalid_days(self):
-        """
-        Removes from the wearable dataframe all days that are marked as invalid.
-
-        :param inplace: if ``True`` removes the invalid days from dataframe silently (Default: ``True``)
-        :return: return the list remaining dataframe in case inplace is False
-        """
-
-        for wearable in self.wearables:
-            wearable.drop_invalid_days()

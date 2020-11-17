@@ -15,7 +15,6 @@ class Wearable(object):
         self.freq_in_secs = None
         self.hour_start_experiment = None
         self.experiment_day_col = "hyp_exp_day"
-        self.invalid_col = "hyp_invalid"
 
         # Other fields
         self.mets_col = None
@@ -141,35 +140,6 @@ class Wearable(object):
     def get_hr_col(self):
         return self.hr_col
 
-    def get_invalid_days(self):
-        """
-
-        :return: list of invalid days in the dataset.
-        """
-
-        if self.experiment_day_col not in self.data.keys():
-            # If it was not configured yet, we start the experiment day from midnight.
-            self.change_start_hour_for_experiment_day(0)
-
-        if self.invalid_col not in self.data.keys():
-            self.data[self.invalid_col] = False
-
-        grp_days = self.data.groupby([self.experiment_day_col])[self.invalid_col].any().reset_index()
-        return set(grp_days[grp_days[self.invalid_col] == True][self.experiment_day_col].unique())
-
-    def get_valid_days(self):
-        """
-
-        :return: list of valid days in the dataset.
-        """
-        invalid_days = self.get_invalid_days()
-        all_days = set(self.data[self.experiment_day_col].unique())
-        return all_days - invalid_days
-
-    def drop_invalid_days(self):
-        valid_days = self.get_valid_days()
-        self.data = self.data[self.data[self.experiment_day_col].isin(valid_days)].copy()
-
     def add_diary(self, d: Diary):
         d.data = d.data[d.data["pid"] == self.get_pid()]
         self.diary = d
@@ -184,16 +154,6 @@ class Wearable(object):
                 self.data.loc[(self.data[self.time_col] >= row["sleep_onset"]) & (
                     self.data[self.time_col] <= row["sleep_offset"]), self.diary_sleep] = True
 
-    def invalidate_days_without_diary(self):
-        tst = self.get_total_sleep_time_per_day(based_on_diary=True)
-        # Gets the experiment days with 0 total sleep time (i.e., no diary entry)
-        invalid_days = set(tst[tst["hyp_diary_sleep"] == 0].index)
-        # Flag them as invalid
-        if len(invalid_days):
-            self.data.loc[self.data[self.experiment_day_col].isin(invalid_days), self.invalid_col] = True
-
-    def invalidate_all(self):
-        self.data[self.invalid_col] = True
 
     def get_total_sleep_time_per_day(self, sleep_col: str = None, based_on_diary: bool = False):
         """
