@@ -27,9 +27,12 @@ class Validator(object):
 
     def __init__(self, input: {Wearable, Experiment}):
         """
-        Two flagging levels: epoch and day.
+        This module works on two levels: epochs and days.
+        Methods started with ``flag_epoch_*`` will analyse epoch by epoch of the dataframe to decide whether the epoch should be marked as invalid or not.
+        Methods started with ``flag_day_*`` will do the same at day level.
 
-        :param input:
+        If a day is flagged for removal, one can easily get rid of it with the method ``remove_flagged_days``.
+
         """
         self.wearables = {}
 
@@ -57,6 +60,12 @@ class Validator(object):
                                   wearable.get_activity_col()] < min_activity_threshold, self.invalid_col] |= InvCode.FLAG_EPOCH_PA
 
     def flag_epoch_null_cols(self, col_list: list):
+        """
+        For each on of the columns in ``col_list``, this method marks as invalid (InvCode.FLAG_EPOCH_NULL_VALUE) if the value for an epoch is None/Null.
+
+        :param col_list: List of columns to check for Null/None values.
+        :return: None
+        """
 
         for wearable in self.wearables.values():
             for col in col_list:
@@ -67,9 +76,10 @@ class Validator(object):
 
     def flag_epoch_nonwearing(self, wearing_col: str):
         """
+        Marks as invalid (InvCode.FLAG_EPOCH_NON_WEARING) if epoch is considered non wearing.
 
-        :param wearing_col:
-        :return:
+        :param wearing_col: Column that was used by the NonWearingDetector Module.
+        :return: None
         """
         for wearable in self.wearables.values():
             if wearing_col not in wearable.data.keys():
@@ -81,11 +91,12 @@ class Validator(object):
 
     def flag_day_sleep_length_less_than(self, sleep_period_col: str, min_sleep_in_minutes: int):
         """
-        Marks as invalid (InvCode.FLAG_SLEEP) the whole day if the number of slept minutes is smaller than ``min_sleep_in_minutes``.
+        Marks as invalid (InvCode.FLAG_SHORT_SLEEP) the whole day if the number of slept minutes is smaller than ``min_sleep_in_minutes``.
+        This analysis is made based on the annotations of the ``sleep_period_col``.
 
-        :param sleep_period_col:
-        :param min_sleep_in_minutes:
-        :return:
+        :param sleep_period_col: Binary sleep column containing: for each epoch, 1 is used for sleep and 0 for awake.
+        :param min_sleep_in_minutes: Minimum required number of slept minutes per night.
+        :return: None
         """
 
         for wearable in self.wearables.values():
@@ -131,6 +142,13 @@ class Validator(object):
                         days_with_problem), self.invalid_col] |= InvCode.FLAG_DAY_LONG_SLEEP
 
     def _flag_list_OR(self, wearable: Wearable, list_of_flags: list):
+        """
+        Internal method to evaluate if an InvCode was used or not.
+
+        :param wearable: Wearable device
+        :param list_of_flags: list of InvCode flags.
+        :return: A pandas Series object with True if any of the InvCode were used in a given epoch.
+        """
 
         result = wearable.data[self.invalid_col].apply(lambda x: list_of_flags[0] in InvCode.check_flag(x))
         for flag in list_of_flags[1:]:
@@ -138,6 +156,12 @@ class Validator(object):
         return result
 
     def flag_day_max_nonwearing(self, max_non_wear_minutes_per_day: int):
+        """
+        Marks as invalid the whole day (InvCode.FLAG_DAY_NON_WEARING) if non wearing time is greater than ``max_non_wear_minutes_per_day``.
+
+        :param max_non_wear_minutes_per_day: Maximum tolerance for non wearing time per day (in minutes).
+        :return: None
+        """
 
         for wearable in self.wearables.values():
             epochs_in_minute = wearable.get_epochs_in_min()
@@ -153,6 +177,12 @@ class Validator(object):
             del wearable.data["_tmp_flag_"]
 
     def flag_day_if_valid_epochs_smaller_than(self, valid_minutes_per_day: int):
+        """
+        Marks as invalid the whole day (InvCode.FLAG_DAY_NOT_ENOUGH_VALID_EPOCHS) if the number of valid minutes in a day is smaller than ``valid_minutes_per_day``.
+
+        :param valid_minutes_per_day: Minimum minutes of valid (i.e., without any other flag) in a day.
+        :return: None
+        """
 
         for wearable in self.wearables.values():
             epochs_in_minute = wearable.get_epochs_in_min()
@@ -166,6 +196,11 @@ class Validator(object):
             del wearable.data["_tmp_flag_"]
 
     def flag_day_without_diary(self):
+        """
+        Marks as invalid the whole day (InvCode.FLAG_DAY_WITHOUT_DIARY) if a diary entry is not found for that day.
+
+        :return: None
+        """
 
         for wearable in self.wearables.values():
             tst = wearable.get_total_sleep_time_per_day(based_on_diary=True)
@@ -182,15 +217,26 @@ class Validator(object):
         Fully removes from the wearable data the days that are flagged with problems.
         Only if all epochs in the day are flagged.
 
-        :return: None
+        :return: the total number of days removed
         """
+        total_days_removed = 0
         for wearable in self.wearables.values():
-            valid_days = self.get_valid_days(wearable.get_pid())[wearable.get_pid()]
+            all_days = set(wearable.get_experiment_days())
+            valid_days = set(self.get_valid_days(wearable.get_pid())[wearable.get_pid()])
             wearable.data = wearable.data[wearable.data[wearable.get_experiment_day_col()].isin(valid_days)].copy()
+
+            # Get the length of the invalid_days without having to run get_invalid_daysL
+            total_days_removed += len(all_days - valid_days)
+
+        return total_days_removed
 
     def get_invalid_days(self, pid: str = None):
         """
+        Returns a dictionary <pid> -> list of invalid days.
+
+        :param pid: (optional) Wearable id. If pid is ``None'', this function returns the number of invalid days for all wearables.
         :return: list of invalid days in the dataset.
+
         """
         if pid is not None and pid in self.wearables:
             wlist = [self.wearables[pid]]
@@ -206,6 +252,9 @@ class Validator(object):
 
     def get_valid_days(self, pid: str = None):
         """
+        Returns a dictionary <pid> -> list of valid days.
+
+        :param pid: (optional) Wearable id. If pid is ``None'', this function returns the number of valid days for all wearables.
         :return: list of valid days in the dataset.
         """
 
@@ -221,7 +270,13 @@ class Validator(object):
             r[wearable.get_pid()] = all_days - invalid_days
         return r
 
-    def remove_wearable(self, pid):
+    def remove_wearable(self, pid: str):
+        """
+        Purges a wearable from the experiment.
+
+        :param pid: Wearable id.
+        :return: None
+        """
         if pid in self.wearables:
             del self.wearables[pid]
 
@@ -229,7 +284,7 @@ class Validator(object):
         """
         Fully removes any wearable if it does not have any valid data.
 
-        :return: None
+        :return: Total number of wearables removed.
         """
         mark_for_removal = []
         for wearable in self.wearables.values():
@@ -241,14 +296,15 @@ class Validator(object):
             print("Removing wearable %s." % pid)
             self.remove_wearable(pid)
 
-    def flag_day_if_not_enough_consecutive_days(self, min_number_days):
+        return len(mark_for_removal)
 
+    def flag_day_if_not_enough_consecutive_days(self, min_number_days: int):
         """
         In case the number of consecutive days is smaller than ``min_number_days``, we mark all as invalid.
         We also try to find any subset that has at least ``min_number_days``.
 
-        :param min_number_days:
-        :return:
+        :param min_number_days: minimum number of consecutive days
+        :return: None
         """
 
         for wearable in self.wearables.values():
