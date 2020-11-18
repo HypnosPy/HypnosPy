@@ -19,7 +19,7 @@ def find_largest_sequence(df_orig, candidate, output_col, seq_length_col="hyp_se
     df_candidates = df[df[candidate] == True]
 
     if df_candidates.empty:
-        warnings.warn("Day has no sleep period!")
+        warnings.warn("Day has no valid elements for column %s." % candidate)
         df[output_col] = -1
         return df[output_col]
 

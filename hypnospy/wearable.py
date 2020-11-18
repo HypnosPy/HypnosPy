@@ -152,8 +152,7 @@ class Wearable(object):
         for _, row in self.diary.data.iterrows():
             if not pd.isna(row["sleep_onset"]) and not pd.isna(row["sleep_offset"]):
                 self.data.loc[(self.data[self.time_col] >= row["sleep_onset"]) & (
-                    self.data[self.time_col] <= row["sleep_offset"]), self.diary_sleep] = True
-
+                        self.data[self.time_col] <= row["sleep_offset"]), self.diary_sleep] = True
 
     def get_total_sleep_time_per_day(self, sleep_col: str = None, based_on_diary: bool = False):
         """
@@ -169,13 +168,15 @@ class Wearable(object):
                              "(assuming you previously added a diary.")
         if based_on_diary:
             if self.diary is None:
-                raise ValueError("Diary not found for PID %s. Add a diary with ``Wearable.add_diary``." % (self.get_pid()))
+                raise ValueError(
+                    "Diary not found for PID %s. Add a diary with ``Wearable.add_diary``." % (self.get_pid()))
             return self.data.groupby(self.experiment_day_col)[[self.diary_sleep]].apply(
                 lambda x: x.sum() / self.get_epochs_in_min())
 
         else:
             if sleep_col not in self.data.keys():
-                raise ValueError("Could not find sleep_col named %s for PID %s. Aborting." % (self.get_pid(), sleep_col))
+                raise ValueError(
+                    "Could not find sleep_col named %s for PID %s. Aborting." % (self.get_pid(), sleep_col))
             return self.data.groupby(self.experiment_day_col)[[sleep_col]].apply(
                 lambda x: x.sum() / self.get_epochs_in_min())
 
