@@ -1,4 +1,5 @@
 from glob import glob
+import numpy as np
 import os
 import warnings
 
@@ -87,6 +88,18 @@ class Experiment(object):
         for wearable in self.get_all_wearables():
             wearable.fill_no_activity(value)
 
-    def stats(self):
-        # TODO: implement statistics about the number of wearables, number of (valid/invalid) days of each wearable
-        pass
+    def overall_stats(self):
+        days_acc = []
+        epochs_acc = []
+        for wearable in self.get_all_wearables():
+            days_acc.append(len(wearable.data[wearable.get_experiment_day_col()].unique()))
+            epochs_acc.append(wearable.data.shape[0])
+
+        days_acc = np.array(days_acc)
+        epochs_acc = np.array(epochs_acc)
+        print("Total number of wearables: %d" % (self.size()))
+        if epochs_acc.size > 0:
+            print("Avg. number of days: %.2f (+-%.3f). Max: %d, Min: %d." % (days_acc.mean(), days_acc.std(), days_acc.max(), days_acc.min()))
+            print("Avg. number of epochs: %.2f (+-%.3f). Max: %d, Min: %d."% (epochs_acc.mean(), epochs_acc.std(), epochs_acc.max(), epochs_acc.min()))
+        else:
+            print("Experiment has no valid wearable left.")
