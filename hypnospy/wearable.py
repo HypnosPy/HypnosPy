@@ -226,4 +226,5 @@ class Wearable(object):
 
         return event.groupby(self.experiment_day_col)[self.time_col].last()
 
-
+    def get_experiment_days(self):
+        return list(self.data[self.get_experiment_day_col()].unique())
