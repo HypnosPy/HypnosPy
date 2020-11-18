@@ -11,11 +11,12 @@ class InvCode(IntFlag):
     FLAG_EPOCH_PA = 1
     FLAG_EPOCH_NON_WEARING = 2
     FLAG_EPOCH_NULL_VALUE = 4
-    FLAG_DAY_SLEEP = 8
-    FLAG_DAY_WITHOUT_DIARY = 16
-    FLAG_DAY_NON_WEARING = 32
-    FLAG_DAY_NOT_ENOUGH_VALID_EPOCHS = 64
-    FLAG_DAY_NOT_ENOUGH_CONSECUTIVE_DAYS = 128
+    FLAG_DAY_SHORT_SLEEP = 8
+    FLAG_DAY_LONG_SLEEP = 16
+    FLAG_DAY_WITHOUT_DIARY = 32
+    FLAG_DAY_NON_WEARING = 64
+    FLAG_DAY_NOT_ENOUGH_VALID_EPOCHS = 128
+    FLAG_DAY_NOT_ENOUGH_CONSECUTIVE_DAYS = 256
 
     @staticmethod
     def check_flag(int_value):
@@ -101,7 +102,33 @@ class Validator(object):
             if days_with_problem.size > 0:
                 wearable.data.loc[
                     wearable.data[wearable.get_experiment_day_col()].isin(
-                        days_with_problem), self.invalid_col] |= InvCode.FLAG_DAY_SLEEP
+                        days_with_problem), self.invalid_col] |= InvCode.FLAG_DAY_SHORT_SLEEP
+
+    def flag_day_sleep_length_more_than(self, sleep_period_col: str, max_sleep_in_minutes: int):
+        """
+        Marks as invalid (InvCode.FLAG_LONG_SLEEP) the whole day if the number of slept minutes is larger than ``max_sleep_in_minutes``.
+        This analysis is made based on the annotations of the ``sleep_period_col``.
+
+        :param sleep_period_col: Binary sleep column containing: for each epoch, 1 is used for sleep and 0 for awake.
+        :param max_sleep_in_minutes: Maximum accepted number of slept minutes per night.
+        :return: None
+        """
+
+        for wearable in self.wearables.values():
+            if sleep_period_col not in wearable.data.keys():
+                warnings.warn("%s is not a valid entry in the data. "
+                              "Maybe you need to run ``SleepBoudaryDetector.detect_sleep_boundaries(...)`` first. "
+                              "Aborting...." % sleep_period_col)
+                return
+
+            sleep_time_per_day = wearable.get_total_sleep_time_per_day(sleep_period_col)
+            days_with_problem = sleep_time_per_day > max_sleep_in_minutes
+            days_with_problem = days_with_problem[days_with_problem[sleep_period_col] == True].index.values
+
+            if days_with_problem.size > 0:
+                wearable.data.loc[
+                    wearable.data[wearable.get_experiment_day_col()].isin(
+                        days_with_problem), self.invalid_col] |= InvCode.FLAG_DAY_LONG_SLEEP
 
     def _flag_list_OR(self, wearable: Wearable, list_of_flags: list):
 
