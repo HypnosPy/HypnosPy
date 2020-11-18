@@ -84,7 +84,7 @@ class Experiment(object):
             wearable.change_start_hour_for_experiment_day(hour)
 
     def fill_no_activity(self, value):
-        for wearable in self.wearables:
+        for wearable in self.get_all_wearables():
             wearable.fill_no_activity(value)
 
     def stats(self):
