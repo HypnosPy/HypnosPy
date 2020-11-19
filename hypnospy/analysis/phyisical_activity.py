@@ -68,7 +68,7 @@ class PhysicalActivity(object):
             wearable.pa_cutoffs = self.cutoffs
             wearable.pa_names = self.names
 
-    def get_bouts(self, pa_col, length_in_minutes, decomposite_bouts=False):
+    def get_bouts(self, pa_col, length_in_minutes, decomposite_bouts=False, sleep_col=None):
         """
 
         :param pa_col:              The name of the physical activity column in the dataframe.
@@ -76,6 +76,7 @@ class PhysicalActivity(object):
         :param decomposite_bouts:   If True, we are going to count the number of subsequencies of ``length_in_minutes``.
                                     For example, if ``length_in_minutes`` is 10 and we identified a continuous activity of 30 minutes,
                                     if ``decomposite_bouts`` is True, we will count 3 bouts for this activity, otherwise only 1.
+        :sleep_col:                 If not None, count bouts that are not in sleep. Make sure to run SleepBoudaryDetector.detect_sleep_boundaries() first.
         :return:                    A dictionary with <pid> keys and Series <day, bouts> as values.
         """
 
@@ -84,20 +85,29 @@ class PhysicalActivity(object):
 
         returning_dict = {}
         for wearable in self.wearables:
+
+            if sleep_col and (sleep_col not in wearable.data.keys()):
+                raise ValueError(
+                    "Could not find sleep_col named %s for PID %s. Aborting." % (sleep_col, wearable.get_pid())
+                )
+
+
             pid = wearable.get_pid()
             epochs_per_minute = wearable.get_epochs_in_min()
             returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
                 lambda x: self._get_bout(x, epochs_per_minute, pacol=pa_col, mins=length_in_minutes,
-                                         decomposite_bouts=decomposite_bouts)
+                                         decomposite_bouts=decomposite_bouts, sleep_col=sleep_col)
             )
         return returning_dict
 
     @staticmethod
-    def _get_bout(dd, epochs_per_minute, pacol, mins=10, decomposite_bouts=True):
+    def _get_bout(dd, epochs_per_minute, pacol, mins=10, decomposite_bouts=True, sleep_col=None):
 
         dd["pa_len"], dd["pa_grp"] = misc.get_consecutive_serie(dd, pacol)
-        bouts = dd[(dd[pacol] == True) & (dd["pa_len"] >= mins * epochs_per_minute)]
-
+        if(sleep_col):
+            bouts = dd[(dd[pacol] == True) & (dd["pa_len"] >= mins * epochs_per_minute) & (dd[sleep_col] == False)]
+        else:
+            bouts = dd[(dd[pacol] == True) & (dd["pa_len"] >= mins * epochs_per_minute)]
         if decomposite_bouts:
             # Should we break a 20 min bout in 2 of 10 mins?
             bouts["num_sub_bouts"] = bouts["pa_len"] // (mins * epochs_per_minute)
