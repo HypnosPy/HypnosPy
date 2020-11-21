@@ -103,3 +103,10 @@ class Experiment(object):
             print("Avg. number of epochs: %.2f (+-%.3f). Max: %d, Min: %d."% (epochs_acc.mean(), epochs_acc.std(), epochs_acc.max(), epochs_acc.min()))
         else:
             print("Experiment has no valid wearable left.")
+
+
+    def set_ml_representation_days_exp(self, sleep_col: str = None, ml_column='ml_sequence', ml_column_mark='ml_sequence_mark'):
+        for wearable in self.get_all_wearables():
+            wearable.set_ml_representation_days(sleep_col, ml_column, ml_column_mark)
+
+

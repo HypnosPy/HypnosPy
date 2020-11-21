@@ -1,6 +1,6 @@
 import hypnospy
 import pandas as pd
-from hypnospy import Diary
+from hypnospy import Diary, misc
 import h5py
 
 
@@ -228,3 +228,55 @@ class Wearable(object):
 
     def get_experiment_days(self):
         return list(self.data[self.get_experiment_day_col()].unique())
+
+
+    def set_ml_representation_days(self, sleep_col, ml_column='ml_sequence', ml_column_mark='ml_sequence_mark'):
+        """
+        Adds a ml_column column to the wearable.data that represents wake cycle followed by sleep (called a sequence).
+        Adds a ml_column_mark column to the wearable.data that marks invalid sequences.
+    
+        :param sleep_col: sleep_col resulted from SleepBoudaryDetector.detect_sleep_boundary()
+        :param ml_column: ml_column name
+        :param ml_column_mark: ml_column_mark name
+        """
+        if not sleep_col:
+            raise ValueError(
+                "sleep_col arg is None or empty"
+            )
+
+        if sleep_col and (sleep_col not in self.data.keys()):
+            raise ValueError(
+                "Could not find sleep_col named %s for PID %s. Aborting." % (sleep_col, self.get_pid())
+            )
+
+        if self.data[sleep_col].dtype != bool:
+            raise ValueError(
+                "Column sleep_col named %s for PID %s is not of type bool. Aborting." % (sleep_col, self.get_pid())
+            )
+
+
+        seq_length, seq_id = misc.get_consecutive_serie(self.data, sleep_col)
+        
+        first_seq_true = self.data[sleep_col].iloc[0]
+        if(first_seq_true): # if the first sequence is a True sequence, 
+            seq_id = seq_id - 1
+
+        self.data[ml_column] = seq_id // 2 # misc.get_consecutive_serie returns each sequence with its own id, and we would like the sequence 'F+T+', 
+                                           # so we're joining 2 sequences together (the False sequence and the True sequence) to create the ML representation.
+        self.data[ml_column_mark] = True
+
+        max_id = self.data[ml_column].max() # If the last sequence consists of Falses' without its conjugate Trues', we have to mark the last sequence.
+        if(max_id % 2 != 0):
+            self.data.loc[self.data[ml_column] == max_id, ml_column_mark] = False
+        
+        # if the first sequence is a True sequence, set the mark to false
+        self.data.loc[self.data[ml_column] == -1, ml_column_mark] = False
+
+
+
+
+
+
+
+
+
