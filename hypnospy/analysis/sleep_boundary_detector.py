@@ -386,3 +386,90 @@ class SleepBoudaryDetector(object):
 
             else:
                 warnings.warn("Strategy %s is not yet implemented" % (strategy))
+
+
+    def _evaluate_sleep_boundaries_pair(self, ground_truth: str, other: str) -> pd.DataFrame:
+
+        df_acc = []
+        expid = 0
+
+        for w in self.wearables:
+
+            if w.data.empty:
+                print("Data for PID %s is empty!" % w.get_pid())
+                continue
+
+            if ground_truth not in w.data:
+                print("Column %s not in dataset for PID %s." % (ground_truth, w.get_pid()))
+                continue
+
+            if other not in w.data:
+                print("Column %s not in dataset for PID %s." % (other, w.get_pid()))
+                continue
+
+            sleep = {}
+            sleep[ground_truth] = w.data[ground_truth].astype(int)
+            sleep[other] = w.data[other].astype(int)
+
+            if sleep[ground_truth].shape[0] == 0:
+                continue
+
+            mse = metrics.mean_squared_error(sleep[ground_truth], sleep[other])
+            cohen = metrics.cohen_kappa_score(sleep[ground_truth], sleep[other])
+
+            tst_gt = w.get_total_sleep_time_per_day(sleep_col=ground_truth)
+            tst_gt.rename(columns={ground_truth: "tst_" + ground_truth}, inplace=True)
+            tst_other = w.get_total_sleep_time_per_day(sleep_col=other)
+            tst_other.rename(columns={other: "tst_" + other}, inplace=True)
+
+            onset_gt = w.get_onset_sleep_time_per_day(sleep_col=ground_truth)
+            onset_gt.name = "onset_" + ground_truth
+            onset_other = w.get_onset_sleep_time_per_day(sleep_col=other)
+            onset_other.name = "onset_" + other
+
+            offset_gt = w.get_offset_sleep_time_per_day(sleep_col=ground_truth)
+            offset_gt.name = "offset_" + ground_truth
+            offset_other = w.get_offset_sleep_time_per_day(sleep_col=other)
+            offset_other.name = "offset_" + other
+
+            df_res = pd.concat((onset_gt, onset_other, offset_gt, offset_other, tst_gt, tst_other), axis=1)
+            df_res["pid"] = w.get_pid()
+            df_res["mse_" + ground_truth + "&" + other] = mse
+            df_res["cohens_" + ground_truth + "&" + other] = cohen
+            df_res = df_res.reset_index()
+            expid += 1
+
+            df_acc.append(df_res)
+
+        df_acc = pd.concat(df_acc)
+
+        # Drop invalid rows:
+        for col in ["onset_", "offset_", "tst_"]:
+            df_acc = df_acc[~df_acc[col + ground_truth].isnull()]
+
+        return df_acc
+
+    def evaluate_sleep_boundaries(self, ground_truth: str, others: list) -> pd.DataFrame:
+        """
+        This method aims to compare two or more SleepBoudaryDetector approaches.
+
+        :param ground_truth: Ground Truth data to be compared with sleep_metric[sleep_wake_col] when sleep_perdiod_col == True
+        :param others: a list of  0.
+        :param sleep_period_col: Dataframe column for the actual sleep period (see SleepBoundaryDetector module)
+
+        :return: a dataframe with the comparison results. Key differ according to the comparison method used.
+        """
+
+        dfs = []
+        for other in others:
+            dfs.append(self._evaluate_sleep_boundaries_pair(ground_truth, other))
+
+        if len(dfs) == 0:
+            return None
+
+        result = dfs[0]
+        for other in dfs[1:]:
+            common_keys = list(set(result.keys()).intersection(other.keys()))
+            result = result.merge(other, on=common_keys)
+
+        return result
