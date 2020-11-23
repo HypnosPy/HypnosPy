@@ -8,6 +8,7 @@ from scipy import linalg  # linear algebra (matrix) processing package
 from tqdm import tqdm, trange
 from collections import defaultdict
 from tensorflow.keras.preprocessing import timeseries_dataset_from_array
+from CosinorPy import file_parser, cosinor, cosinor1
 
 
 class CircadianAnalysis(object):
@@ -19,11 +20,13 @@ class CircadianAnalysis(object):
             self.wearables = input.get_all_wearables()
 
     def run_SSA(self):
+        """
+        sets ssa results in w.ssa
+        """
         for idx, w in tqdm(enumerate(self.wearables)):
             # print(wearable.get_pid())
 
             if w.data.shape[0] == 0:
-                wearable.data[output_col] = np.nan
                 warnings.warn("No data for PID %s. Skipping it." % wearable.get_pid())
                 continue
 
@@ -143,9 +146,67 @@ class CircadianAnalysis(object):
         wMatrix = np.array(wMatrix)
         return (r, l, gkList, wMatrix);
 
-    def run_cosinor():
-        # apply cosinor method
-        pass
+    def run_cosinor(self):
+        """
+        sets cosinor results in w.cosinor
+        """
+
+        for idx, w in tqdm(enumerate(self.wearables)):
+
+            if w.data.shape[0] == 0:
+                warnings.warn("No data for PID %s. Skipping it." % wearable.get_pid())
+                continue
+
+            print(idx)
+            w = self._get_cosinor(w)
+            self.wearables[idx] = w
+
+    def _get_cosinor(self, w, col='hyp_act_x', freqs=2):
+    
+        freq = w.get_frequency_in_secs()
+        s = w.data.groupby('hyp_exp_day')['hyp_time_col'].transform(self._group_to_timepoints, freq)
+
+        cosinor_input = w.data[['hyp_exp_day', 'cosinor_timepoints', col]].copy()
+        cosinor_input['cosinor_timepoints'] = s
+        cosinor_input = cosinor_input[['hyp_exp_day', 'cosinor_timepoints', col]]
+        cosinor_input.columns = ['test', 'x', 'y']
+        cosinor_input['test'] = cosinor_input['test'].astype(str)
+
+        try:
+            cosinor_result = cosinor.fit_me(cosinor_input['x'].values,
+                                   cosinor_input['y'].values, 
+                                   n_components=3, 
+                                   period=24, 
+                                   model_type='lin', 
+                                   lin_comp=True, 
+                                   alpha=0, 
+                                   name='', 
+                                   save_to='', 
+                                   plot=False, 
+                                   return_model=True)
+        except:
+            cosinor_result = cosinor.fit_me(cosinor_input['x'].values,
+                                   cosinor_input['y'].values, 
+                                   n_components=3, 
+                                   period=24, 
+                                   model_type='lin', 
+                                   lin_comp=True, 
+                                   alpha=0, 
+                                   name='', 
+                                   save_to='', 
+                                   plot=False, 
+                                   return_model=True)
+
+        # cosinor_result is a tuple of
+        # (RegressionResultsWrapper, statistics, rhythm_params, X_test, Y_test, model) 
+        w.cosinor = cosinor_result
+        return w
+
+    @staticmethod
+    def _group_to_timepoints(g, freq=2):
+        hyp_exp_day_length = g.shape[0]
+        timepoints = np.arange(0, hyp_exp_day_length*freq, freq)
+        return timepoints
 
     def run_PSD():
         # apply power spectral density analysis
