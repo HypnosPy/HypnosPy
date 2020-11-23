@@ -50,6 +50,10 @@ class PhysicalActivity(object):
 
     def generate_pa_columns(self, based_on="activity"):
         """
+        Sets two physical activity (pa) attributes for each wearable in a given experiment (self). 
+        The two attributes are pa_cutoffs, and pa_names.
+        pa_cutoffs is a list of numbers.
+        pa_names is a list of names representing the numbers.
 
         :param based_on: Base column used to calculate the physical activity.
         :return: None
@@ -70,6 +74,9 @@ class PhysicalActivity(object):
 
     def get_bouts(self, pa_col, length_in_minutes, decomposite_bouts=False, sleep_col=None):
         """
+        Counts bouts within physical activity column (pa_col). 1 bout is counted when pa_col exist for equal 
+        or more than length_in_minutes * epochs_per_minute.
+        epochs_per_minute is retrieved from wearable.get_epochs_in_min().
 
         :param pa_col:              The name of the physical activity column in the dataframe.
         :param length_in_minutes:   The minimal length of the activity in minutes
@@ -121,8 +128,14 @@ class PhysicalActivity(object):
 
     def get_binned_pa_representation(self):
         """
+        Counts the number of occurance of physical activity names (PhysicalActivity.names) 
+        within wearable.get_activity_col(). PhysicalActivity.name boundaries are set in 
+        PhysicalActivity.cutoffs
 
-        :return:
+        :return: dataframe with pa counts 
+        per hour (wearable.get_time_col()) 
+        per day (wearable.get_experiment_day_col()) 
+        per wearable id (wearable.get_pid())
         """
         rows = []
         for wearable in self.wearables:
@@ -150,6 +163,9 @@ class PhysicalActivity(object):
 
     def get_stats_pa_representation(self):
         """
+        Returns each wearable's statistical measures 
+        per hour (wearable.get_time_col()) 
+        per day (wearable.get_experiment_day_col()) 
 
         :return: a dataframe with statistical measures by day and hour of the experiment
         """
