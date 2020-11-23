@@ -298,3 +298,18 @@ class MMASHPreProcessing(RawProcessing):
                          col_for_hr=col_for_hr,
                          )
         self.device = "actigraphy"
+
+class HCHSPreProcessing(RawProcessing):
+
+    def __init__(self, filename, device_location=None, col_for_datetime="time", col_for_pid="pid"):
+        super().__init__(filename, device_location=device_location,
+                         cols_for_activity=["activity"],
+                         is_act_count=True,
+                         # Datatime information
+                         col_for_datetime=col_for_datetime,
+                         start_of_week="dayofweek",
+                         # Participant information
+                         col_for_pid=col_for_pid,
+                         )
+        self.device = "actigraphy"
+        self.data["hyp_annotation"] = self.data["interval"].isin(["REST", "REST-S"])
