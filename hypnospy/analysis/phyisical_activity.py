@@ -90,7 +90,7 @@ class PhysicalActivity(object):
         if pa_col not in self.names:
             raise ValueError("Unknown physical activity column %s. Please use ``set_cutoffs``.")
 
-        returning_dict = {}
+        returning_df = []
         for wearable in self.wearables:
 
             if sleep_col and (sleep_col not in wearable.data.keys()):
@@ -98,14 +98,17 @@ class PhysicalActivity(object):
                     "Could not find sleep_col named %s for PID %s. Aborting." % (sleep_col, wearable.get_pid())
                 )
 
-
-            pid = wearable.get_pid()
             epochs_per_minute = wearable.get_epochs_in_min()
-            returning_dict[pid] = wearable.data.groupby(wearable.experiment_day_col).apply(
+            tmp_df = wearable.data.groupby(wearable.get_experiment_day_col()).apply(
                 lambda x: self._get_bout(x, epochs_per_minute, pacol=pa_col, mins=length_in_minutes,
                                          decomposite_bouts=decomposite_bouts, sleep_col=sleep_col)
             )
-        return returning_dict
+            tmp_df = tmp_df.reset_index().rename(columns={0: pa_col})
+            tmp_df["pid"] = wearable.get_pid()
+            tmp_df["bout_length"] = length_in_minutes
+            returning_df.append(tmp_df)
+
+        return pd.concat(returning_df).reset_index(drop=True)
 
     @staticmethod
     def _get_bout(dd, epochs_per_minute, pacol, mins=10, decomposite_bouts=True, sleep_col=None):

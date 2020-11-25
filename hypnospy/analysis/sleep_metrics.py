@@ -119,7 +119,8 @@ class SleepMetrics(object):
         :param outputname: Name for the metric in the returned dataframe. Default: the metric used as ``sleep_metric``.
         :param ignore_awakenings_smaller_than_X_epochs: Ignores changes from sleep to wake if they are smaller than X epochs. Used in sleepEficiency and awakenings.
         :param normalize_per_hour: controls if the result should be normalized per hour of sleep or not. Used when the sleep_metric is awakenings.
-        :return: a dataframe with 5 columns: <pid, expday, metric, value, parameters>. Every row is the result of applying the sleep_metric on an expday for a given pid.
+        :return: A dataframe with 4 columns: <pid, exp_day_col, metric_name, parameters>.
+                 Every row is the result of applying the sleep_metric on an experiment day for a given pid.
         """
 
         if outputname is None:
@@ -132,44 +133,39 @@ class SleepMetrics(object):
             first_day = True
             prev_block = None
 
-            for day, block in df.groupby(wearable.experiment_day_col):
+            for day, block in df.groupby(wearable.get_experiment_day_col()):
 
-                row = {"pid": wearable.get_pid(), "expday": day}
+                row = {"pid": wearable.get_pid(), wearable.get_experiment_day_col(): day}
 
                 # filter where we should calculate the sleep metric
                 if sleep_period_col is not None:
                     block = block[block[sleep_period_col] == True]
 
                 if sleep_metric.lower() in ["sleepefficiency", "se", "sleep_efficiency"]:
-                    row["metric"] = outputname
-                    row["value"] = SleepMetrics.calculate_sleep_efficiency(block, wake_sleep_col,
+                    row[outputname] = SleepMetrics.calculate_sleep_efficiency(block, wake_sleep_col,
                                                                            ignore_awakening_in_epochs)
-                    row["parameters"] = {"ignore_awakening_in_epochs": ignore_awakening_in_epochs}
+                    row[outputname + "_parameters"] = {"ignore_awakening_in_epochs": ignore_awakening_in_epochs}
 
                 elif sleep_metric.lower() in ["awakening", "awakenings", "arousal", "arousals"]:
-                    row["metric"] = outputname
-                    row["value"] = SleepMetrics.calculate_awakening(block, wake_sleep_col,
+                    row[outputname] = SleepMetrics.calculate_awakening(block, wake_sleep_col,
                                                                     ignore_awakening_in_epochs,
                                                                     normalize_per_hour=normalize_per_hour,
                                                                     epochs_in_hour=wearable.get_epochs_in_hour())
-                    row["parameters"] = {"ignore_awakening_in_epochs": ignore_awakening_in_epochs,
+                    row[outputname + "_parameters"] = {"ignore_awakening_in_epochs": ignore_awakening_in_epochs,
                                          "normalize_per_hour": normalize_per_hour,
                                          "epochs_in_hour":wearable.get_epochs_in_hour()}
 
                 elif sleep_metric == "totalTimeInBed":
-                    row["metric"] = outputname
-                    row["value"] = block.shape[0] / wearable.get_epochs_in_hour()
-                    row["parameters"] = {}
+                    row[outputname] = block.shape[0] / wearable.get_epochs_in_hour()
+                    row[outputname + "_parameters"] = {}
 
                 elif sleep_metric == "totalSleepTime":
-                    row["metric"] = outputname
-                    row["value"] = (block[wake_sleep_col].sum()) / wearable.get_epochs_in_hour()
-                    row["parameters"] = {}
+                    row[outputname] = (block[wake_sleep_col].sum()) / wearable.get_epochs_in_hour()
+                    row[outputname + "_parameters"] = {}
 
                 elif sleep_metric == "totalWakeTime":
-                    row["metric"] = outputname
-                    row["value"] = ((block[wake_sleep_col] == 0).sum()) / wearable.get_epochs_in_hour()
-                    row["parameters"] = {}
+                    row[outputname] = ((block[wake_sleep_col] == 0).sum()) / wearable.get_epochs_in_hour()
+                    row[outputname + "_parameters"] = {}
 
                 elif sleep_metric.lower() in ["sri", "sleep_regularity_index", "sleepregularityindex"]:
                     if first_day:
@@ -177,14 +173,13 @@ class SleepMetrics(object):
                         prev_block = block
                         continue
 
-                    row["metric"] = outputname
                     try:
                         sri = SleepMetrics.calculate_sri(prev_block, block, wake_sleep_col)
                     except ValueError:
                         print("Unable to calculate SRI for day %d (PID = %s)." % (day, wearable.get_pid()))
                         sri = None
-                    row["value"] = sri
-                    row["parameters"] = {}
+                    row[outputname] = sri
+                    row[outputname + "_parameters"] = {}
                     prev_block = block
 
                 else:
@@ -230,6 +225,8 @@ class SleepMetrics(object):
 
             gt = self.get_sleep_quality(wake_sleep_col=ground_truth, sleep_metric=sleep_metric, sleep_period_col=sleep_period_col)
             other = self.get_sleep_quality(wake_sleep_col=sleep_wake_col, sleep_metric=sleep_metric, sleep_period_col=sleep_period_col)
+
+            # TODO: need to melt results before using the comparison method
 
             gtdf = pd.DataFrame(gt)
             otherdf = pd.DataFrame(other)
