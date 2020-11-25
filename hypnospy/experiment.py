@@ -98,6 +98,7 @@ class Experiment(object):
         days_acc = np.array(days_acc)
         epochs_acc = np.array(epochs_acc)
         print("Total number of wearables: %d" % (self.size()))
+        print("Total number of days: %d" % days_acc.sum())
         if epochs_acc.size > 0:
             print("Avg. number of days: %.2f (+-%.3f). Max: %d, Min: %d." % (days_acc.mean(), days_acc.std(), days_acc.max(), days_acc.min()))
             print("Avg. number of epochs: %.2f (+-%.3f). Max: %d, Min: %d."% (epochs_acc.mean(), epochs_acc.std(), epochs_acc.max(), epochs_acc.min()))

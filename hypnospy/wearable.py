@@ -82,6 +82,9 @@ class Wearable(object):
     def get_pid(self):
         return self.pid
 
+    def set_experiment_exp_day_col(self, col):
+        self.experiment_day_col = col
+
     def get_experiment_day_col(self):
         return self.experiment_day_col
 
@@ -230,7 +233,7 @@ class Wearable(object):
         return list(self.data[self.get_experiment_day_col()].unique())
 
 
-    def set_ml_representation_days(self, sleep_col, ml_column='ml_sequence', ml_column_mark='ml_sequence_mark'):
+    def set_ml_representation_days(self, sleep_col, ml_column='ml_sequence'):
         """
         Adds a ml_column column to the wearable.data that represents wake cycle followed by sleep (called a sequence).
         Adds a ml_column_mark column to the wearable.data that marks invalid sequences.
@@ -258,19 +261,18 @@ class Wearable(object):
         seq_length, seq_id = misc.get_consecutive_serie(self.data, sleep_col)
         
         first_seq_true = self.data[sleep_col].iloc[0]
-        if(first_seq_true): # if the first sequence is a True sequence, 
+        if first_seq_true: # if the first sequence is a True sequence, 
             seq_id = seq_id - 1
 
         self.data[ml_column] = seq_id // 2 # misc.get_consecutive_serie returns each sequence with its own id, and we would like the sequence 'F+T+', 
                                            # so we're joining 2 sequences together (the False sequence and the True sequence) to create the ML representation.
-        self.data[ml_column_mark] = True
 
         max_id = self.data[ml_column].max() # If the last sequence consists of Falses' without its conjugate Trues', we have to mark the last sequence.
         if(max_id % 2 != 0):
-            self.data.loc[self.data[ml_column] == max_id, ml_column_mark] = False
+            self.data.loc[self.data[ml_column] == max_id, ml_column] = -1
         
-        # if the first sequence is a True sequence, set the mark to false
-        self.data.loc[self.data[ml_column] == -1, ml_column_mark] = False
+        # warnings.warn("Switching exp_day_col to %s" % ml_column)
+        set_experiment_exp_day_col(ml_column)
 
 
 
