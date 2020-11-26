@@ -277,7 +277,7 @@ class SleepMetrics(object):
         for wearable in self.wearables:
             df = wearable.data
 
-            for day, block in df.groupby(wearable.experiment_day_col):
+            for day, block in df.groupby(wearable.get_experiment_day_col()):
 
                 # Filter where we should calculate the sleep metric
                 if sleep_period_col is not None:
@@ -296,7 +296,7 @@ class SleepMetrics(object):
                 result["roc_auc"] = metrics.roc_auc_score(gt, pred)
                 result["cohens_kappa"] = metrics.cohen_kappa_score(gt, pred)
                 result["pid"] = wearable.get_pid()
-                result["expday"] = day
+                result[wearable.get_experiment_day_col()] = day
 
                 results.append(result)
 

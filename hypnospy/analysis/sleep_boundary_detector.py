@@ -10,13 +10,6 @@ import warnings
 class SleepBoudaryDetector(object):
 
     def __init__(self, input: {Wearable, Experiment}):
-        """ Here we need to load the data and determine:
-            potentially by fetching from class wearable
-            (1) what type of file is it
-            (2) is it multimodal
-            (3) length/type- night only/ full
-            (4) sampling rate
-            """
 
         if type(input) is Wearable:
             self.wearables = [input]
