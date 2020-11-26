@@ -95,18 +95,16 @@ if __name__ == "__main__":
     for act_level in pa_levels:
         tmp_list = []
         for length in [5, 10, 20, 30]:
-            tmp_list.append(pa.get_bouts(act_level, length_in_minutes=length, sleep_col="sleep_period_annotation"))
+            tmp_list.append(pa.get_bouts(act_level, length, length//2,
+                                         resolution="hour", sleep_col="sleep_period_annotation"))
         tmp_list = pd.concat(tmp_list)
         bouts.append(tmp_list)
 
-    # TODO: have an allowance for lower PA activity.
-    # TODO: get_bouts inform the amount of activity per hour
-
-    # 3: <8-12> <13-18> <18-22> Medium/Vigorous activity?
 
     # Merge PA datasets
     bouts = functools.reduce(
-        lambda left, right: pd.merge(left, right, on=["pid", "hyp_exp_day", "bout_length"], how='outer'), bouts)
+        lambda left, right: pd.merge(left, right, on=["pid", "hyp_exp_day", "hyp_time_col", "bout_length"],
+                                     how='outer'), bouts).fillna(0.0)
 
     bouts_melted = bouts.melt(id_vars=["pid", "hyp_exp_day", "bout_length"],
                               value_vars=["sedentary", "light", "medium", "vigorous"])
@@ -130,8 +128,7 @@ if __name__ == "__main__":
     # SRI does not use a sleep_period_col
     sleep_metrics.append(sm.get_sleep_quality(sleep_metric="sri", wake_sleep_col="ScrippsClinic"))
 
-    # TODO: use expday instead of hyp_exp_day or the other way around
-    sleep_metrics = functools.reduce(lambda left, right: pd.merge(left, right, on=["pid", "expday"], how='outer'),
+    sleep_metrics = functools.reduce(lambda left, right: pd.merge(left, right, on=["pid", "hyp_exp_day"], how='outer'),
                                      sleep_metrics)
 
 
@@ -152,9 +149,8 @@ if __name__ == "__main__":
     # View signals
     v = Viewer(exp)
     v.view_signals(["activity", "pa_intensity", "sleep"], sleep_cols=["sleep_period_annotation"],
-                   signal_as_area=["ScrippsClinic"])
-
-
+                   #signal_as_area=["ScrippsClinic"]
+                   )
 
     w = exp.get_wearable("1760")
     #w = exp.get_wearable("1766")
