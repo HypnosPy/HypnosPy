@@ -223,32 +223,29 @@ class SleepMetrics(object):
         results = []
         for sleep_metric in sleep_metrics:
 
-            gt = self.get_sleep_quality(wake_sleep_col=ground_truth, sleep_metric=sleep_metric, sleep_period_col=sleep_period_col)
-            other = self.get_sleep_quality(wake_sleep_col=sleep_wake_col, sleep_metric=sleep_metric, sleep_period_col=sleep_period_col)
+            gt = self.get_sleep_quality(wake_sleep_col=ground_truth, sleep_metric=sleep_metric,
+                                        sleep_period_col=sleep_period_col)
+            other = self.get_sleep_quality(wake_sleep_col=sleep_wake_col, sleep_metric=sleep_metric,
+                                           sleep_period_col=sleep_period_col)
 
-            # TODO: need to melt results before using the comparison method
-
-            gtdf = pd.DataFrame(gt)
-            otherdf = pd.DataFrame(other)
-            merged = pd.merge(gtdf, otherdf, on=["pid", "expday", "metric"], suffixes=["_gt", "_other"])
+            merged = pd.merge(gt[["pid", "hyp_exp_day", sleep_metric]], other[["pid", "hyp_exp_day", sleep_metric]],
+                              on=["pid", "hyp_exp_day"], suffixes=["_gt", "_other"])
 
             if comparison_method == "relative_difference":
-                merged["value"] = merged[["value_gt", "value_other"]].apply(
-                    lambda x: ((x["value_gt"] - x["value_other"]) / x["value_other"]) * 100. if x[
-                                                                                                    "value_other"] is not None and
-                                                                                                x[
-                                                                                                    "value_other"] > 0 else 0,
-                    axis=1)
-                merged["metric"] = "delta_" + merged["metric"]
+                merged["value"] = merged[[sleep_metric + "_gt", sleep_metric + "_other"]].apply(
+                    lambda x: ((x[sleep_metric + "_gt"] - x[sleep_metric + "_other"]) /x[sleep_metric + "_other"]) * 100. if
+                                    x[sleep_metric + "_other"] is not None and x[sleep_metric + "_other"] > 0 else 0, axis=1)
+                merged["metric"] = "delta_" + sleep_metric
                 merged["alg1"] = ground_truth
                 merged["alg2"] = sleep_wake_col
-                del merged["value_gt"]
-                del merged["value_other"]
+                del merged[sleep_metric + "_gt"]
+                del merged[sleep_metric + "_other"]
 
                 results.append(merged)
 
             elif comparison_method == "pearson":
-                value = merged[["value_gt", "value_other"]].corr("pearson")["value_gt"]["value_other"]
+                value = merged[[sleep_metric + "_gt", sleep_metric + "_other"]].corr("pearson")[sleep_metric + "_gt"][
+                    sleep_metric + "_other"]
 
                 s = pd.Series({"value": value, "metric": "pearson_" + sleep_metric,
                                "alg1": ground_truth, "alg2": sleep_wake_col})
