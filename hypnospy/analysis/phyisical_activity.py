@@ -7,7 +7,7 @@ import pandas as pd
 
 class PhysicalActivity(object):
 
-    def __init__(self, input: {Experiment, Wearable}, cutoffs=None, names=None):
+    def __init__(self, input: {Experiment, Wearable}, cutoffs: list = None, names: list = None):
         """
 
         :param input: Either an experiment or wearable object.
@@ -72,19 +72,22 @@ class PhysicalActivity(object):
             wearable.pa_cutoffs = self.cutoffs
             wearable.pa_names = self.names
 
-    def get_bouts(self, pa_col, length_in_minutes, decomposite_bouts=False, sleep_col=None):
+    def get_bouts(self, pa_col: str, length_in_minutes: int, pa_allowance_in_minutes: int, resolution: str,
+                  sleep_col: object = None) -> pd.DataFrame:
         """
-        Counts bouts within physical activity column (pa_col). 1 bout is counted when pa_col exist for equal 
-        or more than length_in_minutes * epochs_per_minute.
-        epochs_per_minute is retrieved from wearable.get_epochs_in_min().
+        Return the bouts for a given physical activity column (``pa_col``).
+        One bout is counted when ``pa_col`` is True for more than ``length_in_minutes``.
+        We allow up to ``pa_allowance_in_minutes`` minutes of physical activity below the minimal required for a pa level.
+        If ``sleep_col`` is used, we do not count bouts when data[sleep_col] is True.
+        ``resolution`` can currently be either "day" or "hour".
 
-        :param pa_col:              The name of the physical activity column in the dataframe.
-        :param length_in_minutes:   The minimal length of the activity in minutes
-        :param decomposite_bouts:   If True, we are going to count the number of subsequencies of ``length_in_minutes``.
-                                    For example, if ``length_in_minutes`` is 10 and we identified a continuous activity of 30 minutes,
-                                    if ``decomposite_bouts`` is True, we will count 3 bouts for this activity, otherwise only 1.
-        :sleep_col:                 If not None, count bouts that are not in sleep. Make sure to run SleepBoudaryDetector.detect_sleep_boundaries() first.
-        :return:                    A dictionary with <pid> keys and Series <day, bouts> as values.
+        :param pa_col:                   The name of the physical activity column in the dataframe.
+        :param length_in_minutes:        The minimal length of the activity in minutes
+        :param pa_allowance_in_minutes:  The maximum allowance of minutes in which a bout is still counted.
+        :param resolution:               Either "day" or "hour". The resolution expected for output.
+        :param sleep_col:                If a valid binary colunm, we ignore bouts that happened when the value of this col is True.
+                                         Make sure to run SleepBoudaryDetector.detect_sleep_boundaries() first.
+        :return:                         A dataframe counting the number of bouts for the given physical activity level
         """
 
         if pa_col not in self.names:
@@ -97,37 +100,40 @@ class PhysicalActivity(object):
                 raise ValueError(
                     "Could not find sleep_col named %s for PID %s. Aborting." % (sleep_col, wearable.get_pid())
                 )
+            df = wearable.data.copy()
+            min_num_epochs = wearable.get_epochs_in_min() * length_in_minutes
 
-            epochs_per_minute = wearable.get_epochs_in_min()
-            tmp_df = wearable.data.groupby(wearable.get_experiment_day_col()).apply(
-                lambda x: self._get_bout(x, epochs_per_minute, pacol=pa_col, mins=length_in_minutes,
-                                         decomposite_bouts=decomposite_bouts, sleep_col=sleep_col)
-            )
-            tmp_df = tmp_df.reset_index().rename(columns={0: pa_col})
+            df["pa_len"], df["pa_grp"] = misc.get_consecutive_series(df, pa_col)
+            # We admit up to allowance minutes
+            df[pa_col], df["pa_len"], df["pa_grp"] = misc.merge_sequences_given_tolerance(df, "hyp_time_col", pa_col,
+                                                                                          pa_allowance_in_minutes,
+                                                                                          seq_id_col="pa_grp",
+                                                                                          seq_length_col="pa_len")
+
+            # calculate all possible bouts, either including the sleep period or not
+            if sleep_col:
+                bouts = df[(df[pa_col] == True) & (df["pa_len"] >= min_num_epochs) & (df[sleep_col] == False)]
+            else:
+                bouts = df[(df[pa_col] == True) & (df["pa_len"] >= min_num_epochs)]
+
+            # drop_duplicates is used to get only the first occurrence of a bout sequence.
+            bouts = bouts[
+                ["hyp_time_col", wearable.get_experiment_day_col(), "pa_grp", "pa_len", pa_col]
+                ].drop_duplicates(subset=["pa_grp"])
+
+            if resolution == "day":
+                tmp_df = bouts.groupby([wearable.get_experiment_day_col()])[pa_col].count().reset_index()
+            elif resolution == "hour":
+                gbouts = bouts.set_index("hyp_time_col")
+                tmp_df = gbouts.groupby([wearable.get_experiment_day_col(), gbouts.index.hour])[pa_col].count().reset_index()
+            else:
+                raise ValueError("The parameter 'resolution' can only be `day` or `hour`.")
+
             tmp_df["pid"] = wearable.get_pid()
             tmp_df["bout_length"] = length_in_minutes
             returning_df.append(tmp_df)
 
         return pd.concat(returning_df).reset_index(drop=True)
-
-    @staticmethod
-    def _get_bout(dd, epochs_per_minute, pacol, mins=10, decomposite_bouts=True, sleep_col=None):
-
-        dd["pa_len"], dd["pa_grp"] = misc.get_consecutive_serie(dd, pacol)
-        if(sleep_col):
-            bouts = dd[(dd[pacol] == True) & (dd["pa_len"] >= mins * epochs_per_minute) & (dd[sleep_col] == False)]
-        else:
-            bouts = dd[(dd[pacol] == True) & (dd["pa_len"] >= mins * epochs_per_minute)]
-        if decomposite_bouts:
-            # Should we break a 20 min bout in 2 of 10 mins?
-            bouts["num_sub_bouts"] = bouts["pa_len"] // (mins * epochs_per_minute)
-            return bouts.groupby("pa_grp").first()["num_sub_bouts"].sum()
-        else:
-            return len(bouts["pa_grp"].unique())
-
-    def mask_sleep_period(self, mask):
-        # TODO: missing implementation and finding a better name for this method.
-        df["X"] = df["activity"].where(~df["sleep_period"].astype(np.bool), 0)
 
     def get_binned_pa_representation(self):
         """
