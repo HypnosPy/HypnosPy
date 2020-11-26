@@ -79,9 +79,9 @@ def one_loop(hparam):
 
     sm = SleepMetrics(exp)
     sm_results = sm.get_sleep_quality(strategy="sleepEfficiency", sleep_period_col="hyp_sleep_period_hr",
-                                      wake_col="hyp_sleep_period_hr")
+                                      wake_sleep_col="hyp_sleep_period_hr")
     sm_results = sm.get_sleep_quality(strategy="sri", sleep_period_col=None,
-                                      wake_col="hyp_sleep_period_hr")
+                                      wake_sleep_col="hyp_sleep_period_hr")
 
     print(sm_results)
 

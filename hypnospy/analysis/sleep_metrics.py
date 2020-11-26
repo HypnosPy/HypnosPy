@@ -34,7 +34,7 @@ class SleepMetrics(object):
         else:
             # Avoid modifying the original values in the wake col
             df = df_in[[sleep_wake_col]].copy()
-            df["consecutive_state"], _ = misc.get_consecutive_serie(df, sleep_wake_col)
+            df["consecutive_state"], _ = misc.get_consecutive_series(df, sleep_wake_col)
 
             # If number of wakes (= 0) is smaller than X epochs, convert them to sleep (1):
             df.loc[(df[sleep_wake_col] == 0) & (
@@ -61,7 +61,7 @@ class SleepMetrics(object):
         """
         df = df_in.copy()
 
-        df["consecutive_state"], df["gids"] = misc.get_consecutive_serie(df, sleep_wake_col)
+        df["consecutive_state"], df["gids"] = misc.get_consecutive_series(df, sleep_wake_col)
         # We ignore the first group of awakenings, as this method is only interested to count the number
         # of sequequencies after the subject slept for the first time.
         if df[(df["gids"] == 0) & (df[sleep_wake_col] == 0)].shape[0] > 0:

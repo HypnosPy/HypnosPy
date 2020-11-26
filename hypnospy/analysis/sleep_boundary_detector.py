@@ -55,7 +55,7 @@ class SleepBoudaryDetector(object):
             #  Ignore all sleep candidate period outsite win
             df_time.loc[idx, "hyp_sleep_bin"] = 0
 
-        seq_length, seq_id = misc.get_consecutive_serie(df_time, "hyp_sleep_bin")
+        seq_length, seq_id = misc.get_consecutive_series(df_time, "hyp_sleep_bin")
 
         return df_time["hyp_sleep"].values, df_time["hyp_sleep_bin"].values, seq_length.values, seq_id.values
 
@@ -91,7 +91,7 @@ class SleepBoudaryDetector(object):
         df["hyp_sleep_vard"] = df[wearable.hr_col].rolling(volatility_window_in_minutes,
                                                            center=True).std().fillna(0)
 
-        df["hyp_seq_length"], df["hyp_seq_id"] = misc.get_consecutive_serie(df, "hyp_sleep_candidate")
+        df["hyp_seq_length"], df["hyp_seq_id"] = misc.get_consecutive_series(df, "hyp_sleep_candidate")
 
         # Merge two sleep segments if their gap is smaller than X min (interval per day):
         wearable.data = df
@@ -101,10 +101,8 @@ class SleepBoudaryDetector(object):
         tmp_df = []
         for grp_id, grp_df in grps:
             gdf = grp_df.copy()
-            gdf["hyp_sleep_candidate"], gdf["hyp_seq_id"], gdf["hyp_seq_length"] = misc.merge_windows(gdf,
-                                                                                                      wearable.time_col,
-                                                                                                      "hyp_sleep_candidate",
-                                                                                                      tolerance_minutes=merge_blocks_gap_time_in_min)
+            gdf["hyp_sleep_candidate"], gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.merge_sequences_given_tolerance(
+                gdf, wearable.time_col, "hyp_sleep_candidate", tolerance_in_minutes=merge_blocks_gap_time_in_min)
 
             tmp_df.append(gdf)
         wearable.data = pd.concat(tmp_df)
@@ -137,7 +135,7 @@ class SleepBoudaryDetector(object):
             df.loc[new_start:new_end, "hyp_sleep_candidate"] = 1
 
         # Need to reorganize the sequences.
-        df["hyp_seq_length"], df["hyp_seq_id"] = misc.get_consecutive_serie(df, "hyp_sleep_candidate")
+        df["hyp_seq_length"], df["hyp_seq_id"] = misc.get_consecutive_series(df, "hyp_sleep_candidate")
 
         # new_sleep_segments = df[df[col_win_night + '_sleep_candidate'] == 1][col_win_night + '_grpid'].unique()
         wearable.data = df.reset_index()
@@ -151,7 +149,7 @@ class SleepBoudaryDetector(object):
             tmp_df = []
             for grp_id, grp_df in grps:
                 gdf = grp_df.copy()
-                gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_serie(gdf, "hyp_sleep_candidate")
+                gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_series(gdf, "hyp_sleep_candidate")
                 df_out = misc.find_largest_sequence(gdf, "hyp_sleep_candidate", output_col).replace(-1, False)
                 tmp_df.append(df_out)
             wearable.data[output_col] = pd.concat(tmp_df)
@@ -180,19 +178,19 @@ class SleepBoudaryDetector(object):
         wearable.data["hyp_sleep_candidate"] = wearable.data[annotation_col].copy()
 
         # Annotates the sequences of sleep_candidate
-        wearable.data["hyp_seq_length"], wearable.data["hyp_seq_id"] = misc.get_consecutive_serie(wearable.data,
-                                                                                                  "hyp_sleep_candidate")
+        wearable.data["hyp_seq_length"], wearable.data["hyp_seq_id"] = misc.get_consecutive_series(wearable.data,
+                                                                                                   "hyp_sleep_candidate")
 
-        wearable.data["hyp_sleep_candidate"], wearable.data["hyp_seq_id"], wearable.data[
-            "hyp_seq_length"] = misc.merge_windows(wearable.data, wearable.time_col, "hyp_sleep_candidate",
-                                                   merge_tolerance_in_minutes)
+        wearable.data["hyp_sleep_candidate"], wearable.data["hyp_seq_length"], wearable.data[
+            "hyp_seq_id"] = misc.merge_sequences_given_tolerance(wearable.data, wearable.time_col,
+                                                                     "hyp_sleep_candidate", merge_tolerance_in_minutes)
 
         if only_largest_sleep_period:
             grps = wearable.data.groupby(wearable.experiment_day_col)
             tmp_df = []
             for grp_id, grp_df in grps:
                 gdf = grp_df.copy()
-                gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_serie(gdf, "hyp_sleep_candidate")
+                gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_series(gdf, "hyp_sleep_candidate")
                 df_out = misc.find_largest_sequence(gdf, "hyp_sleep_candidate", output_col).replace(-1, False)
                 tmp_df.append(df_out)
             wearable.data[output_col] = pd.concat(tmp_df)
@@ -267,7 +265,7 @@ class SleepBoudaryDetector(object):
 
             df_time["hyp_" + col + '_bin'] = np.where(
                 (df_time["hyp_" + col + '_5mm'] - (df_time["hyp_" + col + '_10pct'] * factor)) > 0, 0, 1)
-            df_time["hyp_" + col + '_len'], _ = misc.get_consecutive_serie(df_time, "hyp_" + col + '_bin')
+            df_time["hyp_" + col + '_len'], _ = misc.get_consecutive_series(df_time, "hyp_" + col + '_bin')
 
             # Paper's Step 7
             if operator == "or":
@@ -283,12 +281,12 @@ class SleepBoudaryDetector(object):
         wearable.data = df_time.reset_index()
         # wearable.data[output_col] = wearable.data["hyp_sleep_candidate"]
 
-        wearable.data["hyp_seq_length"], wearable.data["hyp_seq_id"] = misc.get_consecutive_serie(wearable.data,
-                                                                                                  "hyp_sleep_candidate")
+        wearable.data["hyp_seq_length"], wearable.data["hyp_seq_id"] = misc.get_consecutive_series(wearable.data,
+                                                                                                   "hyp_sleep_candidate")
         # Paper's Step 8
-        wearable.data["hyp_sleep_candidate"], wearable.data["hyp_seq_id"], wearable.data[
-            "hyp_seq_length"] = misc.merge_windows(wearable.data, wearable.time_col, "hyp_sleep_candidate",
-                                                   merge_tolerance_in_minutes)
+        wearable.data["hyp_sleep_candidate"], wearable.data["hyp_seq_length"], wearable.data[
+            "hyp_seq_id"] = misc.merge_sequences_given_tolerance(wearable.data, wearable.time_col,
+                                                                     "hyp_sleep_candidate", merge_tolerance_in_minutes)
 
         # Paper's Step 9
         if only_largest_sleep_period:  # If true, we keep only one sleep period per night.
@@ -298,7 +296,7 @@ class SleepBoudaryDetector(object):
             tmp_df = []
             for grp_id, grp_df in grps:
                 gdf = grp_df.copy()
-                gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_serie(gdf, "hyp_sleep_candidate")
+                gdf["hyp_seq_length"], gdf["hyp_seq_id"] = misc.get_consecutive_series(gdf, "hyp_sleep_candidate")
                 df_out = misc.find_largest_sequence(gdf, "hyp_sleep_candidate", output_col).replace(-1, False)
                 tmp_df.append(df_out)
             wearable.data[output_col] = pd.concat(tmp_df)
