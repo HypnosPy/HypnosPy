@@ -165,7 +165,7 @@ class CircadianAnalysis(object):
     def _get_cosinor(self, w, col='hyp_act_x', freqs=2):
     
         freq = w.get_frequency_in_secs()
-        s = w.data.groupby('hyp_exp_day')['hyp_time_col'].transform(self._group_to_timepoints, freq)
+        s = w.data.groupby(w.get_experiment_day_col())['hyp_time_col'].transform(self._group_to_timepoints, freq)
         w.data['cosinor_timepoints'] = s
 
         cosinor_input = w.data[[w.get_experiment_day_col(), 'cosinor_timepoints', col]].copy()
@@ -174,35 +174,38 @@ class CircadianAnalysis(object):
         cosinor_input.columns = ['test', 'x', 'y']
         cosinor_input['test'] = cosinor_input['test'].astype(str)
 
-        try:
-            cosinor_result = cosinor.fit_me(cosinor_input['x'].values,
-                                   cosinor_input['y'].values, 
-                                   n_components=3, 
-                                   period=24, 
-                                   model_type='lin', 
-                                   lin_comp=True, 
-                                   alpha=0, 
-                                   name='', 
-                                   save_to='', 
-                                   plot=False, 
-                                   return_model=True)
-        except:
-            cosinor_result = cosinor.fit_me(cosinor_input['x'].values,
-                                   cosinor_input['y'].values, 
-                                   n_components=3, 
-                                   period=24, 
-                                   model_type='lin', 
-                                   lin_comp=True, 
-                                   alpha=0, 
-                                   name='', 
-                                   save_to='', 
-                                   plot=False, 
-                                   return_model=True)
+        cosinor_result = cosinor_input.groupby('test').apply(self._apply_cosinor_on_exp_day)
 
         # cosinor_result is a tuple of
         # (RegressionResultsWrapper, statistics, rhythm_params, X_test, Y_test, model) 
         w.cosinor = cosinor_result
         return w
+
+    @staticmethod
+    def _apply_cosinor_on_exp_day(g):
+        try:
+            cosinor_result = cosinor.fit_me(g['x'].values,
+                       g['y'].values, 
+                       n_components=2, 
+                       period=24, 
+                       model_type='lin', 
+                       lin_comp=True, 
+                       alpha=0,
+                       plot=False)
+        except:
+            cosinor_result = cosinor.fit_me(g['x'].values,
+                       g['y'].values, 
+                       n_components=2, 
+                       period=24, 
+                       model_type='lin', 
+                       lin_comp=True, 
+                       alpha=0,
+                       plot=False)
+        # cosinor_result[1] contains {p, p_reject, SNR, RSS, resid_SE, ME}
+        # cosinor_result[2] contains {ME, period, aplitude, acrophase, mesor}
+        # Note: sometimes, acrophase is NaN.
+        df = pd.concat([pd.Series(cosinor_result[1]), pd.Series(cosinor_result[2])], axis=0)
+        return df
 
     @staticmethod
     def _group_to_timepoints(g, freq=2):

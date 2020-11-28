@@ -1,9 +1,13 @@
+import functools
+import pandas as pd
 from glob import glob
 from hypnospy import Wearable, Experiment, Diary
 from hypnospy.data import MESAPreProcessing
 from hypnospy.analysis import NonWearingDetector, SleepBoudaryDetector, Viewer, PhysicalActivity, Validator, CircadianAnalysis
 from hypnospy.analysis import SleepMetrics, SleepWakeAnalysis
 
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 def setup_experiment(file_path, diary_path, start_hour):
     # Configure an Experiment
@@ -40,8 +44,8 @@ if __name__ == "__main__":
     exp.overall_stats()
 
     #
-    # nwd = NonWearingDetector(exp)
-    # nwd.detect_non_wear(strategy="choi", wearing_col="hyp_wearing_choi")
+    nwd = NonWearingDetector(exp)
+    nwd.detect_non_wear(strategy="choi", wearing_col="hyp_wearing_choi")
     #
     # # TODO: fix bug when annotation_merge_tolerance_in_minutes < 0
     sbd = SleepBoudaryDetector(exp)
@@ -89,23 +93,42 @@ if __name__ == "__main__":
 
 
     # Setting day to ml representation -> days may not be of fixed lengths.
-    ml_column='ml_sequence'
-    exp.set_ml_representation_days_exp(sleep_col="sleep_period_annotation", ml_column='ml_sequence')
+    exp_day_column='ml_sequence'
+    exp.set_ml_representation_days_exp(sleep_col="sleep_period_annotation", ml_column=exp_day_column)
     va.flag_day_sleep_length_less_than(sleep_period_col="sleep_period_annotation", min_sleep_in_minutes=3*30)    
     va.flag_day_sleep_length_more_than(sleep_period_col="sleep_period_annotation", max_sleep_in_minutes=12*60)
     n_removed_wearables = va.remove_wearables_without_valid_days()
     print("Removed %d wearables." % n_removed_wearables)
 
-    # The below code takes time because they run linear algebra algorithms.
-    ca = CircadianAnalysis(exp)
-    ca.run_cosinor()
-    ca.run_SSA()
 
+    pa_levels = ["sedentary", "light", "medium", "vigorous"]
 
     pa = PhysicalActivity(exp)
-    pa.set_cutoffs(cutoffs=[58, 399, 1404], names=["sedentary", "light", "medium", "vigorous"])
+    # METS: 1.5, 3, 6
+    pa.set_cutoffs(cutoffs=[58, 399, 1404], names=pa_levels)
     pa.generate_pa_columns(based_on="activity")
-    bouts = pa.get_bouts("sedentary", length_in_minutes=30, sleep_col="sleep_period_annotation")
+    bouts = []
+    for act_level in pa_levels:
+        tmp_list = []
+        for length in [5, 10, 20, 30]:
+            tmp_list.append(pa.get_bouts(act_level, length, length//2,
+                                         resolution="hour", sleep_col="sleep_period_annotation"))
+        tmp_list = pd.concat(tmp_list)
+        bouts.append(tmp_list)
+
+
+    # Merge PA datasets
+    bouts = functools.reduce(
+        lambda left, right: pd.merge(left, right, on=["pid", exp_day_column, "hyp_time_col", "bout_length"],
+                                     how='outer'), bouts).fillna(0.0)
+
+    bouts_melted = bouts.melt(id_vars=["pid", exp_day_column, "bout_length"],
+                              value_vars=["sedentary", "light", "medium", "vigorous"])
+
+    # g = sns.catplot(
+    #     data=bouts_melted[bouts_melted["bout_length"] == 5], kind="bar", hue="variable",
+    #     x="hyp_exp_day", y="value", ci="sd", palette="dark", alpha=.6, height=6
+    # )
 
     sw = SleepWakeAnalysis(exp)
     sw.run_sleep_algorithm(algname="ScrippsClinic", activityIdx="hyp_act_x", rescoring=False, on_sleep_interval=False,
@@ -114,27 +137,46 @@ if __name__ == "__main__":
                            inplace=True)
 
     sm = SleepMetrics(exp)
-    metrics = {}
-    metrics["sleepEfficiency"] = sm.get_sleep_quality(sleep_metric="sleepEfficiency", wake_sleep_col="ScrippsClinic",
-                                                      sleep_period_col="sleep_period_annotation")
-    metrics["awakening"] = sm.get_sleep_quality(sleep_metric="awakening", wake_sleep_col="ScrippsClinic",
-                                                sleep_period_col="sleep_period_annotation")
-    metrics["arousal"] = sm.get_sleep_quality(sleep_metric="arousal", wake_sleep_col="ScrippsClinic",
-                                              sleep_period_col="sleep_period_annotation")
 
+    # metrics = {}
+    # metrics["sleepEfficiency"] = sm.get_sleep_quality(sleep_metric="sleepEfficiency", wake_sleep_col="ScrippsClinic",
+    #                                                   sleep_period_col="sleep_period_annotation")
+    # metrics["awakening"] = sm.get_sleep_quality(sleep_metric="awakening", wake_sleep_col="ScrippsClinic",
+    #                                             sleep_period_col="sleep_period_annotation")
+    # metrics["arousal"] = sm.get_sleep_quality(sleep_metric="arousal", wake_sleep_col="ScrippsClinic",
+    #                                           sleep_period_col="sleep_period_annotation")
+    # metrics["sri"] = sm.get_sleep_quality(sleep_metric="sri", wake_sleep_col="ScrippsClinic")
+
+    sleep_metrics = []
+    for sleep_metric in ["sleepEfficiency", "awakening", "arousal"]:
+        sleep_metrics.append(sm.get_sleep_quality(sleep_metric=sleep_metric, wake_sleep_col="ScrippsClinic",
+                                                  sleep_period_col="sleep_period_annotation"))
+    # SRI does not use a sleep_period_col
     # SRI calculation will not work with set_ml_representation_days_exp because day representation will be of different lengths.
     # While SRI requires the days to be of fixed lengths.
-    metrics["sri"] = sm.get_sleep_quality(sleep_metric="sri", wake_sleep_col="ScrippsClinic")
+    sleep_metrics.append(sm.get_sleep_quality(sleep_metric="sri", wake_sleep_col="ScrippsClinic"))
 
-    r1 = sm.compare_sleep_metrics(ground_truth="ScrippsClinic", sleep_wake_col="Sadeh",
-                             sleep_metrics=["sleepEfficiency", "awakenings"],
-                             sleep_period_col="sleep_period_annotation", comparison_method="pearson")
+    sleep_metrics = functools.reduce(lambda left, right: pd.merge(left, right, on=["pid", exp_day_column], how='outer'),
+                                     sleep_metrics)
 
-    r2 = sm.compare_sleep_metrics(ground_truth="ScrippsClinic", sleep_wake_col="Sadeh",
-                                  sleep_metrics=["sleepEfficiency", "awakenings"],
-                                  sleep_period_col="sleep_period_annotation", comparison_method="relative_difference")
 
-    sm.evaluate_sleep_metric(ground_truth="ScrippsClinic", sleep_wake_col="Sadeh", sleep_period_col="sleep_period_annotation")
+    # TODO: check melting dataset
+    # The below code takes time because they run linear algebra algorithms.
+    ca = CircadianAnalysis(exp)
+    ca.run_cosinor()
+    ca.run_SSA()
+
+
+
+    # r1 = sm.compare_sleep_metrics(ground_truth="ScrippsClinic", sleep_wake_col="Sadeh",
+    #                          sleep_metrics=["sleepEfficiency", "awakenings"],
+    #                          sleep_period_col="sleep_period_annotation", comparison_method="pearson")
+    #
+    # r2 = sm.compare_sleep_metrics(ground_truth="ScrippsClinic", sleep_wake_col="Sadeh",
+    #                               sleep_metrics=["sleepEfficiency", "awakenings"],
+    #                               sleep_period_col="sleep_period_annotation", comparison_method="relative_difference")
+    #
+    # sm.evaluate_sleep_metric(ground_truth="ScrippsClinic", sleep_wake_col="Sadeh", sleep_period_col="sleep_period_annotation")
 
     # View signals
     v = Viewer(exp)
@@ -142,12 +184,11 @@ if __name__ == "__main__":
                    signal_as_area=["ScrippsClinic"])
 
 
-    print(metrics['sleepEfficiency'])
+    print(sleep_metrics)
     
     w = exp.get_wearable("1768")
-    print(w.cosinor.keys())
-    print(w.ssa.keys())
-    #w = exp.get_wearable("1766")
+    print(w.cosinor)
+    print(w.ssa['hyp_act_x'].keys())
 
 
     #  ------------------------------------------------

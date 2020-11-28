@@ -258,7 +258,7 @@ class Wearable(object):
             )
 
 
-        seq_length, seq_id = misc.get_consecutive_serie(self.data, sleep_col)
+        seq_length, seq_id = misc.get_consecutive_series(self.data, sleep_col)
         
         first_seq_true = self.data[sleep_col].iloc[0]
         if first_seq_true: # if the first sequence is a True sequence, 
