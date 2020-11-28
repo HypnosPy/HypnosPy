@@ -23,6 +23,7 @@ class CircadianAnalysis(object):
         """
         sets ssa results in w.ssa
         """
+        print('=== Running SSA ===')
         for idx, w in tqdm(enumerate(self.wearables)):
             # print(wearable.get_pid())
 
@@ -39,7 +40,7 @@ class CircadianAnalysis(object):
     def _get_SSA(self, w, cols=['hyp_act_x'], freqs=['15T']):
         ssa = defaultdict(dict)
         for col in cols:
-            df = w.data[['hyp_exp_day', 'hyp_time_col', 'hyp_act_x']].resample('1T', on='hyp_time_col').mean()
+            df = w.data[[w.get_experiment_day_col(), 'hyp_time_col', 'hyp_act_x']].resample('1T', on='hyp_time_col').mean()
             df = df['hyp_act_x']
             ssa[col]['r'], ssa[col]['pv'], ssa[col]['gk'], ssa[col]['wm'] = self._get_SSA_par(df, L=1440)
             ssa[col]['df'] = df
@@ -52,7 +53,7 @@ class CircadianAnalysis(object):
 
                 # if self.data freq is different than df.resample, then the below line will cause an error
                 # df_1 = df_1.set_index(self.data.index)
-                df = w.data[['hyp_exp_day', 'hyp_time_col', 'hyp_act_x']].resample('1T', on='hyp_time_col').mean()
+                df = w.data[[w.get_experiment_day_col(), 'hyp_time_col', 'hyp_act_x']].resample('1T', on='hyp_time_col').mean()
                 df = df['hyp_act_x']
                 ssa[col]['df'] = df
 
@@ -165,10 +166,11 @@ class CircadianAnalysis(object):
     
         freq = w.get_frequency_in_secs()
         s = w.data.groupby('hyp_exp_day')['hyp_time_col'].transform(self._group_to_timepoints, freq)
+        w.data['cosinor_timepoints'] = s
 
-        cosinor_input = w.data[['hyp_exp_day', 'cosinor_timepoints', col]].copy()
+        cosinor_input = w.data[[w.get_experiment_day_col(), 'cosinor_timepoints', col]].copy()
         cosinor_input['cosinor_timepoints'] = s
-        cosinor_input = cosinor_input[['hyp_exp_day', 'cosinor_timepoints', col]]
+        cosinor_input = cosinor_input[[w.get_experiment_day_col(), 'cosinor_timepoints', col]]
         cosinor_input.columns = ['test', 'x', 'y']
         cosinor_input['test'] = cosinor_input['test'].astype(str)
 

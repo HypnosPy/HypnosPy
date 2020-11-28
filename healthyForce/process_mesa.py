@@ -1,7 +1,7 @@
 from glob import glob
 from hypnospy import Wearable, Experiment, Diary
 from hypnospy.data import MESAPreProcessing
-from hypnospy.analysis import NonWearingDetector, SleepBoudaryDetector, Viewer, PhysicalActivity, Validator
+from hypnospy.analysis import NonWearingDetector, SleepBoudaryDetector, Viewer, PhysicalActivity, Validator, CircadianAnalysis
 from hypnospy.analysis import SleepMetrics, SleepWakeAnalysis
 
 
@@ -22,8 +22,8 @@ def setup_experiment(file_path, diary_path, start_hour):
         exp.set_freq_in_secs(30)
         w.change_start_hour_for_experiment_day(start_hour)
 
-    diary = Diary().from_file(diary_path)
-    exp.add_diary(diary)
+    # diary = Diary().from_file(diary_path)
+    # exp.add_diary(diary)
 
     return exp
 
@@ -37,6 +37,8 @@ if __name__ == "__main__":
 
     exp = setup_experiment(file_path, diary_path, start_hour)
     exp.fill_no_activity(-0.0001)
+    exp.overall_stats()
+
     #
     # nwd = NonWearingDetector(exp)
     # nwd.detect_non_wear(strategy="choi", wearing_col="hyp_wearing_choi")
@@ -50,17 +52,21 @@ if __name__ == "__main__":
     va = Validator(exp)
     va.flag_epoch_physical_activity_less_than(min_activity_threshold=0)
     va.flag_epoch_null_cols(col_list=["hyp_act_x"])
+
+    nwd = NonWearingDetector(exp)
+    nwd.detect_non_wear(strategy="choi", wearing_col="hyp_wearing_choi")
     va.flag_epoch_nonwearing("hyp_wearing_choi")
 
-    va.flag_day_sleep_length_less_than(sleep_period_col="sleep_period_annotation", min_sleep_in_minutes=3*60)
+    va.flag_day_sleep_length_less_than(sleep_period_col="sleep_period_annotation", min_sleep_in_minutes=3*30)
     # n_removed_days = va.remove_flagged_days()
     # print("Removed %d days (short sleep)." % n_removed_days)
 
-    va.flag_day_sleep_length_more_than(sleep_period_col="sleep_period_annotation", max_sleep_in_minutes=12 * 60)
+    va.flag_day_sleep_length_more_than(sleep_period_col="sleep_period_annotation", max_sleep_in_minutes=12*60)
     # n_removed_days = va.remove_flagged_days()
     # print("Removed %d days (long sleep)." % n_removed_days)
 
-    va.flag_day_max_nonwearing(max_non_wear_minutes_per_day=3*60)
+    va.flag_day_max_nonwearing(max_non_wear_minutes_per_day=3*10)
+    # va.flag_day_max_nonwearing(max_non_wear_minutes_per_day=3*60)
     # n_removed_days = va.remove_flagged_days()
     # print("Removed %d days (non wearing)." % n_removed_days)
 
@@ -73,13 +79,28 @@ if __name__ == "__main__":
     n_removed_wearables = va.remove_wearables_without_valid_days()
     print("Removed %d wearables." % n_removed_wearables)
 
-    va.flag_day_if_not_enough_consecutive_days(5)
+    va.flag_day_if_not_enough_consecutive_days(3)
     n_removed_days = va.remove_flagged_days()
     print("Removed %d days that are not consecutive." % n_removed_days)
     n_removed_wearables = va.remove_wearables_without_valid_days()
     print("Removed %d wearables." % n_removed_wearables)
 
     exp.overall_stats()
+
+
+    # Setting day to ml representation -> days may not be of fixed lengths.
+    ml_column='ml_sequence'
+    exp.set_ml_representation_days_exp(sleep_col="sleep_period_annotation", ml_column='ml_sequence')
+    va.flag_day_sleep_length_less_than(sleep_period_col="sleep_period_annotation", min_sleep_in_minutes=3*30)    
+    va.flag_day_sleep_length_more_than(sleep_period_col="sleep_period_annotation", max_sleep_in_minutes=12*60)
+    n_removed_wearables = va.remove_wearables_without_valid_days()
+    print("Removed %d wearables." % n_removed_wearables)
+
+    # The below code takes time because they run linear algebra algorithms.
+    ca = CircadianAnalysis(exp)
+    ca.run_cosinor()
+    ca.run_SSA()
+
 
     pa = PhysicalActivity(exp)
     pa.set_cutoffs(cutoffs=[58, 399, 1404], names=["sedentary", "light", "medium", "vigorous"])
@@ -100,6 +121,9 @@ if __name__ == "__main__":
                                                 sleep_period_col="sleep_period_annotation")
     metrics["arousal"] = sm.get_sleep_quality(sleep_metric="arousal", wake_sleep_col="ScrippsClinic",
                                               sleep_period_col="sleep_period_annotation")
+
+    # SRI calculation will not work with set_ml_representation_days_exp because day representation will be of different lengths.
+    # While SRI requires the days to be of fixed lengths.
     metrics["sri"] = sm.get_sleep_quality(sleep_metric="sri", wake_sleep_col="ScrippsClinic")
 
     r1 = sm.compare_sleep_metrics(ground_truth="ScrippsClinic", sleep_wake_col="Sadeh",
@@ -118,8 +142,11 @@ if __name__ == "__main__":
                    signal_as_area=["ScrippsClinic"])
 
 
-
-    w = exp.get_wearable("1760")
+    print(metrics['sleepEfficiency'])
+    
+    w = exp.get_wearable("1768")
+    print(w.cosinor.keys())
+    print(w.ssa.keys())
     #w = exp.get_wearable("1766")
 
 
