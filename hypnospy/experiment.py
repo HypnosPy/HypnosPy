@@ -106,8 +106,8 @@ class Experiment(object):
             print("Experiment has no valid wearable left.")
 
 
-    def set_ml_representation_days_exp(self, sleep_col: str = None, ml_column='ml_sequence', ml_column_mark='ml_sequence_mark'):
+    def set_ml_representation_days_exp(self, sleep_col=None, ml_column='ml_sequence'):
         for wearable in self.get_all_wearables():
-            wearable.set_ml_representation_days(sleep_col, ml_column, ml_column_mark)
+            wearable.set_ml_representation_days(sleep_col, ml_column)
 
 

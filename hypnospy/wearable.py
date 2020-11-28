@@ -82,7 +82,7 @@ class Wearable(object):
     def get_pid(self):
         return self.pid
 
-    def set_experiment_exp_day_col(self, col):
+    def set_experiment_day_col(self, col):
         self.experiment_day_col = col
 
     def get_experiment_day_col(self):
@@ -272,7 +272,7 @@ class Wearable(object):
             self.data.loc[self.data[ml_column] == max_id, ml_column] = -1
         
         # warnings.warn("Switching exp_day_col to %s" % ml_column)
-        set_experiment_exp_day_col(ml_column)
+        self.set_experiment_day_col(ml_column)
 
 
 
