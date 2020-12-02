@@ -175,6 +175,11 @@ class CircadianAnalysis(object):
         cosinor_input['test'] = cosinor_input['test'].astype(str)
 
         cosinor_result = cosinor_input.groupby('test').apply(self._apply_cosinor_on_exp_day)
+        cosinor_result.index = cosinor_result.index.astype(int)
+
+        # remove invalid days
+        cosinor_result = cosinor_result.loc[0:]
+        
 
         # cosinor_result is a tuple of
         # (RegressionResultsWrapper, statistics, rhythm_params, X_test, Y_test, model) 

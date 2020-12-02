@@ -274,6 +274,11 @@ class Wearable(object):
         # warnings.warn("Switching exp_day_col to %s" % ml_column)
         self.set_experiment_day_col(ml_column)
 
+    def get_activity_per_day(self):
+        # .loc[0:] is to remove -1 days (invalid days).
+        act_per_ml_day = self.data.groupby('ml_sequence')['hyp_act_x'].apply(list).loc[0:]
+        return act_per_ml_day
+
 
 
 
