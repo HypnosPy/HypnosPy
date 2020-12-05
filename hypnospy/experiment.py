@@ -111,13 +111,4 @@ class Experiment(object):
             wearable.set_ml_representation_days(sleep_col, ml_column)
 
 
-    def get_activity_per_day_exp(self):
-        act_per_ml_day_exp = []
-        for w in self.get_all_wearables():
-            act_per_ml_day = w.get_activity_per_day()
-            act_per_ml_day_exp.append(act_per_ml_day)
-        
-        wearable_pids = [w.pid for w in self.get_all_wearables()]
-        act_per_ml_day_exp = pd.concat(act_per_ml_day_exp, keys=wearable_pids, names=['pid', 'ml_sequence'])
-        
-        return act_per_ml_day_exp
+

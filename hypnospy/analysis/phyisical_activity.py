@@ -122,10 +122,10 @@ class PhysicalActivity(object):
                 ].drop_duplicates(subset=["pa_grp"])
 
             if resolution == "day":
-                tmp_df = bouts.groupby([wearable.get_experiment_day_col()])[pa_col].count().reset_index()
+                tmp_df = bouts.groupby([wearable.get_experiment_day_col()])[pa_col].sum().reset_index()
             elif resolution == "hour":
                 gbouts = bouts.set_index("hyp_time_col")
-                tmp_df = gbouts.groupby([wearable.get_experiment_day_col(), gbouts.index.hour])[pa_col].count().reset_index()
+                tmp_df = gbouts.groupby([wearable.get_experiment_day_col(), gbouts.index.hour])[pa_col].sum().reset_index()
             else:
                 raise ValueError("The parameter 'resolution' can only be `day` or `hour`.")
 
@@ -212,4 +212,13 @@ class PhysicalActivity(object):
         #     #rows.append(act_hour)
         #     return act_hour
         # #return pd.concat(rows)
-        pass
+
+        act_per_ml_day_exp = []
+        for w in self.get_all_wearables():
+            act_per_ml_day = w.data.groupby('ml_sequence')['hyp_act_x'].apply(list).loc[0:]
+            act_per_ml_day_exp.append(act_per_ml_day)
+        
+        wearable_pids = [w.pid for w in self.get_all_wearables()]
+        act_per_ml_day_exp = pd.concat(act_per_ml_day_exp, keys=wearable_pids, names=['pid', 'ml_sequence'])
+        
+        return act_per_ml_day_exp
