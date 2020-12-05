@@ -2,6 +2,8 @@ import warnings
 import pandas as pd
 import numpy as np
 from datetime import timedelta
+from calendar import monthrange
+
 
 
 def get_consecutive_series(df_in: pd.DataFrame, col: str) -> [pd.Series, pd.Series]:
@@ -114,3 +116,56 @@ def merge_sequences_given_tolerance(df_orig: pd.DataFrame, time_col: str, col_to
     df.index = saved_index.values
 
     return df[col_to_act].astype(np.bool), df[seq_length_col], df[seq_id_col]
+
+
+#
+def encode_datetime_to_ml(series, col_name):
+    """
+    This method converts datetime pandas series to machine learning acceptable format. 
+    It extracts year, month, day, hour, and minute from the datetime object.
+    The method returns a dataframe, as shown in below example.
+    Example:
+        pd.Series
+        2017-01-03   2017-01-03 15:25:00
+        2017-01-04   2017-01-04 14:56:00
+        2017-01-05   2017-01-05 12:49:00
+        2017-01-06   2017-01-06 18:52:00
+        2017-01-07   2017-01-07 18:00:00
+        2017-01-08   2017-01-08 07:58:00
+        Freq: 24H, dtype: datetime64[ns]
+    
+    Code: encode_datetime_to_ml(series, 'acrophase')
+
+    Output:
+       acrophase_year  acrophase_month_sin  acrophase_month_cos  \
+        2017-01-03            2017                  0.5             0.866025   
+        2017-01-04            2017                  0.5             0.866025   
+        2017-01-05            2017                  0.5             0.866025   
+        2017-01-06            2017                  0.5             0.866025   
+        2017-01-07            2017                  0.5             0.866025   
+        2017-01-08            2017                  0.5             0.866025   
+        ...
+
+    :param series: An input pandas datetime series 
+    :param col_name:   prefix column name for output dataframe
+    :return: dataframe
+    """
+    df = pd.DataFrame()
+    df[col_name + '_year'] = series.dt.year
+    
+    # retain cyclic nature of time
+    df[col_name + '_month_sin'] = np.sin(2 * np.pi * series.dt.month/12)
+    df[col_name + '_month_cos'] = np.cos(2 * np.pi * series.dt.month/12)
+    
+    # some months have 28, 29, 30, and 31 days
+    days_in_month = series.apply(lambda x: monthrange(x.year, x.month)[1])
+    df[col_name + '_day_sin'] = np.sin(2 * np.pi * series.dt.day/days_in_month)
+    df[col_name + '_day_cos'] = np.cos(2 * np.pi * series.dt.day/days_in_month)
+    
+    df[col_name + '_hour_sin'] = np.sin(2 * np.pi * series.dt.hour/24)
+    df[col_name + '_hour_cos'] = np.cos(2 * np.pi * series.dt.hour/24)
+    
+    df[col_name + '_minute_sin'] = np.sin(2 * np.pi * series.dt.minute/60)
+    df[col_name + '_minute_cos'] = np.cos(2 * np.pi * series.dt.minute/60)
+    
+    return df
