@@ -131,8 +131,10 @@ class PhysicalActivity(object):
 
             tmp_df["pid"] = wearable.get_pid()
             tmp_df["bout_length"] = length_in_minutes
+
             returning_df.append(tmp_df)
 
+        returning_df = [x for x in returning_df if type(x) == pd.DataFrame]        
         return pd.concat(returning_df).reset_index(drop=True)
 
     def get_binned_pa_representation(self):
