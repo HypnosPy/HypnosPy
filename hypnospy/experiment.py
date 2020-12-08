@@ -105,10 +105,17 @@ class Experiment(object):
         else:
             print("Experiment has no valid wearable left.")
 
+    def create_day_sleep_experiment_day(self, sleep_col: str, new_col: str = 'day_night_sequence',
+                                        start_by_awaken_part: bool = True):
+        """
+        Adds a column to the wearable data.
+        This column will be similar to ``experiment_day``, however instead of having a fixed size, it will follow the day/sleep cycle.
+        This is not by exploring the annotations made by the SleepBoudaryDetector module, represented here by the ``sleep_col``.
 
-    def set_ml_representation_days_exp(self, sleep_col=None, ml_column='ml_sequence'):
+        :param sleep_col: sleep_col resulted from SleepBoudaryDetector.detect_sleep_boundary()
+        :param new_col: the name of the new column created
+        :param start_by_awaken_part: should we start sequence id 0 with the day part (True) or not (False)
+        """
+
         for wearable in self.get_all_wearables():
-            wearable.set_ml_representation_days(sleep_col, ml_column)
-
-
-
+            wearable.create_day_sleep_experiment_day(sleep_col, new_col, start_by_awaken_part)

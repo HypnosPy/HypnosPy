@@ -232,20 +232,20 @@ class Wearable(object):
     def get_experiment_days(self):
         return list(self.data[self.get_experiment_day_col()].unique())
 
+    def create_day_sleep_experiment_day(self, sleep_col: str, new_col: str = 'day_night_sequence',
+                                        start_by_awaken_part: bool = True):
+        """
+        Adds a column to the wearable data.
+        This column will be similar to ``experiment_day``, however instead of having a fixed size, it will follow the day/sleep cycle.
+        This is not by exploring the annotations made by the SleepBoudaryDetector module, represented here by the ``sleep_col``.
 
-    def set_ml_representation_days(self, sleep_col, ml_column='ml_sequence'):
-        """
-        Adds a ml_column column to the wearable.data that represents wake cycle followed by sleep (called a sequence).
-        Adds a ml_column_mark column to the wearable.data that marks invalid sequences.
-    
         :param sleep_col: sleep_col resulted from SleepBoudaryDetector.detect_sleep_boundary()
-        :param ml_column: ml_column name
-        :param ml_column_mark: ml_column_mark name
+        :param new_col: the name of the new column created
+        :param start_by_awaken_part: should we start sequence id 0 with the day part (True) or not (False)
         """
+
         if not sleep_col:
-            raise ValueError(
-                "sleep_col arg is None or empty"
-            )
+            raise ValueError("sleep_col arg is None or empty")
 
         if sleep_col and (sleep_col not in self.data.keys()):
             raise ValueError(
@@ -257,28 +257,19 @@ class Wearable(object):
                 "Column sleep_col named %s for PID %s is not of type bool. Aborting." % (sleep_col, self.get_pid())
             )
 
-
         seq_length, seq_id = misc.get_consecutive_series(self.data, sleep_col)
-        
-        first_seq_true = self.data[sleep_col].iloc[0]
-        if first_seq_true: # if the first sequence is a True sequence, 
+
+        # sleep col is a binary with True meaning Sleep and False meaning Awake
+        first_seq_sleep = self.data[sleep_col].iloc[0]
+
+        # We should alter the sequence if:
+        # (1) the first epoch is sleep, but we should start by the day part.
+        # (2) first epoch is a day, but we should start by the sleep part
+        if (first_seq_sleep and start_by_awaken_part) or (not first_seq_sleep and not start_by_awaken_part):
             seq_id = seq_id - 1
 
-        self.data[ml_column] = seq_id // 2 # misc.get_consecutive_serie returns each sequence with its own id, and we would like the sequence 'F+T+', 
-                                           # so we're joining 2 sequences together (the False sequence and the True sequence) to create the ML representation.
+        # We can use the seq_id to create the new experiment_day col that uses the sequences of awakening and sleep
+        self.data[new_col] = seq_id // 2
 
-        max_id = self.data[ml_column].max() # If the last sequence consists of Falses' without its conjugate Trues', we have to mark the last sequence.
-        if(max_id % 2 != 0):
-            self.data.loc[self.data[ml_column] == max_id, ml_column] = -1
-        
         # warnings.warn("Switching exp_day_col to %s" % ml_column)
-        self.set_experiment_day_col(ml_column)
-
-
-
-
-
-
-
-
-
+        self.set_experiment_day_col(new_col)
