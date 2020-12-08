@@ -85,7 +85,7 @@ class PhysicalActivity(object):
         :param length_in_minutes:        The minimal length of the activity in minutes
         :param pa_allowance_in_minutes:  The maximum allowance of minutes in which a bout is still counted.
         :param resolution:               Either "day" or "hour". The resolution expected for output.
-        :param sleep_col:                If a valid binary colunm, we ignore bouts that happened when the value of this col is True.
+        :param sleep_col:                If a valid binary column, we ignore bouts that happened when the value of this col is True.
                                          Make sure to run SleepBoudaryDetector.detect_sleep_boundaries() first.
         :return:                         A dataframe counting the number of bouts for the given physical activity level
         """
@@ -137,16 +137,16 @@ class PhysicalActivity(object):
         returning_df = [x for x in returning_df if type(x) == pd.DataFrame]        
         return pd.concat(returning_df).reset_index(drop=True)
 
-    def get_binned_pa_representation(self):
+    def get_binned_pa_representation(self) -> pd.DataFrame:
         """
-        Counts the number of occurance of physical activity names (PhysicalActivity.names) 
-        within wearable.get_activity_col(). PhysicalActivity.name boundaries are set in 
-        PhysicalActivity.cutoffs
+        Counts the number of epochs for each physical activity levels (see PhysicalActivity.names) per hour of the day.
+        PhysicalActivity.names and PhysicalActivity.cutoffs are set with ``PhysicalActivity.set_cutoffs``
 
-        :return: dataframe with pa counts 
-        per hour (wearable.get_time_col()) 
-        per day (wearable.get_experiment_day_col()) 
-        per wearable id (wearable.get_pid())
+        Note the difference between this method and get_bouts.
+        While get_bouts counts the number of bouts at a given hour, binner_pa counts the number of minutes at a given PA level per hour.
+        If the number of epochs is smaller than the minimal for a bout, get_bouts would not capture it, while binned_pa_representation would.
+
+        :return: dataframe with pa counts binned per hour
         """
         rows = []
         for wearable in self.wearables:
@@ -156,23 +156,30 @@ class PhysicalActivity(object):
                     wearable.get_activity_col()]
 
             pid = wearable.get_pid()
-            # lpa = act_hour.apply(lambda x: (x <= self.mvpa_value).sum())
-            lpa = act_hour.apply(lambda x: (x <= self.cutoffs[0]).sum())
-            lpa.name = "LPA"
-            # mvpa = act_hour.apply(lambda x: x.between(self.mvpa_value, self.vpa_value).sum())
-            mvpa = act_hour.apply(lambda x: x.between(self.cutoffs[0], self.cutoffs[1]).sum())
-            mvpa.name = "MVPA"
-            # vpa = act_hour.apply(lambda x: (x >= self.vpa_value).sum())
-            vpa = act_hour.apply(lambda x: (x >= self.cutoffs[1]).sum())
-            vpa.name = "VPA"
 
-            concatenated = pd.concat([lpa, mvpa, vpa], axis=1)
+            PAs = []
+            # Special case of self.names[0]
+            tmpdf = act_hour.apply(lambda x: (x <= self.cutoffs[0]).sum())
+            tmpdf.name = self.names[0]
+            PAs.append(tmpdf)
+
+            for i in range(1, len(self.cutoffs)):
+                tmpdf = act_hour.apply(lambda x: x.between(self.cutoffs[i-1], self.cutoffs[i]).sum())
+                tmpdf.name = self.names[i]
+                PAs.append(tmpdf)
+
+            # Special case for the last activity
+            tmpdf = act_hour.apply(lambda x: (x >= self.cutoffs[-1]).sum())
+            tmpdf.name = self.names[-1]
+            PAs.append(tmpdf)
+
+            concatenated = pd.concat(PAs, axis=1)
             concatenated["pid"] = pid
             rows.append(concatenated)
 
         return pd.concat(rows)
 
-    def get_stats_pa_representation(self):
+    def get_stats_pa_representation(self) -> pd.DataFrame:
         """
         Returns each wearable's statistical measures 
         per hour (wearable.get_time_col()) 
@@ -199,28 +206,27 @@ class PhysicalActivity(object):
                                       }))
         return pd.concat(rows)
 
-    def get_raw_pa(self):
-        #  TODO: actually, one interesting way to implement it is having a concept of experiment_day that starts from 1
-        #   rather than the current experiment_day that start from the day of the week
+    def get_raw_pa(self, resolution):
+        """
+        Returns each wearable's raw physical activity either grouped by hour or day (resolution).
+            per hour (wearable.get_time_col())
+            per day (wearable.get_experiment_day_col())
 
-        # rows = []
-        # for wearable in self.wearables:
-        #     act_hour = \
-        #         wearable.data.groupby(
-        #             [wearable.get_experiment_day_col(), wearable.data[wearable.get_time_col()].dt.hour])[
-        #             wearable.get_activity_col()]
-        #     #act_hour.apply(lambda x: x.values.ravel())
-        #     #act_hour["pid"] = wearable.get_pid()
-        #     #rows.append(act_hour)
-        #     return act_hour
-        # #return pd.concat(rows)
+        :param resolution:               Either "day" or "hour". The resolution expected for output.
+        :return: a dataframe with raw physical activity
+        """
 
-        act_per_ml_day_exp = []
-        for w in self.get_all_wearables():
-            act_per_ml_day = w.data.groupby('ml_sequence')['hyp_act_x'].apply(list).loc[0:]
-            act_per_ml_day_exp.append(act_per_ml_day)
-        
-        wearable_pids = [w.pid for w in self.get_all_wearables()]
-        act_per_ml_day_exp = pd.concat(act_per_ml_day_exp, keys=wearable_pids, names=['pid', 'ml_sequence'])
-        
-        return act_per_ml_day_exp
+        rows = []
+        for wearable in self.wearables:
+            if resolution == "hour":
+                activity = wearable.data.groupby([wearable.get_experiment_day_col(), wearable.data[wearable.get_time_col()].dt.hour])[wearable.get_activity_col()]
+            elif resolution == "day":
+                activity = wearable.data.groupby([wearable.get_experiment_day_col()])[wearable.get_activity_col()]
+
+            activity = activity.apply(lambda x: x.values.ravel())
+            activity.name = "raw_pa"
+            activity = activity.reset_index()
+            activity["pid"] = wearable.get_pid()
+            rows.append(activity)
+
+        return pd.concat(rows)
