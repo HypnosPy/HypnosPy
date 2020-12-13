@@ -273,3 +273,28 @@ class Wearable(object):
 
         # warnings.warn("Switching exp_day_col to %s" % ml_column)
         self.set_experiment_day_col(new_col)
+
+    def weekday(self) -> pd.DataFrame:
+        """
+
+        :return:
+        """
+        self.data["hyp_weekday"] = self.data[self.get_time_col()].dt.weekday
+        s = self.data[[self.get_experiment_day_col(), "hyp_weekday"]].groupby(self.get_experiment_day_col())[
+            "hyp_weekday"].agg(pd.Series.mode)
+        s = s.reset_index()
+        s["pid"] = self.get_pid()
+        return s
+
+    def is_weekend(self, weekend=[5, 6]) -> pd.DataFrame:
+        """
+        The day of the week with Monday=0, Sunday=6.
+
+        Returns a dataframe with exp_day -> is_weekend
+
+        :return:
+        """
+        days = self.weekday()
+        days["hyp_is_weekend"] = days["hyp_weekday"].isin(weekend)
+        del days["hyp_weekday"]
+        return days

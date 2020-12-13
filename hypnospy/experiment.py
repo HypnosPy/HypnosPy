@@ -1,4 +1,5 @@
 from glob import glob
+import pandas as pd
 import numpy as np
 import os
 import warnings
@@ -101,9 +102,9 @@ class Experiment(object):
         print("Total number of days: %d" % days_acc.sum())
         if epochs_acc.size > 0:
             print("Avg. number of days: %.2f (+-%.3f). Max: %d, Min: %d." % (
-            days_acc.mean(), days_acc.std(), days_acc.max(), days_acc.min()))
+                days_acc.mean(), days_acc.std(), days_acc.max(), days_acc.min()))
             print("Avg. number of epochs: %.2f (+-%.3f). Max: %d, Min: %d." % (
-            epochs_acc.mean(), epochs_acc.std(), epochs_acc.max(), epochs_acc.min()))
+                epochs_acc.mean(), epochs_acc.std(), epochs_acc.max(), epochs_acc.min()))
         else:
             print("Experiment has no valid wearable left.")
 
@@ -121,3 +122,9 @@ class Experiment(object):
 
         for wearable in self.get_all_wearables():
             wearable.create_day_sleep_experiment_day(sleep_col, new_col, start_by_awaken_part)
+
+    def weekday(self) -> pd.DataFrame:
+        return pd.concat([wearable.weekday() for wearable in self.get_all_wearables()])
+
+    def is_weekend(self, weekend=[5, 6]) -> pd.DataFrame:
+        return pd.concat([wearable.is_weekend(weekend) for wearable in self.get_all_wearables()])
