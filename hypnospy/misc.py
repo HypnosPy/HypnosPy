@@ -1,7 +1,8 @@
 import warnings
 import pandas as pd
 import numpy as np
-from datetime import timedelta
+import time
+import datetime
 from calendar import monthrange
 
 
@@ -96,7 +97,7 @@ def merge_sequences_given_tolerance(df_orig: pd.DataFrame, time_col: str, col_to
             start_time_next_segment = next_segment.index[0]
             end_time_next_segment = next_segment.index[-1]
 
-            if start_time_next_segment - end_time_actual_seg <= timedelta(minutes=tolerance_in_minutes):
+            if start_time_next_segment - end_time_actual_seg <= datetime.timedelta(minutes=tolerance_in_minutes):
                 # Merges two sleep block
                 df.loc[start_time_actual_seg:end_time_next_segment, seq_id_col] = actual_sleep_seg_id
                 df.loc[start_time_actual_seg:end_time_next_segment, seq_length_col] = \
@@ -169,3 +170,30 @@ def encode_datetime_to_ml(series, col_name):
     df[col_name + '_minute_cos'] = np.cos(2 * np.pi * series.dt.minute/60)
     
     return df
+
+
+def convert_clock_to_sec_since_midnight(t) -> int:
+    """
+    Converts clock like time (e.g., HH:MM or HH:MM:SS, such as 09:30 or 21:29:59) to seconds since midnight.
+
+    :param t: a string representing the clock time as HH:MM or HH:MM:SS
+    :return: seconds since midnight
+    """
+
+    if t in ['L', 'H', 'Z']:
+        return np.nan
+    elif type(t) is not str:
+        return np.nan
+
+    n_colon = len(t.split(":")) - 1
+    if n_colon == 1:
+        x = time.strptime(t, '%H:%M')
+    elif n_colon == 2:
+        x = time.strptime(t, '%H:%M:%S')
+    else:
+        raise ValueError("Number of colon should be either one (HH:MM) or two (HH:MM:SS).")
+
+    # seconds since last 00:00
+    return datetime.timedelta(hours=x.tm_hour,
+                              minutes=x.tm_min,
+                              seconds=x.tm_sec).total_seconds()
