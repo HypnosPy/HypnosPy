@@ -6,7 +6,6 @@ import datetime
 from calendar import monthrange
 
 
-
 def get_consecutive_series(df_in: pd.DataFrame, col: str) -> [pd.Series, pd.Series]:
     """
     This method aims to count the number of consecutive values in the dataframe ``df_in`` indexed by column ``col``.
@@ -29,7 +28,8 @@ def get_consecutive_series(df_in: pd.DataFrame, col: str) -> [pd.Series, pd.Seri
     return df["_lenght"], df["_seq_id"]
 
 
-def find_largest_sequence(df_orig: pd.DataFrame, candidate: str, output_col: str, seq_length_col: str = "hyp_seq_length",
+def find_largest_sequence(df_orig: pd.DataFrame, candidate: str, output_col: str,
+                          seq_length_col: str = "hyp_seq_length",
                           seq_id_col: str = "hyp_seq_id") -> pd.Series:
     df = df_orig.copy()
     df[output_col] = False
@@ -51,7 +51,8 @@ def find_largest_sequence(df_orig: pd.DataFrame, candidate: str, output_col: str
 
 
 def merge_sequences_given_tolerance(df_orig: pd.DataFrame, time_col: str, col_to_act: str, tolerance_in_minutes: int,
-                                    seq_id_col: str = "hyp_seq_id", seq_length_col: str = "hyp_seq_length") -> [pd.Series, pd.Series, pd.Series]:
+                                    seq_id_col: str = "hyp_seq_id", seq_length_col: str = "hyp_seq_length") -> [
+    pd.Series, pd.Series, pd.Series]:
     """
     This method is suppose to be used together with ``get_consecutive_series``.
     Here, we want to merge two sequences of positive values from ``get_consecutive_series`` if they are close enough.
@@ -101,7 +102,7 @@ def merge_sequences_given_tolerance(df_orig: pd.DataFrame, time_col: str, col_to
                 # Merges two sleep block
                 df.loc[start_time_actual_seg:end_time_next_segment, seq_id_col] = actual_sleep_seg_id
                 df.loc[start_time_actual_seg:end_time_next_segment, seq_length_col] = \
-                df.loc[start_time_actual_seg:end_time_next_segment].shape[0]
+                    df.loc[start_time_actual_seg:end_time_next_segment].shape[0]
                 df.loc[start_time_actual_seg:end_time_next_segment, col_to_act] = True
             else:
                 actual_sleep_seg_id = next_sleep_seg_id
@@ -109,7 +110,7 @@ def merge_sequences_given_tolerance(df_orig: pd.DataFrame, time_col: str, col_to
     else:
         df.loc[df_true_seq.index[0]:df_true_seq.index[-1], col_to_act] = True
         df.loc[df_true_seq.index[0]:df_true_seq.index[-1], seq_length_col] = \
-                                                            df.loc[df_true_seq.index[0]:df_true_seq.index[-1]].shape[0]
+            df.loc[df_true_seq.index[0]:df_true_seq.index[-1]].shape[0]
         df.loc[df_true_seq.index[0]:df_true_seq.index[-1], seq_id_col] = df.loc[df_true_seq.index[0]][
             "hyp_seq_id"]
 
@@ -119,8 +120,7 @@ def merge_sequences_given_tolerance(df_orig: pd.DataFrame, time_col: str, col_to
     return df[col_to_act].astype(np.bool), df[seq_length_col], df[seq_id_col]
 
 
-#
-def encode_datetime_to_ml(series, col_name):
+def encode_datetime_to_ml(series, col_name) -> pd.DataFrame:
     """
     This method converts datetime pandas series to machine learning acceptable format. 
     It extracts year, month, day, hour, and minute from the datetime object.
@@ -153,22 +153,22 @@ def encode_datetime_to_ml(series, col_name):
     """
     df = pd.DataFrame()
     df[col_name + '_year'] = series.dt.year
-    
+
     # retain cyclic nature of time
-    df[col_name + '_month_sin'] = np.sin(2 * np.pi * series.dt.month/12)
-    df[col_name + '_month_cos'] = np.cos(2 * np.pi * series.dt.month/12)
-    
+    df[col_name + '_month_sin'] = np.sin(2 * np.pi * series.dt.month / 12)
+    df[col_name + '_month_cos'] = np.cos(2 * np.pi * series.dt.month / 12)
+
     # some months have 28, 29, 30, and 31 days
     days_in_month = series.apply(lambda x: monthrange(x.year, x.month)[1])
-    df[col_name + '_day_sin'] = np.sin(2 * np.pi * series.dt.day/days_in_month)
-    df[col_name + '_day_cos'] = np.cos(2 * np.pi * series.dt.day/days_in_month)
-    
-    df[col_name + '_hour_sin'] = np.sin(2 * np.pi * series.dt.hour/24)
-    df[col_name + '_hour_cos'] = np.cos(2 * np.pi * series.dt.hour/24)
-    
-    df[col_name + '_minute_sin'] = np.sin(2 * np.pi * series.dt.minute/60)
-    df[col_name + '_minute_cos'] = np.cos(2 * np.pi * series.dt.minute/60)
-    
+    df[col_name + '_day_sin'] = np.sin(2 * np.pi * series.dt.day / days_in_month)
+    df[col_name + '_day_cos'] = np.cos(2 * np.pi * series.dt.day / days_in_month)
+
+    df[col_name + '_hour_sin'] = np.sin(2 * np.pi * series.dt.hour / 24)
+    df[col_name + '_hour_cos'] = np.cos(2 * np.pi * series.dt.hour / 24)
+
+    df[col_name + '_minute_sin'] = np.sin(2 * np.pi * series.dt.minute / 60)
+    df[col_name + '_minute_cos'] = np.cos(2 * np.pi * series.dt.minute / 60)
+
     return df
 
 
