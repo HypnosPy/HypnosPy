@@ -281,7 +281,7 @@ class Wearable(object):
         """
         self.data["hyp_weekday"] = self.data[self.get_time_col()].dt.weekday
         s = self.data[[self.get_experiment_day_col(), "hyp_weekday"]].groupby(self.get_experiment_day_col())[
-            "hyp_weekday"].agg(pd.Series.mode)
+            "hyp_weekday"].apply(lambda x: pd.Series.mode(x).iloc[0]) # Mode might return more than one number. With .iloc[0] we make sure it takes the first one.
         s = s.reset_index()
         s["pid"] = self.get_pid()
         return s
