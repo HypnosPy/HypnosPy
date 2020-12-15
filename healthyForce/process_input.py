@@ -37,7 +37,7 @@ def setup_experiment(preprocessor, file_path, start_hour):
 if __name__ == "__main__":
 
     # options are: HCHS_SMALL, MESA_SMALL, HCHS, MESA
-    DATA_COLLECTION = "HCHS_SMALL"  #
+    DATA_COLLECTION = "HCHS"  #
 
     if DATA_COLLECTION == "MESA_SMALL":
         file_path = "../data/small_collection_mesa/*.csv"
@@ -160,6 +160,10 @@ if __name__ == "__main__":
     n_removed_wearables = va.remove_wearables_without_valid_days()
     print("Removed %d wearables." % n_removed_wearables)
 
+    print("FINAL DATASET:")
+    exp.overall_stats()
+
+    print("Calculating PA features")
     pa_levels = ["sedentary", "light", "medium", "vigorous"]
     value_vars = []
 
@@ -211,6 +215,7 @@ if __name__ == "__main__":
     pa_raw_per_day = pa_raw_per_day.set_index(['pid', exp_day_column])
 
     # Sleep Analysis
+    print("Calculating Sleep Metrics")
     sm = SleepMetrics(exp)
     sleep_metrics = ["sleepEfficiency", "awakening", "totalSleepTime"]
     sleep_metrics_per_day = []
@@ -237,26 +242,35 @@ if __name__ == "__main__":
 
     # SSA is not yet ready to be used.
     # ssa = ca.run_SSA()
-
+    print("Calculating Demographic features")
     demo = Demographics(file_path=path_to_demographics, pid_col=pid_col, save_only_cols=variables,
                         clock_features=clock_variables, dtype=None)
     demo.data = demo.data.replace("S", np.nan).replace("Q", np.nan)
     for col in demo.data.keys():
         demo.data[col] = demo.data[col].astype(np.float)
 
-    pa_keys = {"bins": list(pa_bins_per_day.keys()),
+    # Time related features
+    print("Calculating Time related features")
+    weekend = exp.is_weekend()
+    weekday = exp.weekday()
+    time_features_per_day = pd.merge(weekend, weekday).set_index(["pid", exp_day_column])
+
+    day_keys = {"bins": list(pa_bins_per_day.keys()),
                "bouts": list(bouts_per_day.keys()),
                "stats": list(pa_stats_per_day.keys()),
                "raw": list(pa_raw_per_day.keys()),
                "sleep_metrics": sleep_metrics,
                "cosinor": cosinor_keys,
+               "time": ["hyp_weekday", "hyp_is_weekend"]
                }
 
+    print("Merging representations")
     data_representation_per_day = pd.merge(bouts_per_day, pa_bins_per_day, left_index=True, right_index=True).merge(
         pa_stats_per_day, left_index=True, right_index=True).merge(
         pa_raw_per_day, left_index=True, right_index=True).merge(
         sleep_metrics_per_day, left_index=True, right_index=True).merge(
-        cosinor_per_day, left_index=True, right_index=True
+        cosinor_per_day, left_index=True, right_index=True).merge(
+        time_features_per_day, left_index=True, right_index=True
     )
 
     data_representation_per_hour = pa_raw_per_hour
@@ -265,11 +279,14 @@ if __name__ == "__main__":
     data_representation_per_day.to_csv("%s_per_day.csv" % DATA_COLLECTION)
     data_representation_per_hour.to_csv("%s_per_hour.csv" % DATA_COLLECTION)
     data_representation_per_pid.to_csv("%s_per_pid.csv" % DATA_COLLECTION)
+    day_keys = pd.Series(day_keys)
+    day_keys.index.name = "key"
+    day_keys.name = "value"
+    day_keys.to_csv("%s_day_keys.csv" % DATA_COLLECTION)
 
     # View signals
     # v = Viewer(exp)
     # v.view_signals(["activity", "sleep"], sleep_cols=["sleep_period_annotation"])
-
 
     #
     # # TODO: check melting dataset
