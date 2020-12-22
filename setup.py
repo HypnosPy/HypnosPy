@@ -9,7 +9,7 @@ requirements = [
     "matplotlib >= 1.5",
     "seaborn >= 0.11.0",
     "cosinorpy >= 1.1",
-    "tensorflow == 2.3.1",
+    "tensorflow == 2.4.0",
 ]
 
 setuptools.setup(name='hypnospy',
