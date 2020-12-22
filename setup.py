@@ -8,10 +8,12 @@ requirements = [
     "scipy >= 1.1.0",
     "matplotlib >= 1.5",
     "seaborn >= 0.11.0",
+    "cosinorpy >= 1.1",
+    "tensorflow == 2.3.1",
 ]
 
 setuptools.setup(name='hypnospy',
-        version='0.0.3',
+        version='0.0.4',
         author='Ignacio Pozuelo, Joao Palotti',
         author_email='ignacio_perez_pozuelo@alumni.brown.edu, joaopalotti@gmail.com',
         license='BSD',
