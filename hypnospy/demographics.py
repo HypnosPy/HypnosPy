@@ -51,3 +51,7 @@ class Demographics(object):
 
         for wearable in experiment.get_all_wearables():
             self.add_to_wearable(wearable)
+
+    def get_valid_data_for_experiment(self, experiment: Experiment) -> pd.DataFrame:
+        pids = [wearable.get_pid() for wearable in experiment.get_all_wearables()]
+        return self.data[self.data.index.isin(pids)]
