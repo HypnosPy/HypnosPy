@@ -98,7 +98,7 @@ class SleepMetrics(object):
         return sri
 
     def get_sleep_quality(self, sleep_metric: str, wake_sleep_col: str, sleep_period_col:str = None,
-                          outputname:str = None, ignore_awakenings_smaller_than_X_epochs: int = 0,
+                          outputname:str = None, ignore_awakenings_smaller_than_X_minutes: int = 0,
                           normalize_per_hour: bool = False) -> pd.DataFrame:
         """
         This method implements many different notions of sleep quality. Use ``sleep_metric`` to chose one of the many implemented here (see below).
@@ -106,18 +106,18 @@ class SleepMetrics(object):
 
 
         ``sleep_metric`` can be any of:
-            - SleepEfficiency (0-100): the percentage of time slept in the dataframe
-            - Awakenings (> 0): counts the number of awakenings in the period. An awakening is a sequence of wake=1 periods larger than th_awakening (default = 10)
-            - TotalTimeInBed (in hours)
-            - TotalSleepTime (in hours)
-            - TotalWakeTime (in hours)
-            - SRI (Sleep Regularity Index, in percentage %)
+            - sleepEfficiency (0-100): the percentage of time slept in the dataframe
+            - awakenings (> 0): counts the number of awakenings in the period. An awakening is a sequence of wake=1 periods larger than th_awakening (default = 10)
+            - totalTimeInBed (in hours)
+            - totalSleepTime (in hours)
+            - totalWakeTime (in hours)
+            - sri (Sleep Regularity Index, in percentage %)
 
         :param sleep_metric: sleep quality metric to be calculated.
         :param sleep_wake_col: Dataframe column for a Sleep/Wake algorithm. Sleep = 1, Wake = 0.
         :param sleep_period_col: Dataframe column for the actual sleep period (see SleepBoundaryDetector module)
         :param outputname: Name for the metric in the returned dataframe. Default: the metric used as ``sleep_metric``.
-        :param ignore_awakenings_smaller_than_X_epochs: Ignores changes from sleep to wake if they are smaller than X epochs. Used in sleepEficiency and awakenings.
+        :param ignore_awakenings_smaller_than_X_minutes: Ignores changes from sleep to wake if they are smaller than X epochs. Used in sleepEficiency and awakenings.
         :param normalize_per_hour: controls if the result should be normalized per hour of sleep or not. Used when the sleep_metric is awakenings.
         :return: A dataframe with 4 columns: <pid, exp_day_col, metric_name, parameters>.
                  Every row is the result of applying the sleep_metric on an experiment day for a given pid.
@@ -129,7 +129,7 @@ class SleepMetrics(object):
         results = []
         for wearable in self.wearables:
             df = wearable.data
-            ignore_awakening_in_epochs = wearable.get_epochs_in_min() * ignore_awakenings_smaller_than_X_epochs
+            ignore_awakening_in_epochs = wearable.get_epochs_in_min() * ignore_awakenings_smaller_than_X_minutes
             first_day = True
             prev_block = None
 
