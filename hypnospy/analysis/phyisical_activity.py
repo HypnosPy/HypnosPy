@@ -120,13 +120,14 @@ class PhysicalActivity(object):
             # drop_duplicates is used to get only the first occurrence of a bout sequence.
             bouts = bouts[
                 ["hyp_time_col", wearable.get_experiment_day_col(), "pa_grp", "pa_len", pa_col]
-                ].drop_duplicates(subset=["pa_grp"])
+            ].drop_duplicates(subset=["pa_grp"])
 
             if resolution == "day":
                 tmp_df = bouts.groupby([wearable.get_experiment_day_col()])[pa_col].sum().reset_index()
             elif resolution == "hour":
                 gbouts = bouts.set_index("hyp_time_col")
-                tmp_df = gbouts.groupby([wearable.get_experiment_day_col(), gbouts.index.hour])[pa_col].sum().reset_index()
+                tmp_df = gbouts.groupby([wearable.get_experiment_day_col(), gbouts.index.hour])[
+                    pa_col].sum().reset_index()
             else:
                 raise ValueError("The parameter 'resolution' can only be `day` or `hour`.")
 
@@ -135,7 +136,7 @@ class PhysicalActivity(object):
 
             returning_df.append(tmp_df)
 
-        returning_df = [x for x in returning_df if type(x) == pd.DataFrame]        
+        returning_df = [x for x in returning_df if type(x) == pd.DataFrame]
         return pd.concat(returning_df).reset_index(drop=True)
 
     def get_binned_pa_representation(self) -> pd.DataFrame:
@@ -165,7 +166,7 @@ class PhysicalActivity(object):
             PAs.append(tmpdf)
 
             for i in range(1, len(self.cutoffs)):
-                tmpdf = act_hour.apply(lambda x: x.between(self.cutoffs[i-1], self.cutoffs[i]).sum())
+                tmpdf = act_hour.apply(lambda x: x.between(self.cutoffs[i - 1], self.cutoffs[i]).sum())
                 tmpdf.name = self.names[i]
                 PAs.append(tmpdf)
 
