@@ -3,6 +3,7 @@ from hypnospy import Experiment
 from hypnospy import misc
 
 import pandas as pd
+import numpy as np
 
 
 class PhysicalActivity(object):
@@ -219,12 +220,24 @@ class PhysicalActivity(object):
         rows = []
         for wearable in self.wearables:
             if resolution == "hour":
-                activity = wearable.data.groupby([wearable.get_experiment_day_col(), wearable.data[wearable.get_time_col()].dt.hour])[wearable.get_activity_col()]
+                dfw = wearable.data.copy()
+                dfw["minute"] = dfw[wearable.get_time_col()].dt.minute
+                dfw["second"] = dfw[wearable.get_time_col()].dt.second
+                activity = dfw.groupby([wearable.get_experiment_day_col(), dfw[wearable.get_time_col()].dt.hour, "minute", "second"])[
+                    wearable.get_activity_col()]
+
+                activity = activity.apply(lambda x: x.values.mean().ravel())
+                activity = activity.reset_index().pivot(index=["ml_sequence", wearable.get_time_col()], columns=["minute", "second"])
+                activity = activity.apply(lambda x: np.vstack(x).reshape(-1), axis=1)
+                activity.name = "raw_pa"
+                # activity = wearable.data.groupby([wearable.get_experiment_day_col(), wearable.data[wearable.get_time_col()].dt.hour])[wearable.get_activity_col()]
+
             elif resolution == "day":
                 activity = wearable.data.groupby([wearable.get_experiment_day_col()])[wearable.get_activity_col()]
 
-            activity = activity.apply(lambda x: x.values.ravel())
-            activity.name = "raw_pa"
+                activity = activity.apply(lambda x: x.values.ravel())
+                activity.name = "raw_pa"
+
             activity = activity.reset_index()
             activity["pid"] = wearable.get_pid()
             rows.append(activity)
