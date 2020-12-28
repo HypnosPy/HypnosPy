@@ -227,10 +227,11 @@ class PhysicalActivity(object):
                 activity = dfw.groupby([wearable.get_experiment_day_col(), dfw[wearable.get_time_col()].dt.hour, "minute", "second"])[
                     wearable.get_activity_col()]
 
-                activity = activity.apply(lambda x: x.values.mean().ravel())
+                activity = activity.apply(lambda x: x.values.mean())
                 activity = activity.reset_index().pivot(index=["ml_sequence", wearable.get_time_col()], columns=["minute", "second"])
-                activity = activity.apply(lambda x: np.vstack(x).reshape(-1), axis=1)
-                activity.name = "raw_pa"
+                activity.columns = ['_'.join(map(lambda x: str(x).zfill(2), col)) for col in activity.columns.values]
+                #activity = activity.apply(lambda x: np.vstack(x).reshape(-1), axis=1)
+                #activity.name = "raw_pa"
                 # activity = wearable.data.groupby([wearable.get_experiment_day_col(), wearable.data[wearable.get_time_col()].dt.hour])[wearable.get_activity_col()]
 
             elif resolution == "day":
