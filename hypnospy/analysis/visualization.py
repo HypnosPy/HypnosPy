@@ -77,23 +77,25 @@ class Viewer(object):
     def view_signals(self, signal_categories: list = ["activity", "hr", "pa_intensity", "sleep"],
                      other_signals: list = [], signal_as_area: list = [], resample_to: str = None,
                      sleep_cols: list = [], select_days: list = None, zoom: list = ["00:00:00", "23:59:59"],
-                     alphas: dict = None, colors: dict = None, edgecolors: dict = None, labels: dict = None
+                     alphas: dict = None, colors: dict = None, edgecolors: dict = None, labels: dict = None,
+                     text: list = []
                      ):
         # Many days, one day per panel
         for wearable in self.wearables:
             Viewer.view_signals_wearable(wearable, signal_categories, other_signals, signal_as_area, resample_to,
-                                         sleep_cols, select_days, zoom, alphas, colors, edgecolors, labels)
+                                         sleep_cols, select_days, zoom, alphas, colors, edgecolors, labels, text)
 
     @staticmethod
     def view_signals_wearable(wearable: Wearable, signal_categories: list, other_signals: list, signal_as_area: list,
-                              resample_to: str, sleep_cols: list, select_days: list, zoom: list,
-                              alphas: dict = None, colors: dict = None, edgecolors: dict = None, labels: dict = None):
+                              resample_to: str, sleep_cols: list, select_days: list, zoom: list, 
+                              alphas: dict = None, colors: dict = None, edgecolors: dict = None, labels: dict = None,
+                              text: list = []):
 
         # Convert zoom to datatime object:
         assert len(zoom) == 2
         zoom_start = datetime.strptime(zoom[0], '%H:%M:%S')
         zoom_end = datetime.strptime(zoom[1], '%H:%M:%S')
-
+        textstr = 'day: validation id \n'
         cols = []
 
         for signal in signal_categories:
@@ -140,7 +142,10 @@ class Viewer(object):
         for col in set(other_signals + signal_as_area):
             cols.append(col)
 
-        df_plot = wearable.data[cols].set_index(wearable.time_col)
+        if "validation" in text:
+            df_plot = wearable.data[cols + ['hyp_invalid']  ].set_index(wearable.time_col)
+        else:
+            df_plot = wearable.data[cols].set_index(wearable.time_col)
 
         if resample_to is not None:
             df_plot = df_plot.resample(resample_to).mean()
@@ -221,7 +226,10 @@ class Viewer(object):
                 diary_event = df_panel[
                     (df_panel[wearable.diary_onset] == True) | (df_panel[wearable.diary_offset] == True)].index
                 ax1[idx].vlines(x=diary_event, ymin=0, ymax=maxy, facecolor='black', alpha=alpha, label='Diary',
-                                linestyles="dashed")
+                                linestyles="dashed")    
+
+            if "validation" in text and "hyp_invalid" in df_panel.keys():
+                textstr = textstr + str(idx) + ": " + str(df_panel['hyp_invalid'].unique()[0]) + '\n'
 
             for i, col in enumerate(other_signals):
                 # colors = ["orange", "violet", "pink", "gray"] # Change to paramters
@@ -301,8 +309,182 @@ class Viewer(object):
         # fig.suptitle("%s" % self.get_pid(), fontsize=16)
 
         fig.legend(handles, labels, loc='lower center', ncol=len(cols), fontsize=14, shadow=True)
+
+        # place a text box in upper left in axes coords
+        if "validation" in text and "hyp_invalid" in wearable.data.columns:
+            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+            fig.text(0.93, 0.87, textstr, fontsize=14,
+                verticalalignment='top', bbox=props)
+
         fig.savefig('%s_signals.pdf' % (wearable.get_pid()), dpi=300, transparent=True, bbox_inches='tight')
+        plt.show()
         plt.close()
+
+    def view_signals_ml_format(self, signal_categories: list = ["activity", "sleep"],
+                     other_signals: list = [], signal_as_area: list = [],
+                     sleep_cols: list = [], select_days: list = None, zoom: list = ["00:00:00", "23:59:59"],
+                     alphas: dict = None, colors: dict = None, edgecolors: dict = None, labels: dict = None,
+                     text: list = []
+                     ):
+        # Many days, one day per panel
+        for wearable in self.wearables:
+            Viewer.view_signals_wearable_ml_format(wearable, signal_categories, other_signals, signal_as_area,
+                                         sleep_cols, select_days, zoom, alphas, colors, edgecolors, labels, text)
+
+    @staticmethod
+    def view_signals_wearable_ml_format(wearable: Wearable, signal_categories: list, other_signals: list, signal_as_area: list,
+                              sleep_cols: list, select_days: list, zoom: list, 
+                              alphas: dict = None, colors: dict = None, edgecolors: dict = None, labels: dict = None,
+                              text: list = []):
+
+        # Convert zoom to datatime object:
+        assert len(zoom) == 2
+        zoom_start = datetime.strptime(zoom[0], '%H:%M:%S')
+        zoom_end = datetime.strptime(zoom[1], '%H:%M:%S')
+        textstr = 'day: validation id \n'
+        cols = []
+
+        for signal in signal_categories:
+            if signal == "activity":
+                cols.append(wearable.get_activity_col())
+
+            elif signal == "sleep":
+                for sleep_col in sleep_cols:
+                    if sleep_col not in wearable.data.keys():
+                        raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
+                    cols.append(sleep_col)
+
+            else:
+                cols.append(signal)
+
+        if len(cols) == 0:
+            raise ValueError("Aborting: Empty list of signals to show.")
+
+        if wearable.data.empty:
+            warnings.warn("Aborting: Dataframe for PID %s is empty." % wearable.get_pid())
+            return
+
+        cols.append(wearable.time_col)
+        for col in set(other_signals + signal_as_area):
+            cols.append(col)
+
+        if "validation" in text:
+            df_plot = wearable.data[cols + ['hyp_invalid']  ].set_index(wearable.time_col)
+        else:
+            df_plot = wearable.data[cols].set_index(wearable.time_col)
+
+        # Add column for experiment day. It will be resampled using the the mean
+        cols.append(wearable.experiment_day_col)
+
+        changed_experiment_hour = False
+        if not Viewer.__is_default_zoom(zoom_start, zoom_end) and zoom_start.hour != wearable.hour_start_experiment:
+            changed_experiment_hour = True
+            saved_start_hour = wearable.hour_start_experiment
+            wearable.change_start_hour_for_experiment_day(zoom_start.hour)
+
+      
+        df_plot[wearable.experiment_day_col] = wearable.data[
+            [wearable.time_col, wearable.experiment_day_col]].set_index(wearable.time_col)[wearable.experiment_day_col]
+
+        if select_days is not None:
+            df_plot = df_plot[df_plot[wearable.experiment_day_col].isin(select_days)]
+            if df_plot.empty:
+                raise ValueError("Invalid day selection: no remaining data to show.")
+
+        dfs_per_group = [pd.DataFrame(group[1]) for group in df_plot.groupby(wearable.experiment_day_col)]
+        max_sequence_length = [len(g) for g in dfs_per_group]
+        max_sequence_length = max(max_sequence_length)
+
+        fig, ax1 = plt.subplots(len(dfs_per_group), 1, figsize=(14, 8))
+
+        if len(dfs_per_group) == 1:
+            ax1 = [ax1]
+
+        for idx in range(len(dfs_per_group)):
+            maxy = 2
+
+            df_panel = dfs_per_group[idx]
+            padding_values = np.zeros(max_sequence_length - len(df_panel))
+
+            if "activity" in signal_categories:
+                y = df_panel[wearable.get_activity_col()]
+                alpha, color, edgecolor, label = Viewer.__get_details(alphas, colors, edgecolors, labels, "activity",
+                                                                      None, default_label="Activity")
+                maxy = max(maxy, df_panel[wearable.get_activity_col()].max())
+                ax1[idx].plot(df_panel.index, y, label=label, linewidth=2,
+                        color=color, alpha=alpha)
+
+            if "sleep" in signal_categories:
+                facecolors = ['royalblue', 'green', 'orange']
+                endy = 0
+                alpha = 1
+                addition = (maxy / len(sleep_cols)) if len(sleep_cols) > 0 else maxy
+
+                for i, sleep_col in enumerate(sleep_cols):
+                    starty = endy
+                    endy = endy + addition
+                    sleeping = df_panel[sleep_col]  # TODO: get a method instead of an attribute
+                    ax1[idx].fill_between(df_panel.index, starty, endy, where=sleeping, facecolor=facecolors[i],
+                                          alpha=0.7, label=sleep_col)   
+
+            if "validation" in text and "hyp_invalid" in df_panel.keys():
+                textstr = textstr + str(idx) + ": " + str(df_panel['hyp_invalid'].unique()[0]) + '\n'
+
+            for i, col in enumerate(other_signals):
+                # colors = ["orange", "violet", "pink", "gray"] # Change to paramters
+                ax1[idx].plot(df_panel.index, df_panel[col], label=col, linewidth=1, color=colors[i], alpha=alpha)
+
+            endy = 0
+            addition = 0 if len(signal_as_area) == 0 else (maxy / len(signal_as_area))
+            for i, col in enumerate(signal_as_area):
+                alpha, color, edgecolor, label = Viewer.__get_details(alphas, colors, edgecolors, labels, "area", i,
+                                                                      default_label=col, default_color="blue")
+
+                starty = endy
+                endy = endy + addition
+
+                ax1[idx].fill_between(df_panel.index, starty, endy, where=df_panel[col], facecolor=color,
+                                      alpha=alpha, label=label)
+            
+
+            ax1[idx].tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=True, rotation=0)
+            ax1[idx].tick_params(axis='x', which='major', labelsize='small')
+            ax1[idx].set_facecolor('snow')
+
+            new_start_datetime = df_panel.index[0]
+
+            freq = wearable.get_frequency_in_secs()
+            new_end_datetime = new_start_datetime + pd.DateOffset(seconds=freq*max_sequence_length)
+
+            ax1[idx].set_xlim(new_start_datetime, new_end_datetime)
+
+            y_label = idx
+            ax1[idx].set_ylabel("%s" % y_label, rotation=0, horizontalalignment="right", verticalalignment="center")
+
+            ax1[idx].xaxis.set_major_locator(dates.DayLocator(interval=1))
+            ax1[idx].xaxis.set_major_formatter(dates.DateFormatter('%m-%d'))
+
+            ax1[idx].xaxis.set_minor_locator(dates.HourLocator(interval=4))  # every 4 hours
+            ax1[idx].xaxis.set_minor_formatter(dates.DateFormatter('%H:%M'))  # hours and minutes
+            ax1[idx].set_yticks([])
+
+        ax1[0].set_title("PID = %s" % wearable.get_pid(), fontsize=16)
+        ax1[-1].set_xlabel('Epochs')
+
+        handles, labels = ax1[-1].get_legend_handles_labels()
+        fig.legend(handles, labels, loc='lower center', ncol=len(cols), fontsize=14, shadow=True)
+
+        # place a text box in upper left in axes coords
+        if "validation" in text and "hyp_invalid" in wearable.data.columns:
+            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+            fig.text(0.93, 0.87, textstr, fontsize=14,
+                verticalalignment='top', bbox=props)
+
+        fig.savefig('%s_signals_ml_format.pdf' % (wearable.get_pid()), dpi=300, transparent=True, bbox_inches='tight')
+        plt.subplots_adjust(hspace=1.0)
+        plt.show()
+        plt.close()
+
 
     @staticmethod
     def __is_default_zoom(zoom_start, zoom_end):
