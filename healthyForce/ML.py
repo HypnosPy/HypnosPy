@@ -18,6 +18,7 @@
 import pandas as pd
 import ast
 import os
+import sys
 from glob import glob
 from tqdm import tqdm
 
@@ -30,10 +31,9 @@ from sklearn import linear_model
 from sklearn import ensemble
 from sklearn.model_selection import cross_val_score
 from sklearn.dummy import DummyRegressor, DummyClassifier
+from sklearn.metrics import f1_score, make_scorer
 
 import scipy
-
-
 # +
 def get_columns(dfkeys, subset):
     return dfkeys.loc[subset]["value"]
@@ -59,6 +59,8 @@ def get_dataframes(dataset, nfolds):
         filenames = {"keys": "mesa/MESA_day_keys.csv", "pids":"mesa/MESA_pid.csv",
                      "per_day": "mesa/MESA_per_day.csv",
                      "per_hour": "mesa/MESA_per_hour.csv", "per_pid": "mesa/MESA_per_pid.csv"}
+    else:
+        raise ValueError("No Filename for dataset %s" % dataset)
 
     df_pid_fold = map_id_fold(filenames["pids"], nfolds)
 
@@ -121,7 +123,7 @@ def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, 
              y_label = "sleepEfficiency", keep_pids=False):
 
     feat_subsets = x_subsets.copy()
-    
+
     get_demo = False
     if "demo" in feat_subsets:
         get_demo = True
@@ -179,7 +181,7 @@ def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, 
         data = pd.merge(Xs_sorted, Ys[[y_label, "ml_sequence", "pid"]])
     else:
         data = pd.merge(Xs_sorted, Ys)
-        
+
     if not keep_pids:
         data.drop(columns=["ml_sequence", "pid"], inplace=True)
 
@@ -197,7 +199,7 @@ def sleepEfficiencyMapping(x):
 
 def tstMapping(x, interval, tol=1):
     minh, maxh = interval
-    
+
     if x < (minh - tol) or x > (maxh + tol):
         return 0
     elif x < minh or x > maxh:
@@ -212,7 +214,7 @@ def awakeningMapping(x):
         return 1
     else:
         return 0
-    
+
 def combinedMapping(x):
     if x <= 2:
         return 0
@@ -220,7 +222,7 @@ def combinedMapping(x):
         return 1
     else:
         return 2
-    
+
 def cdc(age):
 #     https://www.cdc.gov/sleep/about_sleep/how_much_sleep.html
 #     School Age	6–12 years	9–12 hours per 24 hours2
@@ -261,136 +263,66 @@ def modify_data_target(data, target):
         target = "combined"
 
     return data, target
-    
+
 def force_categories(dataset, feature_subset):
     if "demo" not in feature_subset:
         return [], []
-    
+
     if dataset == "hchs":
-        force_cat = ["FLAG_NARC", 'FLAG_AHIGT50', 'FLAG_AGEGE65', 'GENDERNUM', 'AGEGROUP_C2', 
+        force_cat = ["FLAG_NARC", 'FLAG_AHIGT50', 'FLAG_AGEGE65', 'GENDERNUM', 'AGEGROUP_C2',
                       'AGEGROUP_C2_SUENO', 'AGEGROUP_C5_SUENO', 'AGEGROUP_C6', 'AGEGROUP_C6_NHANES',
                       'EDUCATION_C2', 'EDUCATION_C3', 'EMPLOYED', 'INCOME', 'INCOME_C3', 'INCOME_C5',
                       'MARITAL_STATUS', 'N_HC', 'OCCUPATION_CURR', 'OCCUPATION_LONG', 'SHIFTWORKERYN',
                       'ALCOHOL_USE_DISORDER', 'ALCOHOL_USE_LEVEL', 'CDCR', 'CDCR_SUENO', 'CHD_SELF',
-                      'CHD_SELF_SUENO', 'CIGARETTE_PACK_YEARS_C3', 'CIGARETTE_USE', 'CURRENT_SMOKER', 
-                      'CLAUDICATION_INT', 'CVD_FRAME', 'DIAB_DIAG', 'DIABETES1', 'DIABETES2', 'DIABETES3', 
-                      'DIABETES2_INDICATOR', 'DIABETES_C4', 'DIABETES_LAB', 'DIABETES_SELF', 
-                      'DIABETES_SELF_SUENO', 'DIABETES_SUENO', 'DIAB_FAMHIST', 'DM_AWARE', 'DM_AWARE_SUENO', 
-                      'DM_CONTROL', 'DOCTOR_VISIT', 'EVER_ANGINA_RELATIVE', 'EVER_CABG_RELATIVE', 
-                      'EVER_MI_RELATIVE', 'FH_CHD', 'FH_STROKE', 'HYPERT_AWARENESS', 'HYPERT_CONTROL', 
-                      'HYPERT_TREATMENT', 'HYPERTENSION', 'HYPERTENSION2', 'HYPERTENSION_C4', 
-                      'HYPERTENSION_SUENO', 'METS_IDF', 'METS_NCEP', 'METS_NCEP2', 'MI_ECG', 
-                      'PRECHD_ANGINA', 'PRECHD_NO_ANGINA', 'STROKE', 'STROKE_SUENO', 'STROKE_TIA', 
+                      'CHD_SELF_SUENO', 'CIGARETTE_PACK_YEARS_C3', 'CIGARETTE_USE', 'CURRENT_SMOKER',
+                      'CLAUDICATION_INT', 'CVD_FRAME', 'DIAB_DIAG', 'DIABETES1', 'DIABETES2', 'DIABETES3',
+                      'DIABETES2_INDICATOR', 'DIABETES_C4', 'DIABETES_LAB', 'DIABETES_SELF',
+                      'DIABETES_SELF_SUENO', 'DIABETES_SUENO', 'DIAB_FAMHIST', 'DM_AWARE', 'DM_AWARE_SUENO',
+                      'DM_CONTROL', 'DOCTOR_VISIT', 'EVER_ANGINA_RELATIVE', 'EVER_CABG_RELATIVE',
+                      'EVER_MI_RELATIVE', 'FH_CHD', 'FH_STROKE', 'HYPERT_AWARENESS', 'HYPERT_CONTROL',
+                      'HYPERT_TREATMENT', 'HYPERTENSION', 'HYPERTENSION2', 'HYPERTENSION_C4',
+                      'HYPERTENSION_SUENO', 'METS_IDF', 'METS_NCEP', 'METS_NCEP2', 'MI_ECG',
+                      'PRECHD_ANGINA', 'PRECHD_NO_ANGINA', 'STROKE', 'STROKE_SUENO', 'STROKE_TIA',
                       'STROKE_TIA_SUENO',
                       'SLEA3', 'SLEA4', 'SLEA5', 'SLEA6', 'SLEA7', 'SLEA8', 'SLEA9',
-                      'SLEA10', 'SLEA11', 'SLEA12A', 'SLEA12B', 'SLEA12C', 'SLEA12D', 
-                      'SLEA12E', 'SLEA12F', 'SLEA12G', 'SLEA12H', 'SLEA12I', 'SLEA12J', 'SLEA13', 'SLEA14', 
+                      'SLEA10', 'SLEA11', 'SLEA12A', 'SLEA12B', 'SLEA12C', 'SLEA12D',
+                      'SLEA12E', 'SLEA12F', 'SLEA12G', 'SLEA12H', 'SLEA12I', 'SLEA12J', 'SLEA13', 'SLEA14',
                       'SLEA15', 'SLEA16', 'SLEA17', 'SLEA18',
-                      'SPEA10', 'SPEA11', 'SPEA12A', 'SPEA12B', 'SPEA12C', 'SPEA12D', 'SPEA12E', 'SPEA12F', 
-                      'SPEA12G', 'SPEA12H', 'SPEA12I', 'SPEA12J', 'SPEA13', 'SPEA14', 'SPEA15', 'SPEA16', 
+                      'SPEA10', 'SPEA11', 'SPEA12A', 'SPEA12B', 'SPEA12C', 'SPEA12D', 'SPEA12E', 'SPEA12F',
+                      'SPEA12G', 'SPEA12H', 'SPEA12I', 'SPEA12J', 'SPEA13', 'SPEA14', 'SPEA15', 'SPEA16',
                       'SPEA17', 'SPEA18', 'SPEA3', 'SPEA4', 'SPEA5', 'SPEA6', 'SPEA7', 'SPEA8', 'SPEA9', 'SQEA2',
                       'SQEA20', 'SQEA25', 'SQEA3', 'SQEA4', 'SQEA5', 'SQEA6', 'SQEA7', 'SQEA8', 'SQEA9',
                       'SQEA1', 'SQEA10', 'SQEA11', 'SQEA12', 'SQEA13', 'SQEA14', 'SQEA15', 'SQEA16', 'SQEA17',
                       'SQEA18', 'SQEA19',
                      ]
-        force_num = ['AGE', 'AGE_SUENO', 'COMMUTEHOME', 'COMMUTEWORK', 'SHIFT_LENGTH', 'TOTCOMMUTE_DAY', 
-                      'TOTCOMMUTE_WEEK', 'WORK_HRS_DAY', 'WORK_HRS_WEEK', 'CIGARETTE_PACK_YEARS', 
-                      'CIGARETTES_YEAR', 'EXPOSURE_YEAR', 'FRAME_CVD_RISK_10YR', 'HBA1C_SI', 'HOMA_B', 
+        force_num = ['AGE', 'AGE_SUENO', 'COMMUTEHOME', 'COMMUTEWORK', 'SHIFT_LENGTH', 'TOTCOMMUTE_DAY',
+                      'TOTCOMMUTE_WEEK', 'WORK_HRS_DAY', 'WORK_HRS_WEEK', 'CIGARETTE_PACK_YEARS',
+                      'CIGARETTES_YEAR', 'EXPOSURE_YEAR', 'FRAME_CVD_RISK_10YR', 'HBA1C_SI', 'HOMA_B',
                       'HOMA_IR', 'TOTALDRINKS_PER_WEEK', 'SQEA21', 'SQEA22', 'SQEA23', 'SQEA24',
                       'SLEA1A_2401', 'SLEA1C_2401', 'SLEA2A_2401', 'SLEA2C_2401']
     else:
-        force_cat = ['race1c', 'gender1', 'trbleslpng5', 'bcksleep5', 'wakeup5', 'wakeearly5', 'slpngpills5', 
-                     'irritable5', 'sleepy5', 'typicalslp5', 'readng5', 'tv5', 'sittng5', 'riding5', 'lyngdwn5', 
+        force_cat = ['race1c', 'gender1', 'trbleslpng5', 'bcksleep5', 'wakeup5', 'wakeearly5', 'slpngpills5',
+                     'irritable5', 'sleepy5', 'typicalslp5', 'readng5', 'tv5', 'sittng5', 'riding5', 'lyngdwn5',
                      'talkng5', 'quietly5', 'car5', 'dinner5', 'driving5', 'snored5', 'stpbrthng5', 'legsdscmfrt5',
-                     'rubbnglgs5', 'wrserest5', 'wrseltr5', 'feelngbstr5', 'tired5', 'mosttired4', 'feelngbstpk5', 
-                     'types5', 'slpapnea5', 'cpap5', 'dntaldv5', 'uvula5', 'insmnia5', 'rstlesslgs5', 
+                     'rubbnglgs5', 'wrserest5', 'wrseltr5', 'feelngbstr5', 'tired5', 'mosttired4', 'feelngbstpk5',
+                     'types5', 'slpapnea5', 'cpap5', 'dntaldv5', 'uvula5', 'insmnia5', 'rstlesslgs5',
                      'wrksched5', 'extrahrs5']
         force_num = ['sleepage5c', 'wkendsleepdur5t', 'nap5', 'whiirs5c', 'epslpscl5c', 'hoostmeq5c']
-        
+
     return force_cat, force_num
 
-# +
-# # TESTING PROBLEMS WITH DEMO
-
-# from pycaret.classification import *
-
-# n_prev_days = 0
-# include_past_ys = False
-# predict_pa = False
-# keep_pids = True
-# predict_d_plus = 0
-# dataset = "mesa"
-# cv_folds = 11
-
-# feature_subset = ["bins", "stats", "bouts", "time", "cosinor", "demo"]             
-# y_subset = "sleep_metrics"
-# target = "totalSleepTime"
-# age_col = "sleepage5c" if dataset == "mesa" else "AGE_SUENO"
-
-
-# df_per_day, df_per_hour, df_per_pid, df_keys = get_dataframes(dataset, cv_folds)
-# data = get_data(n_prev_days, predict_pa, include_past_ys,
-#                 df_per_day, df_per_hour, df_per_pid, df_keys,
-#                 y_subset=y_subset,
-#                 x_subsets = feature_subset,
-#                 y_label = target, keep_pids=keep_pids)
-
-# df_per_pid["sleep_hours"] = df_per_pid[age_col].apply(cdc)
-# data = pd.merge(data, df_per_pid[["sleep_hours", "pid"]])
-
-# handout_test_pids = df_per_day[df_per_day["fold"] == cv_folds-1]["pid"].unique()
-# handout_test_pids
-
-# data = data.fillna(-1)
-
-# data, target = modify_data_target(data, target)
-    
-# # Predicting day + 1, instead of day
-# if predict_d_plus > 0:
-#     y = data[[target, "ml_sequence", "pid"]]
-#     x = data.drop(columns=[target])
-#     y["ml_sequence"] = y.groupby(["pid"])["ml_sequence"].apply(lambda x: x + predict_d_plus)
-#     data = pd.merge(x, y)
-    
-# cols_to_remove = ["ml_sequence", "pid", "sleep_hours"]
-# for col in cols_to_remove:
-#     data = data.drop(columns=col)
-
-# test_data = data[data["fold"] == cv_folds-1]
-# data = data[data["fold"] != cv_folds-1]
-   
-# force_cat, force_num = force_categories(dataset, feature_subset)
-
-# experiment = setup(data = data,  test_data = test_data,
-#                    target = target, session_id=123,
-#                    normalize = True,
-#                    transformation = True,
-#                    fold_strategy="groupkfold",
-#                    fold_groups="fold",
-#                    log_experiment = True,
-#                    experiment_name = "test_hchs",
-#                    use_gpu=False,
-#                    categorical_features = force_cat,
-#                    numeric_features = force_num,
-#                    silent=True
-#                   )
 
 # +
 from pycaret.classification import *
 
-n_prev_days = 0
-include_past_ys = False
 predict_pa = False
 keep_pids = True
 cv_folds = 11
 
 print("Predicting Sleep metrics")
-#my_models = ['dummy', 'catboost', 'lr', 'lightgbm', 'xgboost', 'rf', 'et', 'lda']
-# DONE
-#my_models = ['lightgbm', 'dummy']
-# DOING
-my_models = ['dummy', 'catboost', 'lr', 'xgboost', 'rf', 'et', 'lda']
-# lr has problems
+#possible_models = ['dummy', 'catboost', 'lr', 'lightgbm', 'xgboost', 'rf', 'et', 'lda']
+my_models = ["dummy"] # [sys.argv[1]]
+datasets = ["hchs"] # [sys.argv[2]]
 
 if predict_pa:
     feature_subsets = [["sleep_metrics"]]
@@ -406,7 +338,7 @@ else:
         ["bins", "stats", "bouts", "cosinor"],
         ["bins", "stats", "bouts", "demo"],
         ["bins", "stats", "bouts", "time", "cosinor"],
-        ["bins"], ["stats"], ["bouts"], ["time"], ["cosinor"], ["demo"]
+        ["bins"], ["stats"], ["bouts"], ["time", "demo"], ["cosinor"]
         ]
     y_subset = "sleep_metrics"
     targets = ["sleepEfficiency", "awakening", "totalSleepTime", None]
@@ -416,24 +348,32 @@ tunner_iterations = 50
 tunner_early_stopping = 5
 
 # ====================================================================================
-
 parameters = []
 
 for model_str in my_models:
-    #for day_future in range(0, 3):
-    for day_future in [0]:
-        for target in targets:
-            for feature_subset in feature_subsets:
-                for dataset in ["mesa", "hchs"]:
-                    parameters.append([dataset, model_str, target, feature_subset, day_future])
-                
-                
-for param in tqdm(parameters):
-                
-    dataset, model_str, target, feature_subset, predict_d_plus = param
-    
-    df_per_day, df_per_hour, df_per_pid, df_keys = get_dataframes(dataset, cv_folds)
+    for dataset in datasets:
+        for day_future in range(0, 3):
+            for target in targets:
+                for feature_subset in feature_subsets:
+                    for n_prev_day in range(0, 3):
+                        for include_past_ys in [True, False]:
+                            parameters.append([dataset, model_str, target, feature_subset, day_future, n_prev_day, include_past_ys])
 
+# ====================================================================================
+
+for param in tqdm(parameters):
+
+    dataset, model_str, target, feature_subset, predict_d_plus, n_prev_days, include_past_ys = param
+
+    experiment_name = "outputs/%s/%s_%s_%s_%s_ipast%s_prev%d_future%d" % (dataset, dataset, model_str, target, '-'.join(feature_subset),
+                                                               include_past_ys, n_prev_days, predict_d_plus)
+    experiment_filename = "%s.csv.gz" % (experiment_name)
+
+    if os.path.exists(experiment_filename):
+        print("Experiment filename %s already exists. Skipping this one!" % (experiment_filename))
+        continue
+
+    df_per_day, df_per_hour, df_per_pid, df_keys = get_dataframes(dataset, cv_folds)
     age_col = "sleepage5c" if dataset == "mesa" else "AGE_SUENO"
 
     print("LOG: dataset (%s), model (%s), target (%s), features (%s), days (%d), include_past (%s), predict_pa (%s)" % (dataset, model_str, target, '-'.join(feature_subset), n_prev_days, include_past_ys, predict_pa))
@@ -442,7 +382,7 @@ for param in tqdm(parameters):
                     y_subset=y_subset,
                     x_subsets = feature_subset,
                     y_label = target, keep_pids=keep_pids)
-    
+
     df_per_pid["sleep_hours"] = df_per_pid[age_col].apply(cdc)
     data = pd.merge(data, df_per_pid[["sleep_hours", "pid"]])
 
@@ -451,7 +391,7 @@ for param in tqdm(parameters):
 
     data = data.fillna(-1)
     data, target = modify_data_target(data, target)
-    
+
     # Predicting day + 1, instead of day
     if predict_d_plus > 0:
         y = data[[target, "ml_sequence", "pid"]]
@@ -463,16 +403,6 @@ for param in tqdm(parameters):
     for col in cols_to_remove:
         data = data.drop(columns=col)
 
-    experiment_name = "outputs/%s/%s_%s_%s_%s_ipast%s_prev%d_future%d" % (dataset,
-                                                             dataset,
-                                                             model_str,
-                                                             target, '-'.join(feature_subset),
-                                                             include_past_ys,
-                                                             n_prev_days,
-                                                             predict_d_plus
-                                                             )
-    
-    
     test_data = data[data["fold"] == cv_folds-1]
     data = data[data["fold"] != cv_folds-1]
 
@@ -491,8 +421,7 @@ for param in tqdm(parameters):
                    numeric_features = force_num,
                    silent=True
                   )
-    
-    from sklearn.metrics import f1_score, make_scorer 
+
     #class_metrics = {}
     #class_metrics["MicroF1"] = make_scorer(f1_score, average="micro")
     #class_metrics["MacroF1"] = make_scorer(f1_score, average="macro")
@@ -501,7 +430,7 @@ for param in tqdm(parameters):
     add_metric(id='micro_f1', name="Micro F1", score_func=lambda x,y: f1_score(x, y, average="macro"), greater_is_better=True)
     add_metric(id='macro_f1', name="Macro F1", score_func=lambda x,y: f1_score(x, y, average="micro"), greater_is_better=True)
     # Metrics removed as it results in problem when using multiclass
-    remove_metric('precision') 
+    remove_metric('precision')
     remove_metric('recall')
     remove_metric('f1')
     # Metrics that are okay to leave:
@@ -516,27 +445,28 @@ for param in tqdm(parameters):
         model = create_model(model_str)
         tunned_model = tune_model(model, n_iter=tunner_iterations,
                                   early_stopping=tunner_early_stopping,
-                                  search_library="optuna", choose_better=True, optimize='micro_f1') #  optimize="F1") 
+                                  search_library="optuna", choose_better=True, optimize='micro_f1') #  optimize="F1")
 
     save_model(tunned_model, experiment_name)
     # Force another run to make sure that we save the best results
     print("Creating final model to save results to disk............")
-    model = create_model(tunned_model) 
+    model = create_model(tunned_model)
     # TODO: add parameters to the saved CSV
     dfresult = pull()
     dfresult["dataset"] = dataset
     dfresult["model"] = model_str
     dfresult["target"] = target
     dfresult["feature_set"] = '_'.join(feature_subset)
-    dfresult["day_plus_x"] = predict_d_plus 
+    dfresult["day_plus_x"] = predict_d_plus
     dfresult["folds"] = cv_folds
     dfresult["tunner_iterations"] = tunner_iterations
     dfresult["tunner_early_stopping"] = tunner_early_stopping
     dfresult["include_past_ys"] = include_past_ys
     dfresult["predict_pa"] = predict_pa
     dfresult["n_prev_days"] = n_prev_days
-    dfresult.to_csv(experiment_name + ".csv.gz")
-                
+    dfresult.to_csv(experiment_filename)
+
+
 # +
 #model = create_model('catboost')
 #predict_model(model)
