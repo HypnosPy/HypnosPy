@@ -31,7 +31,7 @@ class SleepBoudaryDetector(object):
         # We set the hr_col to nan for the time outside the search win in order to find the quantile below ignoring nans
         df_time.loc[idx, hr_col] = np.nan
 
-        quantiles_per_day = df_time[hr_col].resample('24H', base=start_time).quantile(quantile).dropna()
+        quantiles_per_day = df_time[hr_col].resample('24H', offset="%dh" % start_time).quantile(quantile).dropna()
         df_time["hyp_sleep"] = quantiles_per_day
         if quantiles_per_day.index[0] < df_time.index[0]:
             df_time.loc[df_time.index[0], "hyp_sleep"] = quantiles_per_day.iloc[0]
@@ -245,7 +245,7 @@ class SleepBoudaryDetector(object):
             # Paper's Step 5
             df_time["hyp_" + col + '_5mm'] = df_time["hyp_" + col + '_diff'].rolling(five_min).median().fillna(0.0)
             # Paper's Step 6
-            quantiles_per_day = df_time["hyp_" + col + '_5mm'].resample('24H', base=start_hour).quantile(
+            quantiles_per_day = df_time["hyp_" + col + '_5mm'].resample('24H', offset="%dh" % start_hour).quantile(
                 q_sleep).dropna()
             # print(quantiles_per_day)
 
