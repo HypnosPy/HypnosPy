@@ -17,6 +17,7 @@ class InvCode(IntFlag):
     FLAG_DAY_NON_WEARING = 64
     FLAG_DAY_NOT_ENOUGH_VALID_EPOCHS = 128
     FLAG_DAY_NOT_ENOUGH_CONSECUTIVE_DAYS = 256
+    FLAG_DAY_TOO_MANY_INVALID_EPOCHS = 512
 
     @staticmethod
     def check_flag(int_value):
@@ -195,6 +196,28 @@ class Validator(object):
             wearable.data.loc[invalid_epochs, self.invalid_col] |= InvCode.FLAG_DAY_NOT_ENOUGH_VALID_EPOCHS
             del wearable.data["_tmp_flag_"]
 
+    def flag_day_if_invalid_epochs_larger_than(self, max_invalid_minutes_per_day: int):
+        """
+        Marks as invalid the whole day (InvCode.FLAG_DAY_TOO_MANY_INVALID_EPOCHS) if the number of invalid minutes in a day is larger than ``max_invalid_minutes_per_day``.
+
+        :param valid_minutes_per_day: Minimum minutes of valid (i.e., without any other flag) in a day.
+        :return: None
+        """
+
+        for wearable in self.wearables.values():
+            epochs_in_minute = wearable.get_epochs_in_min()
+            max_invalid_epochs_per_day = max_invalid_minutes_per_day * epochs_in_minute
+
+            # Check epochs with problems
+            wearable.data["_tmp_flag_"] = wearable.data[self.invalid_col] != InvCode.FLAG_OKAY
+
+            # Flag day as invalid if there are too many epochs
+            invalid_epochs = wearable.data.groupby([wearable.experiment_day_col])["_tmp_flag_"].transform(
+                lambda x: x.sum()) >= max_invalid_epochs_per_day
+            wearable.data.loc[invalid_epochs, self.invalid_col] |= InvCode.FLAG_DAY_TOO_MANY_INVALID_EPOCHS
+            del wearable.data["_tmp_flag_"]
+
+
     def flag_day_without_diary(self):
         """
         Marks as invalid the whole day (InvCode.FLAG_DAY_WITHOUT_DIARY) if a diary entry is not found for that day.
@@ -290,6 +313,23 @@ class Validator(object):
         for wearable in self.wearables.values():
             valid_days = self.get_valid_days(wearable.get_pid())[wearable.get_pid()]
             if len(valid_days) == 0:
+                mark_for_removal.append(wearable.get_pid())
+
+        for pid in mark_for_removal:
+            print("Removing wearable %s." % pid)
+            self.remove_wearable(pid)
+
+        return len(mark_for_removal)
+
+    def remove_wearables_without_diary(self):
+        """
+        Fully removes any wearable if it does not have a diary entry.
+
+        :return: Total number of wearables removed.
+        """
+        mark_for_removal = []
+        for wearable in self.wearables.values():
+            if wearable.diary is None:
                 mark_for_removal.append(wearable.get_pid())
 
         for pid in mark_for_removal:
