@@ -17,6 +17,8 @@ class Diary(object):
             raise KeyError("Diary needs to have a 'pid' column.")
 
         self.data["pid"] = self.data["pid"].astype(str)
+        return self
 
     def from_dataframe(self, dataframe):
         self.data = dataframe
+        return self
