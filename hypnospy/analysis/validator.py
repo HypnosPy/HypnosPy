@@ -352,7 +352,7 @@ class Validator(object):
             days = self.get_valid_days(wearable.get_pid())[wearable.get_pid()]
 
             if len(days) == 0:
-                return
+                continue
 
             s = sorted(days)
 
