@@ -321,8 +321,11 @@ cv_folds = 11
 
 print("Predicting Sleep metrics")
 #possible_models = ['dummy', 'catboost', 'lr', 'lightgbm', 'xgboost', 'rf', 'et', 'lda']
-my_models = ["dummy"] # [sys.argv[1]]
-datasets = ["hchs"] # [sys.argv[2]]
+my_models = [sys.argv[1]]
+datasets = [sys.argv[2]]
+use_gpu = bool(eval(sys.argv[3]))
+
+print("Using GPU:", use_gpu)
 
 if predict_pa:
     feature_subsets = [["sleep_metrics"]]
@@ -408,7 +411,7 @@ for param in tqdm(parameters):
 
     force_cat, force_num = force_categories(dataset, feature_subset)
 
-    experiment = setup(data = data,  test_data = test_data,
+    experiment = setup(data = data,  test_data = test_data, use_gpu=use_gpu,
                    target = target, session_id=123,
                    normalize = True,
                    transformation = True,
@@ -416,12 +419,12 @@ for param in tqdm(parameters):
                    fold_groups="fold",
                    log_experiment = True,
                    experiment_name = experiment_name,
-                   use_gpu=False,
                    categorical_features = force_cat,
                    numeric_features = force_num,
                    silent=True
                   )
 
+    print("USING GPU? %s" % (get_config('gpu_param')))
     #class_metrics = {}
     #class_metrics["MicroF1"] = make_scorer(f1_score, average="micro")
     #class_metrics["MacroF1"] = make_scorer(f1_score, average="macro")
