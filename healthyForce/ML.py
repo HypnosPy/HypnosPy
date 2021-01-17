@@ -34,6 +34,8 @@ from sklearn.dummy import DummyRegressor, DummyClassifier
 from sklearn.metrics import f1_score, make_scorer
 
 import scipy
+
+
 # +
 def get_columns(dfkeys, subset):
     return dfkeys.loc[subset]["value"]
@@ -80,9 +82,6 @@ def get_dataframes(dataset, nfolds):
 
     return df_per_day, df_per_hour, df_per_pid, df_keys
 
-
-
-# -
 
 def get_xy(df_day, df_hour, df_pid, df_keys, y_subset, x_subsets, keep_cols=[]):
 
@@ -177,7 +176,7 @@ def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, 
     if not Ys_sorted[new_Y_cols].empty:
         Xs_sorted = pd.merge(Xs_sorted, Ys_sorted[[*new_Y_cols, 'ml_sequence', 'pid']])
 
-    if y_label is not None:
+    if y_label != "combined":
         data = pd.merge(Xs_sorted, Ys[[y_label, "ml_sequence", "pid"]])
     else:
         data = pd.merge(Xs_sorted, Ys)
@@ -244,25 +243,23 @@ def cdc(age):
         return (7, 8)
 
 
-# +
 def modify_data_target(data, target):
 
-    if target == "awakening" or target is None:
+    if target == "awakening":
         data["awakening"] = data["awakening"].apply(lambda x: awakeningMapping(x))
 
-    if target == "sleepEfficiency" or target is None:
+    elif target == "sleepEfficiency":
         data["sleepEfficiency"] = data["sleepEfficiency"].apply(lambda x: sleepEfficiencyMapping(x))
 
-    if target == "totalSleepTime" or target is None:
+    elif target == "totalSleepTime":
         data["totalSleepTime"] = data[["totalSleepTime", "sleep_hours"]].apply(lambda x: tstMapping(*x), axis=1)
 
-    if target is None or len(target) == 0:
+    elif target == "combined":
         data["combined"] = data["totalSleepTime"] + data["sleepEfficiency"] + data["awakening"]
         data["combined"] = data["combined"].apply(lambda x: combinedMapping(x))
         data = data.drop(["sleepEfficiency", "totalSleepTime", "awakening"], axis=1)
-        target = "combined"
 
-    return data, target
+    return data
 
 def force_categories(dataset, feature_subset):
     if "demo" not in feature_subset:
@@ -313,6 +310,9 @@ def force_categories(dataset, feature_subset):
 
 
 # +
+
+
+# # +
 from pycaret.classification import *
 
 predict_pa = False
@@ -324,8 +324,10 @@ print("Predicting Sleep metrics")
 my_models = [sys.argv[1]]
 datasets = [sys.argv[2]]
 use_gpu = bool(eval(sys.argv[3]))
+overwritting = bool(eval(sys.argv[4]))
 
 print("Using GPU:", use_gpu)
+print("Overwritting results:", overwritting)
 
 if predict_pa:
     feature_subsets = [["sleep_metrics"]]
@@ -344,7 +346,7 @@ else:
         ["bins"], ["stats"], ["bouts"], ["time", "demo"], ["cosinor"]
         ]
     y_subset = "sleep_metrics"
-    targets = ["sleepEfficiency", "awakening", "totalSleepTime", None]
+    targets = ["sleepEfficiency", "awakening", "totalSleepTime", "combined"]
 
 
 tunner_iterations = 50
@@ -355,11 +357,11 @@ parameters = []
 
 for model_str in my_models:
     for dataset in datasets:
-        for day_future in range(0, 3):
+        for day_future in range(0, 1): # 3
             for target in targets:
                 for feature_subset in feature_subsets:
-                    for n_prev_day in range(0, 3):
-                        for include_past_ys in [True, False]:
+                    for n_prev_day in range(0, 1): # 3
+                        for include_past_ys in [False]: # True
                             parameters.append([dataset, model_str, target, feature_subset, day_future, n_prev_day, include_past_ys])
 
 # ====================================================================================
@@ -372,7 +374,7 @@ for param in tqdm(parameters):
                                                                include_past_ys, n_prev_days, predict_d_plus)
     experiment_filename = "%s.csv.gz" % (experiment_name)
 
-    if os.path.exists(experiment_filename):
+    if os.path.exists(experiment_filename) and overwritting is False:
         print("Experiment filename %s already exists. Skipping this one!" % (experiment_filename))
         continue
 
@@ -393,7 +395,7 @@ for param in tqdm(parameters):
     #handout_test_pids
 
     data = data.fillna(-1)
-    data, target = modify_data_target(data, target)
+    data = modify_data_target(data, target)
 
     # Predicting day + 1, instead of day
     if predict_d_plus > 0:
@@ -468,211 +470,6 @@ for param in tqdm(parameters):
     dfresult["predict_pa"] = predict_pa
     dfresult["n_prev_days"] = n_prev_days
     dfresult.to_csv(experiment_filename)
+    print("Saved results to: %s" % (experiment_filename))
 
 
-# +
-#model = create_model('catboost')
-#predict_model(model)
-
-# Day:
-# 0.6700	0.7929	0.6117	0.6801	0.6661	0.4284	0.4316
-# 0.4931	0.5000	0.3333	0.2438	0.3261	0.0000	0.0000
-
-# Day + 1:
-# 0.5478	0.6649	0.4582	0.5448	0.5337	0.2039	0.2078
-# 0.4931	0.5000	0.3333	0.2438	0.3261	0.0000	0.000
-
-#
-#print(dataset)
-
-# +
-#dummy = create_model(DummyClassifier(strategy="most_frequent"))
-#predict_model(dummy)
-
-# +
-#evaluate_model(model)
-#predict_model(model)
-#data
-
-# #setup?
-#get_config('y_train')
-
-# +
-# OLD CODE WITH REGRESSION
-#from pycaret.regression import *
-# n_prev_days = 0
-# include_past_ys = False
-# predict_pa = False
-
-# print("Predicting Sleep metrics")
-# my_models = ['dummy', 'catboost', 'br', 'lr', 'lightgbm', 'xgboost', 'et', 'omp']
-
-# if predict_pa:
-#     feature_subsets = [["sleep_metrics"]]
-#     y_subset = "bouts"
-#     targets = ["medium_5", "medium_10", "medium_15", "medium_20"]
-
-# else:
-#     # all_feature_subsets = ["bins", "stats", "bouts", "time", "cosinor", "demo"]
-#     feature_subsets = [
-#             #["bins", "stats", "bouts", "time", "cosinor", "demo"],
-#             #       ["bins", "stats", "bouts"],
-#             #       ["bins", "stats", "bouts", "time"],
-#             #       ["bins", "stats", "bouts", "cosinor"],
-#             #       ["bins", "stats", "bouts", "demo"],
-#             #       ["bins", "stats", "bouts", "time", "cosinor"],
-#             #       ["bins"], ["stats"], ["bouts"], ["time"], ["cosinor"],
-#             ["demo"]
-#                   ]
-#     y_subset = "sleep_metrics"
-#     targets = ["sleepEfficiency", "awakening", "totalSleepTime"]
-
-
-# tunner_iterations = 100
-# tunner_early_stopping = 10
-# cv_folds = 10
-
-# for dataset in ["mesa"]: # , "hchs"]:
-#     df_per_day, df_per_hour, df_per_pid, df_keys = get_dataframes(dataset, cv_folds)
-
-#     for model_str in my_models:
-#         for target in targets:
-#             for feature_subset in feature_subsets:
-
-#                 print("LOG: dataset (%s), model (%s), target (%s), features (%s), days (%d), include_past (%s), predict_pa (%s)" % (dataset, model_str, target, '-'.join(feature_subset), n_prev_days, include_past_ys, predict_pa))
-#                 data = get_data(n_prev_days, predict_pa, include_past_ys,
-#                                 df_per_day, df_per_hour, df_per_pid, df_keys,
-#                                 y_subset=y_subset,
-#                                 x_subsets = feature_subset,
-#                                 y_label = target)
-
-#                 experiment_name = "outputs/%s/%s_%s_%s_%s_ipast%s_%d" % (dataset,
-#                                                                          dataset,
-#                                                                          model_str,
-#                                                                          target, '-'.join(feature_subset),
-#                                                                          include_past_ys,
-#                                                                          n_prev_days
-#                                                                          )
-
-#                 experiment = setup(data = data, target = target, session_id=123,
-#                                    normalize = True,
-#                                    transformation = True,
-#                                    fold_strategy="groupkfold",
-#                                    fold_groups="fold",
-#                                    log_experiment = True,
-#                                    experiment_name = experiment_name,
-#                                    use_gpu=False,
-#                                    silent=True
-#                                   )
-#                 add_metric(id='pearson', name="Pearson", score_func=lambda a, b: scipy.stats.pearsonr(a,b)[0], greater_is_better=True)
-
-#                 if model_str == 'dummy':
-#                     tunned_model = create_model(DummyRegressor())
-
-#                 else:
-#                     model = create_model(model_str)
-#                     tunned_model = tune_model(model, n_iter=tunner_iterations,
-#                                               early_stopping=tunner_early_stopping,
-#                                               search_library="optuna", choose_better=True, optimize="R2")
-
-#                 save_model(tunned_model, experiment_name)
-#                 # Force another run to make sure that we save the best results
-#                 model = create_model(tunned_model)
-#                 pull().to_csv(experiment_name + ".csv")
-
-
-# +
-# evaluate_model(best)
-# plot_model(best, plot='feature')
-# interprete_model(model)
-
-# +
-# data[["combined"]]
-# comb_pid = data.groupby("pid")["combined"].mean()
-# comb_pid.mean()
-
-# #data["combined"].mean()
-# #
-
-# #comb_pid.name = "combined_score"
-# #diseased_pid = data.groupby("pid")[["rstlesslgs5", "slpapnea5", "insmnia5"]].sum().any(axis=1)
-# #diseased_pid.name = "has_disease"
-
-# diseased_pid = data.groupby("pid")[["epslpscl5c", "whiirs5c"]].mean()
-# diseased_pid.name = "scores"
-
-
-# merged = pd.merge(comb_pid, diseased_pid, right_index=True, left_index=True)
-
-# merged.corr("pearson")
-# #merged[merged["has_disease"] == True]["combined_score"].mean(), merged[merged["has_disease"] == False]["combined_score"].mean()
-# #merged["combined_score"].mean()
-
-# #s = 4
-# #merged[merged["combined_score"] > s]["has_disease"].mean(), merged[merged["combined_score"] <= s]["has_disease"].mean()
-
-
-
-# +
-# #!mlflow ui
-
-# +
-#
-# dataset = "mesa"
-# predict_pa = False
-# feature_subset = ["bins", "stats", "bouts", "time", "cosinor", "demo"]
-# y_subset = "sleep_metrics"
-# y_label = "sleepEfficiency"
-# ndays = 2
-# include_past_ys = True
-
-# df_per_day, df_per_hour, df_per_pid, df_keys = get_dataframes(dataset, 3)
-
-# data = get_data(ndays, predict_pa, include_past_ys,
-#                      df_per_day, df_per_hour, df_per_pid, df_keys,
-#                      y_subset=y_subset,
-#                      x_subsets = feature_subset,
-#                      y_label = y_label)
-
-
-# +
-# dataset = "mesa"
-# predict_pa = True
-# feature_subset = ['sleep_metrics']
-# y_label = "medium_20"
-# y_subset = "bouts"
-# ndays = 1
-# include_past_ys = True
-
-# df_per_day, df_per_hour, df_per_pid, df_keys = get_dataframes(dataset, 3)
-
-# data = get_data(ndays, predict_pa, include_past_ys,
-#                      df_per_day, df_per_hour, df_per_pid, df_keys,
-#                      y_subset=y_subset,
-#                      x_subsets = feature_subset,
-#                      y_label = y_label)
-
-# +
-#data[["ml_sequence", "pid", "medium_20", "medium_20-1d", "sleepEfficiency", "sleepEfficiency-1d"]].head(10)
-#data[["ml_sequence", "pid", "medium_20", "sleepEfficiency",]].head(10)
-#data.head(10)
-
-# +
-### If we want to run only one experiment
-# experiment = setup(data = data, target = y_label, session_id=123,
-#                    normalize = True,
-#                    transformation = True,
-#                    fold_strategy="groupkfold",
-#                    fold_groups="fold",
-#                    fold=3,
-#                    log_experiment = True,
-#                    experiment_name = experiment_name,
-#                    use_gpu=False,
-#                    silent=True
-#                   )
-
-# +
-# best = compare_models()
-
-# +
-# evaluate_model(best)
