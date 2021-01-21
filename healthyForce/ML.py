@@ -255,6 +255,10 @@ def modify_data_target(data, target):
         data["totalSleepTime"] = data[["totalSleepTime", "sleep_hours"]].apply(lambda x: tstMapping(*x), axis=1)
 
     elif target == "combined":
+        data["totalSleepTime"] = data[["totalSleepTime", "sleep_hours"]].apply(lambda x: tstMapping(*x), axis=1)
+        data["sleepEfficiency"] = data["sleepEfficiency"].apply(lambda x: sleepEfficiencyMapping(x))
+        data["awakening"] = data["awakening"].apply(lambda x: awakeningMapping(x))
+        
         data["combined"] = data["totalSleepTime"] + data["sleepEfficiency"] + data["awakening"]
         data["combined"] = data["combined"].apply(lambda x: combinedMapping(x))
         data = data.drop(["sleepEfficiency", "totalSleepTime", "awakening"], axis=1)
