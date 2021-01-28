@@ -21,6 +21,8 @@
 # ---
 
 # +
+from pathlib import Path
+
 import pandas as pd
 import ast
 import os
@@ -69,22 +71,27 @@ def load_embeddings(train, test):
     return df_embeddings
 
 def get_dataframes(dataset, nfolds):
+    folder_name = ''
+    #         folder_name = 'acm_health_sleep_data-main/'
 
     if dataset == "hchs":
-        folder_name = ''
-#         folder_name = 'acm_health_sleep_data-main/'
-        filenames = {"keys": folder_name + "processed_hchs/HCHS_day_keys.csv", 
+        filenames = {"keys": folder_name + "processed_hchs/HCHS_day_keys.csv",
                      "pids": folder_name + "processed_hchs/HCHS_pid.csv",
                      "per_day": folder_name + "processed_hchs/HCHS_per_day.csv",
                      "per_hour": folder_name + "processed_hchs/HCHS_per_hour.csv", 
                      "per_pid": folder_name + "processed_hchs/HCHS_per_pid.csv",
-                     "embeddings_train": folder_name + "processed_hchc/embeddings_train.pkl",
-                     "embeddings_test": folder_name + "processed_hchc/embeddings_test.pkl"
+                     "embeddings_train": folder_name + "processed_hchs/HCHS_embeddings_train.pkl.gz",
+                     "embeddings_test": folder_name + "processed_hchs/HCHS_embeddings_test.pkl.gz"
                     }
     elif dataset == "mesa":
-        filenames = {"keys": "mesa/MESA_day_keys.csv", "pids":"mesa/MESA_pid.csv",
-                     "per_day": "mesa/MESA_per_day.csv",
-                     "per_hour": "mesa/MESA_per_hour.csv", "per_pid": "mesa/MESA_per_pid.csv"}
+        filenames = {"keys": folder_name + "processed_mesa/MESA_day_keys.csv",
+                     "pids": folder_name + "processed_mesa/MESA_pid.csv",
+                     "per_day": folder_name + "processed_mesa/MESA_per_day.csv",
+                     "per_hour": folder_name + "processed_mesa/MESA_per_hour.csv",
+                     "per_pid": folder_name + "processed_mesa/MESA_per_pid.csv",
+                     "embeddings_train": folder_name + "processed_mesa/MESA_embeddings_train.pkl",
+                     "embeddings_test": folder_name + "processed_mesa/MESA_embeddings_test.pkl"
+                     }
     else:
         raise ValueError("No Filename for dataset %s" % dataset)
 
@@ -145,7 +152,7 @@ def get_xy(df_day, df_hour, df_pid, df_keys, df_embeddings, y_subset, x_subsets,
         x_columns.extend(get_columns(df_keys, subset))
 
     if "demo" in x_subsets:
-        oldcols = df_per_day.keys()
+        oldcols = df_day.keys()
         dfday = pd.merge(df_pid, dfday)
         newcols = set(dfday.keys()) - set(oldcols)
         x_columns.extend(newcols)
@@ -312,7 +319,7 @@ def modify_data_target(data, target):
         data["totalSleepTime"] = data[["totalSleepTime", "sleep_hours"]].apply(lambda x: tstMapping(*x), axis=1)
         data["sleepEfficiency"] = data["sleepEfficiency"].apply(lambda x: sleepEfficiencyMapping(x))
         data["awakening"] = data["awakening"].apply(lambda x: awakeningMapping(x))
-        
+
         data["combined"] = data["totalSleepTime"] + data["sleepEfficiency"] + data["awakening"]
         data["combined"] = data["combined"].apply(lambda x: combinedMapping(x))
         data = data.drop(["sleepEfficiency", "totalSleepTime", "awakening"], axis=1)
@@ -370,11 +377,20 @@ def force_categories(dataset, feature_subset, embedded_features=None):
     return force_cat, force_num
 
 
-# +
+def get_testname(experiment_filename):
+    stemname = Path(experiment_filename).stem
+    print(stemname)
 
+    if ".pkl" in stemname:
+        stemname = stemname.replace(".pkl", "_test.csv.gz")
 
-# In[375]:
+    elif stemname.endswith(".csv"):
+        stemname = stemname.replace(".csv", "_test.csv")
 
+    else:
+        stemname += "_test.csv.gz"
+
+    return experiment_filename.replace(os.path.basename(experiment_filename), stemname)
 
 
 # # +
@@ -386,7 +402,7 @@ cv_folds = 11
 
 print("Predicting Sleep metrics")
 
-# sys.argv = ['0', 'lr', 'hchs', 'True', 'True']
+# sys.argv = ['0', 'dummy', 'hchs', 'False', 'False']
 #possible_models = ['dummy', 'catboost', 'lr', 'lightgbm', 'xgboost', 'rf', 'et', 'lda']
 my_models = [sys.argv[1]]
 datasets = [sys.argv[2]]
@@ -552,10 +568,23 @@ for param in tqdm(parameters[:1]):
     dfresult.to_csv(experiment_filename)
     print("Saved results to: %s" % (experiment_filename))
 
+    # Save test results
+    predict_model(tunned_model)
 
+    dfresult = pull()
+    dfresult["dataset"] = dataset
+    dfresult["model"] = model_str
+    dfresult["target"] = target
+    dfresult["feature_set"] = '_'.join(feature_subset)
+    dfresult["day_plus_x"] = predict_d_plus
+    dfresult["folds"] = cv_folds
+    dfresult["include_past_ys"] = include_past_ys
+    dfresult["predict_pa"] = predict_pa
+    dfresult["n_prev_days"] = n_prev_days
+    dfresult["test"] = True
 
-# In[ ]:
-
-
+    new_filename = get_testname(experiment_filename)
+    dfresult.to_csv(new_filename)
+    print("Saved TEST results to: %s" % new_filename)
 
 
