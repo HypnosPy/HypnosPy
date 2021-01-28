@@ -89,8 +89,8 @@ def get_dataframes(dataset, nfolds):
                      "per_day": folder_name + "processed_mesa/MESA_per_day.csv",
                      "per_hour": folder_name + "processed_mesa/MESA_per_hour.csv",
                      "per_pid": folder_name + "processed_mesa/MESA_per_pid.csv",
-                     "embeddings_train": folder_name + "processed_mesa/MESA_embeddings_train.pkl",
-                     "embeddings_test": folder_name + "processed_mesa/MESA_embeddings_test.pkl"
+                     "embeddings_train": folder_name + "processed_mesa/MESA_embeddings_train.pkl.gz",
+                     "embeddings_test": folder_name + "processed_mesa/MESA_embeddings_test.pkl.gz"
                      }
     else:
         raise ValueError("No Filename for dataset %s" % dataset)
@@ -418,16 +418,19 @@ if predict_pa:
     targets = ["medium_5", "medium_10", "medium_15", "medium_20"]
 
 else:
-    # all_feature_subsets = ["bins", "stats", "bouts", "time", "cosinor", "demo"]
+    # all_feature_subsets = ["bins", "stats", "bouts", "time", "cosinor", "demo", 'ae24', 'ae2880', 'vae24', 'vae2880', 'cvae']
     feature_subsets = [
-        ['ae24'],
+        # Second Batch:
+        #["bins", "stats", "bouts", "time", "cosinor", "demo", 'ae24', 'ae2880', 'vae24', 'vae2880', 'cvae'],
+        #['ae24'], ['ae2880'], ['vae24'], ['vae2880'], ['cvae'],
+        # First Batch:
         ["bins", "stats", "bouts", "time", "cosinor", "demo"],
-#         ["bins", "stats", "bouts"],
-#         ["bins", "stats", "bouts", "time"],
-#         ["bins", "stats", "bouts", "cosinor"],
-#         ["bins", "stats", "bouts", "demo"],
-#         ["bins", "stats", "bouts", "time", "cosinor"],
-#         ["bins"], ["stats"], ["bouts"], ["time", "demo"], ["cosinor"]
+        ["bins", "stats", "bouts"],
+        ["bins", "stats", "bouts", "time"],
+        ["bins", "stats", "bouts", "cosinor"],
+        ["bins", "stats", "bouts", "demo"],
+        ["bins", "stats", "bouts", "time", "cosinor"],
+        ["bins"], ["stats"], ["bouts"], ["time", "demo"], ["cosinor"]
         ]
     y_subset = "sleep_metrics"
     targets = ["sleepEfficiency", "awakening", "totalSleepTime", "combined"]
@@ -450,18 +453,9 @@ for model_str in my_models:
 
 # ====================================================================================
 
-
-# In[376]:
-
-
-pd.DataFrame(parameters, columns=['dataset', 'model_str', 'target', 'feature_subset', 'day_future', 'n_prev_day', 'include_past_ys'])
-
-
 # In[368]:
 
-
-
-for param in tqdm(parameters[:1]):
+for param in tqdm(parameters[:]):
 
     dataset, model_str, target, feature_subset, predict_d_plus, n_prev_days, include_past_ys = param
 
