@@ -326,7 +326,7 @@ def modify_data_target(data, target):
 
     return data
 
-def force_categories(dataset, feature_subset, embedded_features=None):
+def force_categories(dataset, feature_subset):
     if "demo" not in feature_subset:
         return [], []
 
@@ -370,9 +370,6 @@ def force_categories(dataset, feature_subset, embedded_features=None):
                      'types5', 'slpapnea5', 'cpap5', 'dntaldv5', 'uvula5', 'insmnia5', 'rstlesslgs5',
                      'wrksched5', 'extrahrs5']
         force_num = ['sleepage5c', 'wkendsleepdur5t', 'nap5', 'whiirs5c', 'epslpscl5c', 'hoostmeq5c']
-        
-    if embedded_features:
-        force_num += embedded_features
 
     return force_cat, force_num
 
@@ -501,7 +498,7 @@ for param in tqdm(parameters[:]):
     test_data = data[data["fold"] == cv_folds-1]
     data = data[data["fold"] != cv_folds-1]
 
-    force_cat, force_num = force_categories(dataset, feature_subset, embedded_features=df_embeddings.columns.tolist())
+    force_cat, force_num = force_categories(dataset, feature_subset)
 
     experiment = setup(data = data,  test_data = test_data, use_gpu=use_gpu,
                    target = target, session_id=123,
