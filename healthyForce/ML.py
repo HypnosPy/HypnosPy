@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[371]:
 
 
 # -*- coding: utf-8 -*-
@@ -66,18 +66,13 @@ def load_embeddings(train, test):
 
     df_embeddings = pd.concat([embeddings_train, embeddings_test])
     
-    # Remove ae2888, vae2888, cvae since their learning wasn't good.
-    df_embeddings = df_embeddings[['ae24', 'vae24']]
-    
-    # Give each column a unique feature name (ae24.1, ae24.2, ...)
-    df_embeddings.columns = ['.'.join((model, str(feature))).strip() for (model, feature) in df_embeddings.columns.values]
     return df_embeddings
 
 def get_dataframes(dataset, nfolds):
 
     if dataset == "hchs":
         folder_name = ''
-        # folder_name = 'acm_health_sleep_data-main/'
+#         folder_name = 'acm_health_sleep_data-main/'
         filenames = {"keys": folder_name + "processed_hchs/HCHS_day_keys.csv", 
                      "pids": folder_name + "processed_hchs/HCHS_pid.csv",
                      "per_day": folder_name + "processed_hchs/HCHS_per_day.csv",
@@ -114,6 +109,17 @@ def get_dataframes(dataset, nfolds):
   
     return df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings
 
+# Filters out embedders from feature sets.
+def map_feature_set_to_embedders(x_subsets):
+    requested_embedders = []
+    embedders = ['ae24', 'ae2880', 'vae24', 'vae2880', 'cvae']
+    for s in x_subsets:
+        # .startswith in case of ae24_version2
+        if s.startswith(tuple(embedders)):
+            requested_embedders.append(s)
+    
+    return requested_embedders
+
 
 def get_xy(df_day, df_hour, df_pid, df_keys, df_embeddings, y_subset, x_subsets, keep_cols=[]):
 
@@ -132,8 +138,10 @@ def get_xy(df_day, df_hour, df_pid, df_keys, df_embeddings, y_subset, x_subsets,
     # Extract "X"
     x_columns = ["fold"] #["pid", "ml_sequence"]
     print(type(x_subsets), x_subsets)
-
-    for subset in list(set(x_subsets) - set(["demo"])):
+    
+    embedders = map_feature_set_to_embedders(x_subsets)
+    
+    for subset in list(set(x_subsets) - set(["demo"]) - set(embedders)):
         x_columns.extend(get_columns(df_keys, subset))
 
     if "demo" in x_subsets:
@@ -145,8 +153,14 @@ def get_xy(df_day, df_hour, df_pid, df_keys, df_embeddings, y_subset, x_subsets,
     print("X cols: ", x_columns)
     x = dfday[x_columns + keep_cols]
     
-    # TODO: merge embedded_df with x via pid, ml_sequence
-    x = x.merge(df_embeddings, left_on=['pid', 'ml_sequence'], right_index=True)
+    # Check if x_subsets contain embedded features
+    if embedders:
+        # Remove ae2888, vae2888, cvae since their learning wasn't good.
+        df_embeddings = df_embeddings[embedders]
+
+        # Give each column a unique feature name (ae24.1, ae24.2, ...)
+        df_embeddings.columns = ['.'.join((model, str(feature))).strip() for (model, feature) in df_embeddings.columns.values]
+        x = x.merge(df_embeddings, left_on=['pid', 'ml_sequence'], right_index=True)
     
     return x, y
 
@@ -359,7 +373,7 @@ def force_categories(dataset, feature_subset, embedded_features=None):
 # +
 
 
-# In[ ]:
+# In[372]:
 
 
 
@@ -390,13 +404,14 @@ if predict_pa:
 else:
     # all_feature_subsets = ["bins", "stats", "bouts", "time", "cosinor", "demo"]
     feature_subsets = [
+        ['ae24'],
         ["bins", "stats", "bouts", "time", "cosinor", "demo"],
-        ["bins", "stats", "bouts"],
-        ["bins", "stats", "bouts", "time"],
-        ["bins", "stats", "bouts", "cosinor"],
-        ["bins", "stats", "bouts", "demo"],
-        ["bins", "stats", "bouts", "time", "cosinor"],
-        ["bins"], ["stats"], ["bouts"], ["time", "demo"], ["cosinor"]
+#         ["bins", "stats", "bouts"],
+#         ["bins", "stats", "bouts", "time"],
+#         ["bins", "stats", "bouts", "cosinor"],
+#         ["bins", "stats", "bouts", "demo"],
+#         ["bins", "stats", "bouts", "time", "cosinor"],
+#         ["bins"], ["stats"], ["bouts"], ["time", "demo"], ["cosinor"]
         ]
     y_subset = "sleep_metrics"
     targets = ["sleepEfficiency", "awakening", "totalSleepTime", "combined"]
@@ -420,13 +435,13 @@ for model_str in my_models:
 # ====================================================================================
 
 
-# In[ ]:
+# In[373]:
 
 
 pd.DataFrame(parameters, columns=['dataset', 'model_str', 'target', 'feature_subset', 'day_future', 'n_prev_day', 'include_past_ys'])
 
 
-# In[ ]:
+# In[368]:
 
 
 
@@ -537,12 +552,6 @@ for param in tqdm(parameters[:1]):
     dfresult.to_csv(experiment_filename)
     print("Saved results to: %s" % (experiment_filename))
 
-
-
-# In[ ]:
-
-
-dfresult
 
 
 # In[ ]:
