@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[371]:
+# In[374]:
 
 
 # -*- coding: utf-8 -*-
@@ -78,8 +78,8 @@ def get_dataframes(dataset, nfolds):
                      "per_day": folder_name + "processed_hchs/HCHS_per_day.csv",
                      "per_hour": folder_name + "processed_hchs/HCHS_per_hour.csv", 
                      "per_pid": folder_name + "processed_hchs/HCHS_per_pid.csv",
-                     "embeddings_train": "embeddings_train.pkl",
-                     "embeddings_test": "embeddings_test.pkl"
+                     "embeddings_train": folder_name + "processed_hchc/embeddings_train.pkl",
+                     "embeddings_test": folder_name + "processed_hchc/embeddings_test.pkl"
                     }
     elif dataset == "mesa":
         filenames = {"keys": "mesa/MESA_day_keys.csv", "pids":"mesa/MESA_pid.csv",
@@ -373,7 +373,7 @@ def force_categories(dataset, feature_subset, embedded_features=None):
 # +
 
 
-# In[372]:
+# In[375]:
 
 
 
@@ -417,7 +417,7 @@ else:
     targets = ["sleepEfficiency", "awakening", "totalSleepTime", "combined"]
 
 
-tunner_iterations = 5
+tunner_iterations = 50
 tunner_early_stopping = 5
 
 # ====================================================================================
@@ -435,7 +435,7 @@ for model_str in my_models:
 # ====================================================================================
 
 
-# In[373]:
+# In[376]:
 
 
 pd.DataFrame(parameters, columns=['dataset', 'model_str', 'target', 'feature_subset', 'day_future', 'n_prev_day', 'include_past_ys'])
