@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
 # -*- coding: utf-8 -*-
 # ---
 # jupyter:
@@ -51,12 +57,35 @@ def map_id_fold(pid_file, n):
 
     return pd.DataFrame(mapping)
 
+def load_embeddings(train, test):
+    embeddings_train = pd.read_pickle(train)
+    # embeddings_train.columns = embeddings_train.columns.droplevel(1)
+    
+    embeddings_test = pd.read_pickle(test)
+    # embeddings_test.columns = embeddings_test.columns.droplevel(1)
+
+    df_embeddings = pd.concat([embeddings_train, embeddings_test])
+    
+    # Remove ae2888, vae2888, cvae since their learning wasn't good.
+    df_embeddings = df_embeddings[['ae24', 'vae24']]
+    
+    # Give each column a unique feature name (ae24.1, ae24.2, ...)
+    df_embeddings.columns = ['.'.join((model, str(feature))).strip() for (model, feature) in df_embeddings.columns.values]
+    return df_embeddings
+
 def get_dataframes(dataset, nfolds):
 
     if dataset == "hchs":
-        filenames = {"keys": "hchs/HCHS_day_keys.csv", "pids":"hchs/HCHS_pid.csv",
-                     "per_day": "hchs/HCHS_per_day.csv",
-                     "per_hour": "hchs/HCHS_per_hour.csv", "per_pid": "hchs/HCHS_per_pid.csv"}
+        folder_name = ''
+        # folder_name = 'acm_health_sleep_data-main/'
+        filenames = {"keys": folder_name + "processed_hchs/HCHS_day_keys.csv", 
+                     "pids": folder_name + "processed_hchs/HCHS_pid.csv",
+                     "per_day": folder_name + "processed_hchs/HCHS_per_day.csv",
+                     "per_hour": folder_name + "processed_hchs/HCHS_per_hour.csv", 
+                     "per_pid": folder_name + "processed_hchs/HCHS_per_pid.csv",
+                     "embeddings_train": "embeddings_train.pkl",
+                     "embeddings_test": "embeddings_test.pkl"
+                    }
     elif dataset == "mesa":
         filenames = {"keys": "mesa/MESA_day_keys.csv", "pids":"mesa/MESA_pid.csv",
                      "per_day": "mesa/MESA_per_day.csv",
@@ -79,11 +108,14 @@ def get_dataframes(dataset, nfolds):
     # Per pid
     df_per_pid = pd.read_csv(filenames["per_pid"])
     df_per_pid = pd.merge(df_pid_fold, df_per_pid)
+    
+    # Embeddings
+    df_embeddings = load_embeddings(filenames['embeddings_train'], filenames['embeddings_test'])
+  
+    return df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings
 
-    return df_per_day, df_per_hour, df_per_pid, df_keys
 
-
-def get_xy(df_day, df_hour, df_pid, df_keys, y_subset, x_subsets, keep_cols=[]):
+def get_xy(df_day, df_hour, df_pid, df_keys, df_embeddings, y_subset, x_subsets, keep_cols=[]):
 
     x, y = {}, {}
 
@@ -112,11 +144,15 @@ def get_xy(df_day, df_hour, df_pid, df_keys, y_subset, x_subsets, keep_cols=[]):
 
     print("X cols: ", x_columns)
     x = dfday[x_columns + keep_cols]
-
+    
+    # TODO: merge embedded_df with x via pid, ml_sequence
+    x = x.merge(df_embeddings, left_on=['pid', 'ml_sequence'], right_index=True)
+    
     return x, y
 
 
-def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, df_per_pid, df_keys,
+def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, df_per_pid, df_keys, 
+             df_embeddings,
              y_subset="sleep_metrics",
              x_subsets=["bins", "stats", "bouts", "time", "cosinor", "demo"],
              y_label = "sleepEfficiency", keep_pids=False):
@@ -127,8 +163,10 @@ def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, 
     if "demo" in feat_subsets:
         get_demo = True
         feat_subsets.remove("demo")
-
-    Xs, Ys = get_xy(df_per_day, df_per_hour, df_per_pid, df_keys, y_subset=y_subset,
+    
+    # TODO: pass embedded_df_per_hour to get_xy
+    # gets features and label from df_per_day,
+    Xs, Ys = get_xy(df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings, y_subset=y_subset,
                     x_subsets=feat_subsets, keep_cols=["ml_sequence", "pid"])
 
     Xs_sorted = Xs.sort_values(["pid", "ml_sequence"])
@@ -161,8 +199,9 @@ def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, 
     Ys_sorted = Ys_sorted.dropna(axis=0)
 
     if get_demo:
-        Xdemo, _ = get_xy(df_per_day, df_per_hour, df_per_pid, df_keys, y_subset=y_subset,
+        Xdemo, _ = get_xy(df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings, y_subset=y_subset,
                           x_subsets=["demo"], keep_cols=["pid", "ml_sequence"])
+        
         Xs_sorted = pd.merge(Xs_sorted, Xdemo)
 
     new_Y_cols = sorted(list(set(Ys_sorted.keys()) - set(Ysource.keys())))
@@ -183,7 +222,8 @@ def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, 
 
     if not keep_pids:
         data.drop(columns=["ml_sequence", "pid"], inplace=True)
-
+    
+    print(Xs_sorted.columns)
     return data
 
 
@@ -265,7 +305,7 @@ def modify_data_target(data, target):
 
     return data
 
-def force_categories(dataset, feature_subset):
+def force_categories(dataset, feature_subset, embedded_features=None):
     if "demo" not in feature_subset:
         return [], []
 
@@ -309,11 +349,18 @@ def force_categories(dataset, feature_subset):
                      'types5', 'slpapnea5', 'cpap5', 'dntaldv5', 'uvula5', 'insmnia5', 'rstlesslgs5',
                      'wrksched5', 'extrahrs5']
         force_num = ['sleepage5c', 'wkendsleepdur5t', 'nap5', 'whiirs5c', 'epslpscl5c', 'hoostmeq5c']
+        
+    if embedded_features:
+        force_num += embedded_features
 
     return force_cat, force_num
 
 
 # +
+
+
+# In[ ]:
+
 
 
 # # +
@@ -324,6 +371,8 @@ keep_pids = True
 cv_folds = 11
 
 print("Predicting Sleep metrics")
+
+# sys.argv = ['0', 'lr', 'hchs', 'True', 'True']
 #possible_models = ['dummy', 'catboost', 'lr', 'lightgbm', 'xgboost', 'rf', 'et', 'lda']
 my_models = [sys.argv[1]]
 datasets = [sys.argv[2]]
@@ -353,7 +402,7 @@ else:
     targets = ["sleepEfficiency", "awakening", "totalSleepTime", "combined"]
 
 
-tunner_iterations = 50
+tunner_iterations = 5
 tunner_early_stopping = 5
 
 # ====================================================================================
@@ -370,7 +419,18 @@ for model_str in my_models:
 
 # ====================================================================================
 
-for param in tqdm(parameters):
+
+# In[ ]:
+
+
+pd.DataFrame(parameters, columns=['dataset', 'model_str', 'target', 'feature_subset', 'day_future', 'n_prev_day', 'include_past_ys'])
+
+
+# In[ ]:
+
+
+
+for param in tqdm(parameters[:1]):
 
     dataset, model_str, target, feature_subset, predict_d_plus, n_prev_days, include_past_ys = param
 
@@ -382,21 +442,22 @@ for param in tqdm(parameters):
         print("Experiment filename %s already exists. Skipping this one!" % (experiment_filename))
         continue
 
-    df_per_day, df_per_hour, df_per_pid, df_keys = get_dataframes(dataset, cv_folds)
+    df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings = get_dataframes(dataset, cv_folds)
     age_col = "sleepage5c" if dataset == "mesa" else "AGE_SUENO"
-
+    
+    # Merge X, y
     print("LOG: dataset (%s), model (%s), target (%s), features (%s), days (%d), include_past (%s), predict_pa (%s)" % (dataset, model_str, target, '-'.join(feature_subset), n_prev_days, include_past_ys, predict_pa))
     data = get_data(n_prev_days, predict_pa, include_past_ys,
-                    df_per_day, df_per_hour, df_per_pid, df_keys,
+                    df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings,
                     y_subset=y_subset,
                     x_subsets = feature_subset,
                     y_label = target, keep_pids=keep_pids)
-
+    
     df_per_pid["sleep_hours"] = df_per_pid[age_col].apply(cdc)
     data = pd.merge(data, df_per_pid[["sleep_hours", "pid"]])
 
-    #handout_test_pids = df_per_day[df_per_day["fold"] == cv_folds-1]["pid"].unique()
-    #handout_test_pids
+    handout_test_pids = df_per_day[df_per_day["fold"] == cv_folds-1]["pid"].unique()
+#     #handout_test_pids
 
     data = data.fillna(-1)
     data = modify_data_target(data, target)
@@ -415,7 +476,7 @@ for param in tqdm(parameters):
     test_data = data[data["fold"] == cv_folds-1]
     data = data[data["fold"] != cv_folds-1]
 
-    force_cat, force_num = force_categories(dataset, feature_subset)
+    force_cat, force_num = force_categories(dataset, feature_subset, embedded_features=df_embeddings.columns.tolist())
 
     experiment = setup(data = data,  test_data = test_data, use_gpu=use_gpu,
                    target = target, session_id=123,
@@ -475,5 +536,17 @@ for param in tqdm(parameters):
     dfresult["n_prev_days"] = n_prev_days
     dfresult.to_csv(experiment_filename)
     print("Saved results to: %s" % (experiment_filename))
+
+
+
+# In[ ]:
+
+
+dfresult
+
+
+# In[ ]:
+
+
 
 

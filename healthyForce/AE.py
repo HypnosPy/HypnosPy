@@ -9,7 +9,7 @@
 
 # # Imports <a id='imports'></a>
 
-# In[228]:
+# In[39]:
 
 
 import pandas as pd
@@ -193,7 +193,7 @@ class AutoEncoderNet(NeuralNetRegressor):
         return loss_reconstruction + loss_l1  
 
 
-# In[229]:
+# In[40]:
 
 
 import matplotlib.pyplot as plt
@@ -220,7 +220,7 @@ def train(num_epochs,optimizer,criterion,model):
 my_plot([1, 2, 3, 4, 5], [100, 90, 60, 30, 10])
 
 
-# In[230]:
+# In[41]:
 
 
 
@@ -250,13 +250,13 @@ df_hour = pd.concat(dfs, axis=1)
 # -
 
 
-# In[231]:
+# In[42]:
 
 
 df_hour
 
 
-# In[17]:
+# In[43]:
 
 
 
@@ -300,7 +300,7 @@ scaler.inverse_transform(net.predict(X)[0])
 
 # # Tests
 
-# In[ ]:
+# In[5]:
 
 
 # +
@@ -351,7 +351,7 @@ d(out).shape
 
 # ## Encoder/Decoder definition
 
-# In[232]:
+# In[44]:
 
 
 import os
@@ -365,6 +365,57 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.preprocessing import OneHotEncoder
 
 import pytorch_lightning as pl
+
+
+class AESkipConnection(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+        self.linear1 = nn.Linear(2880, 1440)
+        self.linear2 = nn.Linear(1440, 360)
+        self.linear3 = nn.Linear(360, 90)
+        self.linear4 = nn.Linear(90, 30)
+        
+        self.linear5 = nn.Linear(30, 90)
+        self.linear6 = nn.Linear(90, 360)
+        self.linear7 = nn.Linear(360, 1440)
+        self.linear8 = nn.Linear(1440, 2880)
+
+        
+    def forward(self, X):
+        ### Encoder
+        l1_out = self.linear1(X)
+        out = F.relu(l1_out)
+        
+        l2_out = self.linear2(out)
+        out = F.relu(l2_out)
+        
+        l3_out = self.linear3(out)
+        out = F.relu(l3_out)
+        
+        l4_out = self.linear4(out)
+        out = F.relu(l4_out)
+        
+        ### Decoder
+        out = self.linear5(out)
+        out += l3_out
+        out = F.relu(out)
+        
+        # out = torch.cat((out, l1_out), 1)
+        out = self.linear6(out)
+        out += l2_out
+        out = F.relu(out)
+        
+        # out = torch.cat((out, l2_out), 1)
+        out = self.linear7(out)
+        out += l1_out
+        out = F.relu(out)
+        
+        out = self.linear8(out)
+        out = F.relu(out)
+
+        return out
+    
 
 # ===== Encoders for 2280-D ========#
 class LinearEncoder2880(nn.Module):
@@ -460,7 +511,7 @@ class LinearDecoder24(nn.Module):
 
 # ## AE Definition
 
-# In[314]:
+# In[45]:
 
 
 
@@ -469,6 +520,8 @@ class LitAutoEncoder(pl.LightningModule):
 
     def __init__(self, input_dim=24):
         super().__init__()
+        
+        self.skipconnection = AESkipConnection()
         if(input_dim == 2880):
             self.encoder = LinearEncoder2880()
             self.decoder = LinearDecoder2880()
@@ -505,11 +558,44 @@ class LitAutoEncoder(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-2)
         return optimizer
     
+class ResidualAutoEncoder(pl.LightningModule):
+
+    def __init__(self):
+        super().__init__()
+        self.skipconnection = AESkipConnection()
+    
+    def forward(self, x):
+        return self.skipconnection(x)
+
+    def training_step(self, batch, batch_idx):
+        # training_step defined the train loop.
+        # It is independent of forward
+        x, y = batch
+        x = x.view(x.size(0), -1)
+        x_hat = self.skipconnection(x)
+        loss = F.mse_loss(x_hat, x)
+        self.log('train_loss', loss, on_step=False, on_epoch=True)
+        return loss
+    
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        x = x.view(x.size(0), -1)
+        x_hat = self.skipconnection(x)
+        loss = F.mse_loss(x_hat, x)
+        self.log('val_loss', loss, on_step=False, on_epoch=True)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-2)
+        return optimizer
+    
+
+    
 
 
 # ## VAE Definition
 
-# In[319]:
+# In[46]:
 
 
 
@@ -627,7 +713,7 @@ class VAE(pl.LightningModule):
         return optimizer
 
 
-# In[316]:
+# In[47]:
 
 
 train_ids = pd.read_csv('acm_health_sleep_data-main/processed_hchs/HCHS_pid_train.csv')
@@ -725,33 +811,51 @@ cvae_test_loader = DataLoader(cvae_test, batch_size=512)
 
 # # Train AE <a id='train'></a>
 
-# In[323]:
+# In[51]:
 
 
 from pytorch_lightning.loggers import CSVLogger
 
-def train_model(model, train, test, exp_name):  
+def train_model(model, train, test, exp_name, epochs=100):  
     pl.seed_everything(42)
     logger = CSVLogger("logs", name=exp_name)
     
-    trainer = pl.Trainer(gpus=1, max_epochs=100, deterministic=True, logger=logger)
+    trainer = pl.Trainer(gpus=1, max_epochs=epochs, deterministic=True, logger=logger)
     trainer.fit(model, train, test)
     return trainer
 
 
 # ## AE2880
 
-# In[324]:
+# In[52]:
 
 
 # init model
-autoencoder_2880 = LitAutoEncoder(input_dim=2880)
-train_model(autoencoder_2880, train_loader_2880, test_loader_2880, 'ae2880')
+autoencoder_2880 = ResidualAutoEncoder()
+train_model(autoencoder_2880, train_loader_2880, test_loader_2880, 'ae2880', epochs=30)
+
+
+# In[123]:
+
+
+test = torch.Tensor(D_train_2880.df)
+
+
+# In[131]:
+
+
+autoencoder_2880(test[:1])
+
+
+# In[142]:
+
+
+plot_train_test_loss('ae2880')
 
 
 # ## AE24
 
-# In[283]:
+# In[50]:
 
 
 # init model
@@ -763,7 +867,7 @@ train_model(autoencoder_24, train_loader_24, test_loader_24, 'ae24')
 
 # ## VAE2880
 
-# In[326]:
+# In[53]:
 
 
 # init model
@@ -773,7 +877,7 @@ train_model(vae_2880, train_loader_2880, test_loader_2880, 'vae2880')
 
 # ## VAE24
 
-# In[320]:
+# In[54]:
 
 
 # init model
@@ -783,13 +887,13 @@ train_model(vae_24, train_loader_24, test_loader_24, 'vae24')
 
 # # Train CVAE
 
-# In[404]:
+# In[55]:
 
 
 df_cvae
 
 
-# In[405]:
+# In[56]:
 
 
 # init model
@@ -799,25 +903,14 @@ train_model(cvae, cvae_train_loader, cvae_test_loader, 'cvae')
 
 # # Plot <a id='plot'></a>
 
-# In[473]:
+# In[57]:
 
 
 import matplotlib.pyplot as plt
 import os
+import re
 
-def load_logs(model):
-    # pl loggers logs validation, then training in two separate rows
-    # so I join the two rows together via .first()
-    
-    # get the last version
-    last_version = os.listdir('logs/' + model)[-1]
-    log_file = pd.read_csv('logs/' + model + '/' + last_version + '/metrics.csv')
-    log_file = log_file.groupby('epoch').first()
-    return log_file
-
-models = ['ae2880', 'ae24', 'vae2880', 'vae24', 'cvae']
-
-for i, m in enumerate(models):
+def plot_train_test_loss(m):
     fig, ax = plt.subplots(1)
     
     log_file = load_logs(m)
@@ -830,10 +923,36 @@ for i, m in enumerate(models):
     ax.legend(['train', 'test'], loc='upper right')
     plt.savefig(m)
 
+def load_logs(model):
+    # pl loggers logs validation, then training in two separate rows
+    # so I join the two rows together via .first()
+    
+    # get the last version
+    last_version = os.listdir('logs/' + model)
+    last_version.sort(key=natural_keys)
+    last_version = last_version[-1]
+    
+    log_file = pd.read_csv('logs/' + model + '/' + last_version + '/metrics.csv')
+    log_file = log_file.groupby('epoch').first()
+    return log_file
+
+def atoi(text):
+    return int(text) if text.isdigit() else text
+
+def natural_keys(text):
+    return [ atoi(c) for c in re.split(r'(\d+)', text) ]
+
+
+
+models = ['ae2880', 'ae24', 'vae2880', 'vae24', 'cvae']
+
+for i, m in enumerate(models):
+    plot_train_test_loss(m)
+
 
 # # Generate embeddings
 
-# In[349]:
+# In[60]:
 
 
 train = torch.Tensor(D_train_2880.df)
@@ -874,7 +993,7 @@ cvae_embedded_test = cvae_embedded_test.reshape(D_test_2880.df.shape[0], feature
 cvae_embedded_test = pd.DataFrame(cvae_embedded_test)
 
 
-# In[462]:
+# In[61]:
 
 
 embeddings_train = [AE_embedded_train_2880, 
@@ -887,6 +1006,8 @@ embeddings_train = pd.concat(embeddings_train,
                                keys=['ae2880', 'ae24', 'vae2880', 'vae24', 'cvae'], 
                                names=['joined_dfs'], axis=1)
 
+embeddings_train.index = df_hour.loc[train_ids.pid].index
+
 embeddings_test = [AE_embedded_test_2880, 
                    AE_embedded_test_24, 
                    VAE_embedded_test_2880, 
@@ -896,13 +1017,26 @@ embeddings_test = [AE_embedded_test_2880,
 embeddings_test = pd.concat(embeddings_test, 
                                keys=['ae2880', 'ae24', 'vae2880', 'vae24', 'cvae'], 
                                names=['joined_dfs'], axis=1)
+embeddings_test.index = df_hour.loc[test_ids.pid].index
 
 
-# In[465]:
+# In[77]:
 
 
-embeddings_train.to_csv('embeddings_train.csv', index=False)
-embeddings_test.to_csv('embeddings_test.csv', index=False)
+embeddings_train
+
+
+# In[78]:
+
+
+# remove joined_df column name
+embeddings_train.columns = embeddings_train.columns.rename(names=[None, None])
+# embeddings_train.to_csv('embeddings_train.csv', index=True, index_label=False)
+embeddings_train.to_pickle('embeddings_train.pkl')
+
+embeddings_test.columns = embeddings_test.columns.rename(names=[None, None])
+# embeddings_test.to_csv('embeddings_test.csv', index=True, index_label=False)
+embeddings_test.to_pickle('embeddings_test.pkl')
 
 
 # In[143]:
