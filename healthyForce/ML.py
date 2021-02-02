@@ -65,13 +65,13 @@ else:
         ["bins", "stats", "bouts", "cosinor"],
         ["bins", "stats", "bouts", "demo"],
         ["bins", "stats", "bouts", "time", "cosinor"],
-        ["bins"], ["stats"], ["bouts"], ["time", "demo"], ["cosinor"]
+        ["bins"], ["stats"], ["bouts"], ["time", "demo"], ["cosinor"],
         # Up to here, select tset 0 - 10
         # Second Batch:
         # 11
         ["bins", "stats", "bouts", "time", "cosinor", "demo", 'ae24', 'ae2880', 'vae24', 'vae2880', 'cvae'],
         # 12    , 13        , 14       , 15         , 16
-        ['ae24'], ['ae2880'], ['vae24'], ['vae2880'], ['cvae'],
+        ['ae24'], ['ae2880'], ['vae24'], ['vae2880'], ['cvae']
     ]
     y_subset = "sleep_metrics"
     targets = ["sleepEfficiency", "awakening", "totalSleepTime", "combined"]
