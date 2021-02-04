@@ -102,17 +102,22 @@ def load_exp(filename, dataset, model_str, target, feature_subset, include_past_
                        silent=True,
                        use_gpu=False
                        )
-
+        
     make_scorer(f1_score, average="macro")
     make_scorer(f1_score, average="micro")
     add_metric(id='micro_f1', name="Micro F1", score_func=lambda x, y: f1_score(x, y, average="macro"),
                greater_is_better=True)
     add_metric(id='macro_f1', name="Macro F1", score_func=lambda x, y: f1_score(x, y, average="micro"),
                greater_is_better=True)
+    
+    # Metrics removed as it results in problem when using multiclass
+    remove_metric('precision')
+    remove_metric('recall')
+    remove_metric('f1')
 
     unzip_pkl(experiment_name)
     loaded_model = load_model(experiment_name)
-    zip_pkl(experiment_name)
+    delete_pkl(experiment_name)
 
     return loaded_model
 
@@ -146,13 +151,12 @@ def predict_test(model, experiment_filename, dataset, model_str, target, feature
 
 
 # -
-DATASET = sys.argv[1]
+DATASET = "mesa" # sys.argv[1]
 
 all_files = glob("outputs/%s/*.pkl.gz" % DATASET)
 all_files = [file for file in all_files if "test" not in file]
-#all_files = ["outputs/mesa/mesa_lda_combined_stats_ipastFalse_prev0_future2.pkl.gz"]
+all_files = ["outputs/mesa/mesa_dummy_combined_bins_ipastFalse_prev1_future2.pkl.gz"]
 
-# +
 for file in tqdm(all_files):
     testname = get_testname(file)
     print(testname)

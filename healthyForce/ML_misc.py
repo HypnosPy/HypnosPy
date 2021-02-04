@@ -371,9 +371,16 @@ def zip_pkl(filename):
             shutil.copyfileobj(f_in, f_out)
     os.remove(filename + ".pkl")
 
-def unzip_pkl(filename):
+def unzip_pkl(filename, remove_zipped=False):
 
     with gzip.open(filename + ".pkl.gz", 'rb') as f_in:
         with open(filename + ".pkl", 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-    os.remove(filename + ".pkl.gz")
+    if remove_zipped:
+        os.remove(filename + ".pkl.gz")
+
+def delete_pkl(filename, zipped=False):
+    if zipped:
+        os.remove(filename + ".pkl.gz")
+    else:
+        os.remove(filename + ".pkl")

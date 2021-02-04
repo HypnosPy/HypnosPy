@@ -45,7 +45,8 @@ my_models = [sys.argv[1]]
 datasets = [sys.argv[2]]
 use_gpu = bool(eval(sys.argv[3]))
 overwritting = bool(eval(sys.argv[4]))
-fset = int(sys.argv[5])
+fset = sys.argv[5]
+fset = fset if fset == "all" else int(fset)
 
 print("Using GPU:", use_gpu)
 print("Overwritting results:", overwritting)
@@ -83,11 +84,14 @@ tunner_early_stopping = 5
 # ====================================================================================
 parameters = []
 
+if fset != "all":
+    feature_subsets = feature_subsets[fset:fset+1]
+
 for model_str in my_models:
     for dataset in datasets:
         for day_future in range(0, 3):
             for target in targets:
-                for feature_subset in feature_subsets[fset:fset+1]:
+                for feature_subset in feature_subsets:
                     for n_prev_day in range(0, 3):
                         for include_past_ys in [False, True]:
                             parameters.append([dataset, model_str, target, feature_subset, day_future, n_prev_day, include_past_ys])
