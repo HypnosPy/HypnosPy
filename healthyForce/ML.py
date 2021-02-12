@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-
-# In[374]:
-
-
+# %%
 # -*- coding: utf-8 -*-
 # ---
 # jupyter:
@@ -30,21 +27,23 @@ from sklearn.metrics import f1_score, make_scorer
 from ML_misc import *
 from pycaret.classification import *
 
-# # +
+# +
 
-
+# %%
 predict_pa = False
 keep_pids = True
 cv_folds = 11
 
 print("Predicting Sleep metrics")
 
-#sys.argv = ['0', 'xgboost', 'hchs', 'False', 'False']
+sys.argv = ['0', 'xgboost', 'hchs', 'False', 'False', 0]
 #possible_models = ['dummy', 'catboost', 'lr', 'lightgbm', 'xgboost', 'rf', 'et', 'lda']
+
 my_models = [sys.argv[1]]
 datasets = [sys.argv[2]]
 use_gpu = bool(eval(sys.argv[3]))
 overwritting = bool(eval(sys.argv[4]))
+
 fset = sys.argv[5]
 fset = fset if fset == "all" else int(fset)
 
@@ -98,8 +97,7 @@ for model_str in my_models:
 
 # ====================================================================================
 
-# In[368]:
-
+# %%
 for param in tqdm(parameters[:]):
 
     dataset, model_str, target, feature_subset, predict_d_plus, n_prev_days, include_past_ys = param
@@ -136,7 +134,7 @@ for param in tqdm(parameters[:]):
     if predict_d_plus > 0:
         y = data[[target, "ml_sequence", "pid"]]
         x = data.drop(columns=[target])
-        y["ml_sequence"] = y.groupby(["pid"])["ml_sequence"].apply(lambda x: x + predict_d_plus)
+        y["ml_sequence"] = y.groupby(["pid"])["ml_sequence"].apply(lambda x: x - predict_d_plus)
         data = pd.merge(x, y)
 
     cols_to_remove = ["ml_sequence", "pid", "sleep_hours"]
@@ -226,3 +224,22 @@ for param in tqdm(parameters[:]):
     new_filename = get_testname(experiment_filename)
     dfresult.to_csv(new_filename)
     print("Saved TEST results to: %s" % new_filename)
+
+# %%
+# Debug:
+
+# include_past_ys = False
+# predict_pa = True
+# n_prev_days = 1
+# predict_d_plus = 1
+# target = "sleepEfficiency"
+
+# df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings = get_dataframes(dataset, cv_folds)
+
+# data = get_data(n_prev_days, predict_pa, include_past_ys,
+#                 df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings,
+#                 y_subset=y_subset,
+#                 x_subsets = feature_subset,
+#                 y_label = target, keep_pids=keep_pids)
+
+
