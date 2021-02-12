@@ -36,7 +36,7 @@ cv_folds = 11
 
 print("Predicting Sleep metrics")
 
-sys.argv = ['0', 'xgboost', 'hchs', 'False', 'False', 0]
+#sys.argv = ['0', 'xgboost', 'hchs', 'False', 'False', 0]
 #possible_models = ['dummy', 'catboost', 'lr', 'lightgbm', 'xgboost', 'rf', 'et', 'lda']
 
 my_models = [sys.argv[1]]
