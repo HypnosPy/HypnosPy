@@ -59,13 +59,17 @@ else:
     # all_feature_subsets = ["bins", "stats", "bouts", "time", "cosinor", "demo", 'ae24', 'ae2880', 'vae24', 'vae2880', 'cvae']
     feature_subsets = [
         # First Batch:
-        ["bins", "stats", "bouts", "time", "cosinor", "demo"],
-        ["bins", "stats", "bouts"],
-        ["bins", "stats", "bouts", "time"],
-        ["bins", "stats", "bouts", "cosinor"],
-        ["bins", "stats", "bouts", "demo"],
-        ["bins", "stats", "bouts", "time", "cosinor"],
-        ["bins"], ["stats"], ["bouts"], ["time", "demo"], ["cosinor"],
+        ["bins", "stats", "bouts", "time", "cosinor", "demo"],  # 0
+        ["bins", "stats", "bouts", "time"],                     # 1
+        ["bins", "stats", "bouts", "cosinor"],                  # 2
+        ["bins", "stats", "bouts", "demo"],                     # 3
+        ["bins", "stats", "bouts", "time", "cosinor"],          # 4
+        ["bins", "stats", "bouts"],                             # 5
+        ["bins"],                                               # 6
+        ["stats"],                                              # 7
+        ["bouts"],                                              # 8
+        ["time", "demo"],                                       # 9
+        ["cosinor"],                                            # 10
         # Up to here, select tset 0 - 10
         # Second Batch:
         # 11
@@ -118,17 +122,18 @@ for param in tqdm(parameters[:]):
     data = get_data(n_prev_days, predict_pa, include_past_ys,
                     df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings,
                     y_subset=y_subset,
-                    x_subsets = feature_subset,
-                    y_label = target, keep_pids=keep_pids)
+                    x_subsets=feature_subset,
+                    y_label=target, keep_pids=keep_pids)
 
-    df_per_pid["sleep_hours"] = df_per_pid[age_col].apply(cdc)
-    data = pd.merge(data, df_per_pid[["sleep_hours", "pid"]])
+    # df_per_pid["sleep_hours"] = df_per_pid[age_col].apply(cdc)
+    # data = pd.merge(data, df_per_pid[["sleep_hours", "pid"]])
+    data = pd.merge(data, df_per_pid[[age_col, "pid"]])
 
     handout_test_pids = df_per_day[df_per_day["fold"] == cv_folds-1]["pid"].unique()
 #     #handout_test_pids
 
     data = data.fillna(-1)
-    data = modify_data_target(data, target)
+    data = modify_data_target(data, age_col, target)
 
     # Predicting day + 1, instead of day
     if predict_d_plus > 0:
@@ -137,7 +142,7 @@ for param in tqdm(parameters[:]):
         y["ml_sequence"] = y.groupby(["pid"])["ml_sequence"].apply(lambda x: x - predict_d_plus)
         data = pd.merge(x, y)
 
-    cols_to_remove = ["ml_sequence", "pid", "sleep_hours"]
+    cols_to_remove = ["ml_sequence", "pid", age_col]  # , "sleep_hours"]
     for col in cols_to_remove:
         data = data.drop(columns=col)
 
@@ -203,6 +208,9 @@ for param in tqdm(parameters[:]):
     dfresult["include_past_ys"] = include_past_ys
     dfresult["predict_pa"] = predict_pa
     dfresult["n_prev_days"] = n_prev_days
+    dfresult["X_shape"] = get_config("X").shape[0]
+    dfresult["y_train_shape"] = get_config("y_train").shape[0]
+    dfresult["y_test_shape"] = get_config("y_test").shape[0]
     dfresult.to_csv(experiment_filename)
     print("Saved results to: %s" % experiment_filename)
 
@@ -220,6 +228,9 @@ for param in tqdm(parameters[:]):
     dfresult["predict_pa"] = predict_pa
     dfresult["n_prev_days"] = n_prev_days
     dfresult["test"] = True
+    dfresult["X_shape"] = get_config("X").shape[0]
+    dfresult["y_train_shape"] = get_config("y_train").shape[0]
+    dfresult["y_test_shape"] = get_config("y_test").shape[0]
 
     new_filename = get_testname(experiment_filename)
     dfresult.to_csv(new_filename)

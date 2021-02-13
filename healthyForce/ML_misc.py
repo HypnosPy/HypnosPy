@@ -254,7 +254,69 @@ def combinedMapping(x):
         return 2
 
 
-def cdc(age):
+def get_age_group(age):
+    # https://www.sciencedirect.com/science/article/pii/S2352721816301309
+    if age <= 1:  # infant
+        return 0
+    elif age <= 2:  # toddler
+        return 1
+    elif age <= 5:  # prescholler
+        return 2
+    elif age <= 13:  # school
+        return 3
+    elif age <= 17:  # teenager
+        return 4
+    elif age <= 25:  # young adult
+        return 5
+    elif age <= 64:  # adult
+        return 6
+    # older adult
+    return 7
+
+
+def awakenings_by_age(awakenings, age):
+    age_grp = get_age_group(age)
+    if age_grp in [0, 1, 2, 3, 5, 6]:
+        return 2 if awakenings <= 1 else 1 if awakenings <= 3 else 0
+    elif age_grp == 4:
+        return 2 if awakenings <= 1 else 1 if awakenings <= 2 else 0
+    elif age_grp == 7:
+        return 2 if awakenings <= 2 else 1 if awakenings <= 3 else 0
+    else:
+        print("wrong age_grp: %d for age %d" % (age_grp, age))
+
+
+def sleep_efficiency_by_age(se, age):
+    age_grp = get_age_group(age)
+    if age_grp in [0, 1, 2, 3, 4, 6, 7]:
+        return 2 if se >= 85 else 1 if se >= 75 else 0
+    elif age_grp == 5:
+        return 2 if se >= 85 else 1 if se >= 65 else 0
+
+
+def sleep_length_by_age(sl, age):
+    # https://www.sciencedirect.com/science/article/pii/S2352721815000157
+    age_grp = get_age_group(age)
+    if age_grp == 0:  # Infant
+        return 2 if 12 <= sl <= 15 else 1 if 10 <= sl <= 18 else 0
+    if age_grp == 1:  # toddler
+        return 2 if 11 <= sl <= 14 else 1 if 9 <= sl <= 16 else 0
+    if age_grp == 2:  # Preschoolers
+        return 2 if 10 <= sl <= 13 else 1 if 8 <= sl <= 14 else 0
+    if age_grp == 3:  # School-aged children
+        return 2 if 9 <= sl <= 11 else 1 if 7 <= sl <= 12 else 0
+    if age_grp == 4:  # Teenagers
+        return 2 if 8 <= sl <= 10 else 1 if 7 <= sl <= 11 else 0
+    if age_grp == 5:  # Young adult
+        return 2 if 7 <= sl <= 9 else 1 if 6 <= sl <= 11 else 0
+    if age_grp == 6:  # Adults
+        return 2 if 7 <= sl <= 9 else 1 if 6 <= sl <= 10 else 0
+    if age_grp == 7:  # Older adults
+        return 2 if 7 <= sl <= 8 else 1 if 5 <= sl <= 9 else 0
+
+
+def cdc_sleep_length(age):
+    #
     #     https://www.cdc.gov/sleep/about_sleep/how_much_sleep.html
     #     School Age	6–12 years	9–12 hours per 24 hours2
     #     Teen	13–18 years	8–10 hours per 24 hours2
@@ -275,20 +337,25 @@ def cdc(age):
         return (7, 8)
 
 
-def modify_data_target(data, target):
+def modify_data_target(data, age_col, target):
     if target == "awakening":
-        data["awakening"] = data["awakening"].apply(lambda x: awakeningMapping(x))
+        # data["awakening"] = data["awakening"].apply(lambda x: awakeningMapping(x))
+        data["awakening"] = data[["awakening", age_col]].apply(lambda x: awakenings_by_age(*x), axis=1)
 
     elif target == "sleepEfficiency":
-        data["sleepEfficiency"] = data["sleepEfficiency"].apply(lambda x: sleepEfficiencyMapping(x))
+        # data["sleepEfficiency"] = data["sleepEfficiency"].apply(lambda x: sleepEfficiencyMapping(x))
+        data["sleepEfficiency"] = data[["sleepEfficiency", age_col]].apply(lambda x: sleep_efficiency_by_age(*x), axis=1)
 
     elif target == "totalSleepTime":
-        data["totalSleepTime"] = data[["totalSleepTime", "sleep_hours"]].apply(lambda x: tstMapping(*x), axis=1)
+        data["totalSleepTime"] = data[["totalSleepTime", age_col]].apply(lambda x: sleep_length_by_age(*x), axis=1)
 
     elif target == "combined":
-        data["totalSleepTime"] = data[["totalSleepTime", "sleep_hours"]].apply(lambda x: tstMapping(*x), axis=1)
-        data["sleepEfficiency"] = data["sleepEfficiency"].apply(lambda x: sleepEfficiencyMapping(x))
-        data["awakening"] = data["awakening"].apply(lambda x: awakeningMapping(x))
+        # data["totalSleepTime"] = data[["totalSleepTime", "sleep_hours"]].apply(lambda x: tstMapping(*x), axis=1)
+        # data["sleepEfficiency"] = data["sleepEfficiency"].apply(lambda x: sleepEfficiencyMapping(x))
+        # data["awakening"] = data["awakening"].apply(lambda x: awakeningMapping(x))
+        data["awakening"] = data[["awakening", age_col]].apply(lambda x: awakenings_by_age(*x), axis=1)
+        data["sleepEfficiency"] = data[["sleepEfficiency", age_col]].apply(lambda x: sleep_efficiency_by_age(*x), axis=1)
+        data["totalSleepTime"] = data[["totalSleepTime", age_col]].apply(lambda x: sleep_length_by_age(*x), axis=1)
 
         data["combined"] = data["totalSleepTime"] + data["sleepEfficiency"] + data["awakening"]
         data["combined"] = data["combined"].apply(lambda x: combinedMapping(x))
@@ -364,6 +431,25 @@ def get_testname(experiment_filename):
     return experiment_filename.replace(os.path.basename(experiment_filename), stemname)
 
 
+def get_trainname(experiment_filename):
+    stemname = Path(experiment_filename).stem
+    print(stemname)
+
+    if stemname.endswith(".pkl"):
+        stemname = stemname.replace(".pkl", ".csv.gz")
+
+    elif stemname.endswith(".pkl.gz"):
+        stemname = stemname.replace(".pkl.gz", ".csv.gz")
+
+    elif stemname.endswith(".csv"):
+        stemname = stemname.replace(".csv", ".csv.gz")
+
+    else:
+        stemname += ".csv.gz"
+
+    return experiment_filename.replace(os.path.basename(experiment_filename), stemname)
+
+
 def zip_pkl(filename):
 
     with open(filename + ".pkl", 'rb') as f_in:
@@ -371,13 +457,14 @@ def zip_pkl(filename):
             shutil.copyfileobj(f_in, f_out)
     os.remove(filename + ".pkl")
 
-def unzip_pkl(filename, remove_zipped=False):
 
+def unzip_pkl(filename, remove_zipped=False):
     with gzip.open(filename + ".pkl.gz", 'rb') as f_in:
         with open(filename + ".pkl", 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     if remove_zipped:
         os.remove(filename + ".pkl.gz")
+
 
 def delete_pkl(filename, zipped=False):
     if zipped:

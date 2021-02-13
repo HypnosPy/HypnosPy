@@ -66,11 +66,12 @@ def load_exp(filename, dataset, model_str, target, feature_subset, include_past_
                     x_subsets=feature_subset,
                     y_label=target, keep_pids=keep_pids)
 
-    df_per_pid["sleep_hours"] = df_per_pid[age_col].apply(cdc)
-    data = pd.merge(data, df_per_pid[["sleep_hours", "pid"]])
+    # df_per_pid["sleep_hours"] = df_per_pid[age_col].apply(cdc)
+    # data = pd.merge(data, df_per_pid[["sleep_hours", "pid"]])
+    data = pd.merge(data, df_per_pid[[age_col, "pid"]])
 
     data = data.fillna(-1)
-    data = modify_data_target(data, target)
+    data = modify_data_target(data, age_col, target)
 
     # Predicting day + 1, instead of day
     if predict_d_plus > 0:
@@ -79,7 +80,7 @@ def load_exp(filename, dataset, model_str, target, feature_subset, include_past_
         y["ml_sequence"] = y.groupby(["pid"])["ml_sequence"].apply(lambda x: x + predict_d_plus)
         data = pd.merge(x, y)
 
-    cols_to_remove = ["ml_sequence", "pid", "sleep_hours"]
+    cols_to_remove = ["ml_sequence", "pid", age_col] # , "sleep_hours"]
     for col in cols_to_remove:
         data = data.drop(columns=col)
 
@@ -94,8 +95,6 @@ def load_exp(filename, dataset, model_str, target, feature_subset, include_past_
                        transformation=True,
                        fold_strategy="groupkfold",
                        fold_groups="fold",
-                       # log_experiment = False,
-                       # experiment_name = experiment_name,
                        categorical_features=force_cat,
                        numeric_features=force_num,
                        ignore_features=["fold"],
@@ -121,16 +120,46 @@ def load_exp(filename, dataset, model_str, target, feature_subset, include_past_
 
     return loaded_model
 
+def write_training_results(model, experiment_filename, dataset, model_str, target, feature_subset,
+                                include_past_ys, n_prev_days, predict_d_plus, cv_folds=11):
+    dfresult = pull()
+    dfresult["dataset"] = dataset
+    dfresult["model"] = model_str
+    dfresult["target"] = target
+    dfresult["feature_set"] = '_'.join(feature_subset)
+    dfresult["day_plus_x"] = predict_d_plus
+    dfresult["folds"] = cv_folds
+    dfresult["tunner_iterations"] = -1
+    dfresult["tunner_early_stopping"] = -1
+    dfresult["include_past_ys"] = include_past_ys
+    dfresult["predict_pa"] = True
+    dfresult["n_prev_days"] = n_prev_days
+    dfresult["X_shape"] = get_config("X").shape[0]
+    dfresult["y_train_shape"] = get_config("y_train").shape[0]
+    dfresult["y_test_shape"] = get_config("y_test").shape[0]
 
-def predict_test(model, experiment_filename, dataset, model_str, target, feature_subset,
+    new_filename = get_trainname(experiment_filename)
+    dfresult.to_csv(new_filename)
+    print("Saved results to: %s" % new_filename)
+
+
+def predict_test(model, experiment_filename, force_create_training_results, dataset, model_str, target, feature_subset,
                  include_past_ys, n_prev_days, predict_d_plus, cv_folds=11):
     # Force another run to make sure that we save the best results
     print("Creating final model to save results to disk............")
-    try:
-        predict_model(model)
-    except:
+
+
+    if force_create_training_results:
         newmodel = create_model(model["trained_model"])
+        write_training_results(newmodel, experiment_filename, dataset, model_str, target, feature_subset,
+                                    include_past_ys, n_prev_days, predict_d_plus, cv_folds=11)
         predict_model(newmodel)
+    else:
+        try:
+            predict_model(model)
+        except:
+            newmodel = create_model(model["trained_model"])
+            predict_model(newmodel)
     # TODO: add parameters to the saved CSV
 
     dfresult = pull()
@@ -144,6 +173,9 @@ def predict_test(model, experiment_filename, dataset, model_str, target, feature
     dfresult["predict_pa"] = False
     dfresult["n_prev_days"] = n_prev_days
     dfresult["test"] = True
+    dfresult["X_shape"] = get_config("X").shape[0]
+    dfresult["y_train_shape"] = get_config("y_train").shape[0]
+    dfresult["y_test_shape"] = get_config("y_test").shape[0]
 
     new_filename = get_testname(experiment_filename)
     dfresult.to_csv(new_filename)
@@ -151,11 +183,12 @@ def predict_test(model, experiment_filename, dataset, model_str, target, feature
 
 
 # -
-DATASET = "mesa" # sys.argv[1]
+DATASET = sys.argv[1]
+force_create_training_results = True
 
 all_files = glob("outputs/%s/*.pkl.gz" % DATASET)
 all_files = [file for file in all_files if "test" not in file]
-all_files = ["outputs/mesa/mesa_dummy_combined_bins_ipastFalse_prev1_future2.pkl.gz"]
+# all_files = ["outputs/test/mesa_lightgbm_sleepEfficiency_bins-stats-bouts-cosinor_ipastFalse_prev0_future0.pkl.gz"]
 
 for file in tqdm(all_files):
     testname = get_testname(file)
@@ -170,4 +203,4 @@ for file in tqdm(all_files):
 
     config = exp_from_filename(file)
     model = load_exp(file, *config)
-    predict_test(model, file, *config)
+    predict_test(model, file, force_create_training_results, *config)
