@@ -127,13 +127,14 @@ for param in tqdm(parameters[:]):
 
     # df_per_pid["sleep_hours"] = df_per_pid[age_col].apply(cdc)
     # data = pd.merge(data, df_per_pid[["sleep_hours", "pid"]])
-    data = pd.merge(data, df_per_pid[[age_col, "pid"]])
+    df_per_pid["participant_age"] = df_per_pid[age_col]
+    data = pd.merge(data, df_per_pid[["participant_age", "pid"]])
 
     handout_test_pids = df_per_day[df_per_day["fold"] == cv_folds-1]["pid"].unique()
 #     #handout_test_pids
 
     data = data.fillna(-1)
-    data = modify_data_target(data, age_col, target)
+    data = modify_data_target(data, "participant_age", target)
 
     # Predicting day + 1, instead of day
     if predict_d_plus > 0:
@@ -142,7 +143,7 @@ for param in tqdm(parameters[:]):
         y["ml_sequence"] = y.groupby(["pid"])["ml_sequence"].apply(lambda x: x - predict_d_plus)
         data = pd.merge(x, y)
 
-    cols_to_remove = ["ml_sequence", "pid", age_col]  # , "sleep_hours"]
+    cols_to_remove = ["ml_sequence", "pid", "participant_age"]  # , "sleep_hours"]
     for col in cols_to_remove:
         data = data.drop(columns=col)
 
