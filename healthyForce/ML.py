@@ -81,7 +81,7 @@ else:
     targets = ["sleepEfficiency", "awakening", "totalSleepTime", "combined"]
 
 
-tunner_iterations = 50
+tunner_iterations = 30
 tunner_early_stopping = 5
 
 # ====================================================================================

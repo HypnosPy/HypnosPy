@@ -4,7 +4,7 @@ from setuptools.command.develop import develop as _develop
 
 requirements = [
     "pandas >= 1.0.1",
-    "numpy >= 1.0.0",
+    "numpy == 1.18.5",
     "scipy >= 1.1.0",
     "matplotlib >= 1.5",
     "seaborn >= 0.11.0",
