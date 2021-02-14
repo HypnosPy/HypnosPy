@@ -78,7 +78,7 @@ def load_exp(filename, dataset, model_str, target, feature_subset, include_past_
     if predict_d_plus > 0:
         y = data[[target, "ml_sequence", "pid"]]
         x = data.drop(columns=[target])
-        y["ml_sequence"] = y.groupby(["pid"])["ml_sequence"].apply(lambda x: x + predict_d_plus)
+        y["ml_sequence"] = y.groupby(["pid"])["ml_sequence"].apply(lambda x: x - predict_d_plus)
         data = pd.merge(x, y)
 
     cols_to_remove = ["ml_sequence", "pid", "participant_age"] # , "sleep_hours"]
@@ -133,7 +133,7 @@ def write_training_results(model, experiment_filename, dataset, model_str, targe
     dfresult["tunner_iterations"] = -1
     dfresult["tunner_early_stopping"] = -1
     dfresult["include_past_ys"] = include_past_ys
-    dfresult["predict_pa"] = True
+    dfresult["predict_pa"] = False
     dfresult["n_prev_days"] = n_prev_days
     dfresult["X_shape"] = get_config("X").shape[0]
     dfresult["y_train_shape"] = get_config("y_train").shape[0]
@@ -144,8 +144,8 @@ def write_training_results(model, experiment_filename, dataset, model_str, targe
     print("Saved results to: %s" % new_filename)
 
 
-def predict_test(model, experiment_filename, force_create_training_results, dataset, model_str, target, feature_subset,
-                 include_past_ys, n_prev_days, predict_d_plus, cv_folds=11):
+def predict_test(model, experiment_filename, force_create_training_results, dataset, model_str,
+                 target, feature_subset, include_past_ys, n_prev_days, predict_d_plus, cv_folds=11):
     # Force another run to make sure that we save the best results
     print("Creating final model to save results to disk............")
 
@@ -161,8 +161,8 @@ def predict_test(model, experiment_filename, force_create_training_results, data
         except:
             newmodel = create_model(model["trained_model"])
             predict_model(newmodel)
+            
     # TODO: add parameters to the saved CSV
-
     dfresult = pull()
     dfresult["dataset"] = dataset
     dfresult["model"] = model_str
@@ -205,3 +205,5 @@ for file in tqdm(all_files):
     config = exp_from_filename(file)
     model = load_exp(file, *config)
     predict_test(model, file, force_create_training_results, *config)
+
+
