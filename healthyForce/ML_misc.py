@@ -248,7 +248,7 @@ def awakeningMapping(x):
 def combinedMapping(x):
     if x <= 2:
         return 0
-    elif x <= 5:
+    elif x <= 4:
         return 1
     else:
         return 2
