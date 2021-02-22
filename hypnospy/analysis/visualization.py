@@ -486,6 +486,148 @@ class Viewer(object):
         plt.close()
 
 
+    # gets mean index of awake and sleep sequences
+    @staticmethod
+    def get_rolling_mean(df_plot):
+        # get last index of awake and sleep sequences
+        df_plot['index_percentage'] = df_plot.reset_index().index / df_plot.reset_index().index.max()
+        df = df_plot.reset_index().groupby(['ml_sequence', "sleep_period_annotation"]).apply(lambda x: x.index[-1])
+        
+        
+        # append row with value 0 to df to take care of NaN in first row
+        ind = pd.MultiIndex.from_arrays([[-1], [False]])
+        t0 = pd.Series(0, index=ind)
+        df = t0.append(df)
+
+        # for every sequence, (first index + last index) / 2
+        m = df.rolling(2).mean()
+        df = pd.DataFrame(df, columns=['index'])
+        df['mean'] = m
+        # remove the added -1 index
+        df = df.loc[0:]
+        df['mean'] = df['mean'].astype(int)
+        return df_plot.iloc[df['mean']]['index_percentage']
+
+    @staticmethod
+    def view_ml_format_in_one_row(wearable: Wearable, 
+                                signal_categories: list, 
+                                sleep_cols: list, 
+                                alphas: dict = None, 
+                                colors: dict = None, 
+                                edgecolors: dict = None, 
+                                labels: dict = None):
+
+        # Convert zoom to datatime object:
+        textstr = 'day: validation id \n'
+        cols = []
+
+        for signal in signal_categories:
+            if signal == "activity":
+                cols.append(wearable.get_activity_col())
+
+            elif signal == "sleep":
+                for sleep_col in sleep_cols:
+                    if sleep_col not in wearable.data.keys():
+                        raise ValueError("Could not find sleep_col (%s). Aborting." % sleep_col)
+                    cols.append(sleep_col)
+
+            else:
+                cols.append(signal)
+
+        if len(cols) == 0:
+            raise ValueError("Aborting: Empty list of signals to show.")
+
+        if wearable.data.empty:
+            warnings.warn("Aborting: Dataframe for PID %s is empty." % wearable.get_pid())
+            return
+
+        cols.append(wearable.time_col)
+
+        df_plot = wearable.data[cols].set_index(wearable.time_col)
+
+        ### Add column for experiment day. It will be resampled using the the mean
+        cols.append(wearable.experiment_day_col)
+
+        changed_experiment_hour = False
+
+
+        df_plot[wearable.experiment_day_col] = wearable.data[
+            [wearable.time_col, wearable.experiment_day_col]].set_index(wearable.time_col)[wearable.experiment_day_col]
+        
+        ### Init fig plot
+        fig, ax1 = plt.subplots(1, 1, figsize=(21, 3))
+        maxy = 2
+        
+        ### Plot Activity
+        if "activity" in signal_categories:
+            y = df_plot[wearable.get_activity_col()]
+            alpha, color, edgecolor, label = Viewer.__get_details(alphas, colors, edgecolors, labels, "activity",
+                                                                  None, default_label="Activity")
+            maxy = max(maxy, df_plot[wearable.get_activity_col()].max())
+            ax1.plot(df_plot.index, y, label=label, linewidth=2,
+                    color=color, alpha=alpha)
+        
+        ### Plot Sleep
+        if "sleep" in signal_categories:
+            facecolors = ['royalblue', 'green', 'orange']
+            endy = 0
+            alpha = 1
+            addition = (maxy / len(sleep_cols)) if len(sleep_cols) > 0 else maxy
+
+            for i, sleep_col in enumerate(sleep_cols):
+                starty = endy
+                endy = endy + addition
+                sleeping = df_plot[sleep_col]  # TODO: get a method instead of an attribute
+                ax1.fill_between(df_plot.index, starty, endy, where=~sleeping, facecolor='red',
+                                      alpha=0.3, label=sleep_col, edgecolor='red') 
+                ax1.fill_between(df_plot.index, starty, endy, where=sleeping, facecolor=facecolors[i],
+                                      alpha=0.3, label=sleep_col, edgecolor='purple')   
+
+        # X-tick label 
+        labels = []
+        for day in np.unique(df_plot[wearable.experiment_day_col]):
+            labels.append('Active ' + str(day + 1))
+            labels.append('Sleep ' + str(day + 1))
+        
+        # remove last sleep
+        labels = labels[:-1]    
+        
+        # get indices at the middle of awake and sleep sequences
+        mean_indices = Viewer.get_rolling_mean(df_plot)
+        for label, awake_sleep_index in zip(labels, mean_indices):
+            ax1.text(awake_sleep_index, -0.1, label, fontsize=14, 
+                     verticalalignment='center', 
+                     horizontalalignment='center',
+                     transform=ax1.transAxes)
+
+        ### X-tick params
+        ax1.tick_params(axis='x', which='both', bottom=True, top=False, labelbottom=True, rotation=0, 
+                        labelsize='medium', pad=20)
+        ax1.tick_params(axis='x', which='major', bottom=False, labelbottom=False) 
+        ax1.tick_params(axis='y', which='major') 
+        ax1.set_facecolor('snow')
+        
+        
+        new_start_datetime = df_plot.index[0]
+        new_end_datetime = df_plot.index[-1]
+        
+        ax1.set_xlim(new_start_datetime, new_end_datetime)
+        ax1.set_ylim(df_plot[wearable.get_activity_col()].min() - 5, df_plot[wearable.get_activity_col()].max() + 5)
+
+        y_label = 'Activity'
+        ax1.set_ylabel("%s" % y_label, rotation=0, horizontalalignment="right", verticalalignment="center")
+        
+        ax1.xaxis.set_minor_locator(dates.HourLocator(byhour=[15]))  # every 4 hours
+        ax1.xaxis.set_minor_formatter(dates.DateFormatter('%H:%M'))  # hours and minutes
+
+        ax1.set_title("PID = %s" % wearable.get_pid(), fontsize=16)
+        ax1.set_xlabel('Time')    
+        print(ax1.get_xticks())
+
+        plt.subplots_adjust(hspace=1.0)
+        plt.show()
+        return ax1, plt
+
     @staticmethod
     def __is_default_zoom(zoom_start, zoom_end):
         return zoom_start.time() == time(0, 0, 0) and zoom_end.time() == time(23, 59, 59)
