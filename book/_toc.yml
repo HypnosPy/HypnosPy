@@ -11,11 +11,3 @@
   sections:
     - file: installing
       title: Installing HypnosPy
-<<<<<<< Updated upstream
-=======
-    - file: features
-      title: HypnosPy features
-#      
-- file: cases
-  sections:
->>>>>>> Stashed changes

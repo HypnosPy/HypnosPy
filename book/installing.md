@@ -1,6 +1,6 @@
 # Installing
 
-The easiest way to install HypnosPy in your system is through pip:
+The easiast way to install HypnosPy in your system is through pip:
 
 ```shell
 >> pip install hypnospy
