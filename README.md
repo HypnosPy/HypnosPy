@@ -86,8 +86,8 @@ While all data analysis in HypnosPy can be performed on one single wearable, Hyp
 **Hypnospy's** core functionalities can be summarized as follows:
 
    * *Labelling cohort datasets for clinical and epidemiological sleep research*: HypnosPy allows the user to run most traditional heuristic sleep algorithms, triaxial accelerometry and heart rate-based approaches in a seamless and modular way. The software also supports sleep diary and expert sleep annotation options and can be used to calculate a battery of sleep quality metrics.
-   
-    
+
+
    The **HR algorithm** developed by our group consists of the following steps: (1)  Wearable sensor HR data is obtained and pre-processed, setting initial sleep blocks through ECDF quantile thresholds *Q*. (2) Blocks longer than *L* minutes are kept and merged with other blocks if their gap is smaller than *G* minutes. The limits of the resulting blocks are then used as sleep candidates for sleep onset and offset. (3) Then, rolling heart rate volatility is used for the refinement of these candidate times by finding nearby periods where HR volatility is high. In free-living conditions with full-day of recordings, we recommend *Q* to be set to 0.35, *L* to be on the range of 30-40 minutes and $G$ to be between 120-260 minutes. After this process is completed, nap and awakenings are labeled. Naps are obtained from candidate sleep blocks that were not included in the largest sleep window. Awakenings are derived from short periods (<60 minutes) within the sleep window where the heart rate exceeds the daytime threshold. These awakenings labels allow HypnosPy to provide sleep metrics such as the number of nightly awakenings, the total wake time after sleep onset (WASO) and the sleep efficiency (SE), which are widely used in the sleep literature and carry clinical significance. This is summarized in the following figure:
    
    <p style="text-align:center;"><img src ="docs/HRdescriptioncropped.png" width = "950" class="center" alt="centered image"></p>
@@ -97,7 +97,7 @@ While all data analysis in HypnosPy can be performed on one single wearable, Hyp
   
   <p style="text-align:center;"><img src ="docs/Circadian.png" width = "950" class="center" alt="centered image"></p>
 
-  
+
    * *Personalized health monitoring using research and commercial-grade device data*: HypnosPy facilitates the integration of a diverse range of wearables ranging from research grade tools to commercial, readily-available devices. Through this encompassing support, which will continue to grow over time, HypnosPy aims to enable comparative analysis across the growing number of tools available to both researchers and consumers. 
     
       For example, here is a subject labelled with HypnosPy for physical activity and sleep:

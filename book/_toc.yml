@@ -11,3 +11,12 @@
   sections:
     - file: installing
       title: Installing HypnosPy
+    - file: referencing
+      title: Citing us
+    - file: development
+      title: Collaborating with us
+- file: modules
+  sections: 
+    - file: preprocessing
+    - file: analysis
+- file: use-cases

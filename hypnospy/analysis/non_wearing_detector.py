@@ -265,4 +265,4 @@ class NonWearingDetector(object):
 
         non_wear_vector = non_wear_vector.reshape(-1)
         return non_wear_vector
-        
+

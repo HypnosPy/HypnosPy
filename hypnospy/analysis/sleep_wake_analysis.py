@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from hypnospy import Wearable
 from hypnospy import Experiment
 
