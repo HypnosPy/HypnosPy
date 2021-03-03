@@ -1,6 +1,6 @@
- ##Explore HypnosPy modules:
- * {doc}`**Preprocessing** <preprocessing.md>`
- * {doc}`**Data analysis** <analysis.md>`
+# Explore HypnosPy modules:
+ * {doc}`Preprocessing<preprocessing>`
+ * {doc}`Data analysis<analysis>`
 
 **Hypnospy's** core functionalities can be summarized as follows:
 

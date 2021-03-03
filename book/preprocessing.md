@@ -1,3 +1,4 @@
+# Preprocessing
 The first step in the HypnosPy workflow is creating the **RawProcessing()** class for each subject's data:
 
 {doc} `preprocessing.py <https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/data/preprocessing.py>`

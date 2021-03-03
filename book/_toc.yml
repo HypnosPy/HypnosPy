@@ -2,21 +2,25 @@
 # Learn more at https://jupyterbook.org/customize/toc.html
 #
 - file: intro
-- file: content
-  sections:
-    - file: markdown
-    - file: notebooks
-#
-- file: getting_started
-  sections:
+- part: Get Started
+  chapters:
+    - file: getting_started
+      title: Overview
     - file: installing
       title: Installing HypnosPy
     - file: referencing
       title: Citing us
     - file: development
       title: Collaborating with us
-- file: modules
-  sections: 
-    - file: preprocessing
-    - file: analysis
-- file: use-cases
+      
+- part: Modules
+  chapters:
+    - file: modules
+      title: Modules
+      sections: 
+        - file: preprocessing
+          title: Pre-processing
+        - file: analysis
+          title: Analysis
+        - file: use-cases
+          title: Use Cases

@@ -1,4 +1,5 @@
-# Installing :computer:
+# Installing 💻
+
 
 The easiast way to install HypnosPy in your system is through pip:
 
