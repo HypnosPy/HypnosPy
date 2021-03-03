@@ -97,8 +97,7 @@ def map_feature_set_to_embedders(x_subsets):
     return requested_embedders
 
 
-def get_xy(df_day, df_hour, df_pid, df_keys, df_embeddings, y_subset, x_subsets, keep_cols=[]):
-    x, y = {}, {}
+def get_xy(df_day, df_pid, df_keys, df_embeddings, y_subset, x_subsets, keep_cols=[]):
 
     dfday = df_day.copy()
 
@@ -141,7 +140,7 @@ def get_xy(df_day, df_hour, df_pid, df_keys, df_embeddings, y_subset, x_subsets,
     return x, y
 
 
-def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, df_per_pid, df_keys,
+def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_pid, df_keys,
              df_embeddings,
              y_subset="sleep_metrics",
              x_subsets=["bins", "stats", "bouts", "time", "cosinor", "demo"],
@@ -155,7 +154,7 @@ def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, 
 
     # TODO: pass embedded_df_per_hour to get_xy
     # gets features and label from df_per_day,
-    Xs, Ys = get_xy(df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings, y_subset=y_subset,
+    Xs, Ys = get_xy(df_per_day, df_per_pid, df_keys, df_embeddings, y_subset=y_subset,
                     x_subsets=feat_subsets, keep_cols=["ml_sequence", "pid"])
 
     Xs_sorted = Xs.sort_values(["pid", "ml_sequence"])
@@ -188,7 +187,7 @@ def get_data(n_prev_days, predict_pa, include_past_ys, df_per_day, df_per_hour, 
     Ys_sorted = Ys_sorted.dropna(axis=0)
 
     if get_demo:
-        Xdemo, _ = get_xy(df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings, y_subset=y_subset,
+        Xdemo, _ = get_xy(df_per_day, df_per_pid, df_keys, df_embeddings, y_subset=y_subset,
                           x_subsets=["demo"], keep_cols=["pid", "ml_sequence"])
 
         Xs_sorted = pd.merge(Xs_sorted, Xdemo)
@@ -337,29 +336,25 @@ def cdc_sleep_length(age):
         return (7, 8)
 
 
-def modify_data_target(data, age_col, target):
+def modify_data_target(data, age_col, target, keep_others=False):
     if target == "awakening":
-        # data["awakening"] = data["awakening"].apply(lambda x: awakeningMapping(x))
         data["awakening"] = data[["awakening", age_col]].apply(lambda x: awakenings_by_age(*x), axis=1)
 
     elif target == "sleepEfficiency":
-        # data["sleepEfficiency"] = data["sleepEfficiency"].apply(lambda x: sleepEfficiencyMapping(x))
         data["sleepEfficiency"] = data[["sleepEfficiency", age_col]].apply(lambda x: sleep_efficiency_by_age(*x), axis=1)
 
     elif target == "totalSleepTime":
         data["totalSleepTime"] = data[["totalSleepTime", age_col]].apply(lambda x: sleep_length_by_age(*x), axis=1)
 
     elif target == "combined":
-        # data["totalSleepTime"] = data[["totalSleepTime", "sleep_hours"]].apply(lambda x: tstMapping(*x), axis=1)
-        # data["sleepEfficiency"] = data["sleepEfficiency"].apply(lambda x: sleepEfficiencyMapping(x))
-        # data["awakening"] = data["awakening"].apply(lambda x: awakeningMapping(x))
         data["awakening"] = data[["awakening", age_col]].apply(lambda x: awakenings_by_age(*x), axis=1)
         data["sleepEfficiency"] = data[["sleepEfficiency", age_col]].apply(lambda x: sleep_efficiency_by_age(*x), axis=1)
         data["totalSleepTime"] = data[["totalSleepTime", age_col]].apply(lambda x: sleep_length_by_age(*x), axis=1)
 
         data["combined"] = data["totalSleepTime"] + data["sleepEfficiency"] + data["awakening"]
         data["combined"] = data["combined"].apply(lambda x: combinedMapping(x))
-        data = data.drop(["sleepEfficiency", "totalSleepTime", "awakening"], axis=1)
+        if not keep_others:
+            data = data.drop(["sleepEfficiency", "totalSleepTime", "awakening"], axis=1)
 
     return data
 

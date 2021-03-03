@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
+# ---
 # %%
 # -*- coding: utf-8 -*-
-# ---
 # jupyter:
 #   jupytext:
 #     formats: ipynb,py:light
@@ -28,15 +28,16 @@ from ML_misc import *
 from pycaret.classification import *
 
 # +
-
 # %%
 predict_pa = False
 keep_pids = True
 cv_folds = 11
+OPT_METRIC = "mcc"
 
 print("Predicting Sleep metrics")
 
-#sys.argv = ['0', 'xgboost', 'hchs', 'False', 'False', 0]
+# Arguments: Model, Dataset, GPU, overwrite, fset_num, reverse
+# sys.argv = ['0', 'lda', 'mesa', 'False', 'True', 0, 'True']
 #possible_models = ['dummy', 'catboost', 'lr', 'lightgbm', 'xgboost', 'rf', 'et', 'lda']
 
 my_models = [sys.argv[1]]
@@ -46,6 +47,8 @@ overwritting = bool(eval(sys.argv[4]))
 
 fset = sys.argv[5]
 fset = fset if fset == "all" else int(fset)
+reverse = bool(eval(sys.argv[6]))
+print("Reverse experiment order:", reverse)
 
 print("Using GPU:", use_gpu)
 print("Overwritting results:", overwritting)
@@ -56,21 +59,26 @@ if predict_pa:
     targets = ["medium_5", "medium_10", "medium_15", "medium_20"]
 
 else:
-    # all_feature_subsets = ["bins", "stats", "bouts", "time", "cosinor", "demo", 'ae24', 'ae2880', 'vae24', 'vae2880', 'cvae']
+    
+#     all_feature_subsets = ["bins", "stats", "bouts", "hourly_bins", "hourly_bouts", "houly_stats", "time",
+#                            "cosinor", "demo", 'ae24', 'ae2880', 'vae24', 'vae2880', 'cvae']
     feature_subsets = [
         # First Batch:
         ["bins", "stats", "bouts", "time", "cosinor", "demo"],  # 0
         ["bins"],                                               # 1
-        ["stats"],                                              # 2
-        ["bouts"],                                              # 3
-        ["cosinor"],                                            # 4
-        #["bins", "stats", "bouts", "time"],                    # 
-        #["bins", "stats", "bouts", "cosinor"],                 # 
-        #["bins", "stats", "bouts", "demo"],                    # 
-        #["bins", "stats", "bouts", "time", "cosinor"],         # 
-        #["bins", "stats", "bouts"],                            # 
-        #["time", "demo"],                                      # 
-        # Up to here, select tset 0 - 10
+        ["stats", "houly_stats"],                               # 2
+        ["houly_stats"],                                        # 3
+        ["stats"],                                              # 4
+        ["hourly_stats"],                                       # 5
+        ["stats", "hourly_stats"],                              # 6
+        ["bouts"],                                              # 7
+        ["hourly_bouts"],                                       # 8
+        ["bouts", "hourly_bouts"],                              # 9
+        ["cosinor"],                                            # 10
+        ["bins", "houly_bins", "stats", "houly_stats", "bouts", "houly_bouts", "time", "cosinor", "demo"],  # 11
+        ["bins", "houly_bins", "stats", "houly_stats", "bouts", "houly_bouts", "time", "cosinor"],  # 12
+        ["bins", "houly_bins", "stats", "houly_stats", "bouts", "houly_bouts", "cosinor"],  # 13
+        # Up to here, select tset 0 - 13
         # Second Batch:
         # 11
         # ["bins", "stats", "bouts", "time", "cosinor", "demo", 'ae24', 'ae2880', 'vae24', 'vae2880', 'cvae'],
@@ -102,11 +110,12 @@ for model_str in my_models:
 # ====================================================================================
 
 # %%
-for param in tqdm(parameters[:]):
+order = -1 if reverse else 1
+for param in tqdm(parameters[::order])
 
     dataset, model_str, target, feature_subset, predict_d_plus, n_prev_days, include_past_ys = param
 
-    experiment_name = "outputs/%s/%s_%s_%s_%s_ipast%s_prev%d_future%d" % (dataset, dataset, model_str, target, '-'.join(feature_subset),
+    experiment_name = "outputs/%s/%s/%s_%s_%s_%s_ipast%s_prev%d_future%d" % (OPT_METRIC, dataset, dataset, model_str, target, '-'.join(feature_subset),
                                                                include_past_ys, n_prev_days, predict_d_plus)
     experiment_filename = "%s.csv.gz" % (experiment_name)
 
@@ -120,14 +129,14 @@ for param in tqdm(parameters[:]):
     # Merge X, y
     print("LOG: dataset (%s), model (%s), target (%s), features (%s), days (%d), include_past (%s), predict_pa (%s)" % (dataset, model_str, target, '-'.join(feature_subset), n_prev_days, include_past_ys, predict_pa))
     data = get_data(n_prev_days, predict_pa, include_past_ys,
-                    df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings,
+                    df_per_day, df_per_pid, df_keys, df_embeddings,
                     y_subset=y_subset,
                     x_subsets=feature_subset,
                     y_label=target, keep_pids=keep_pids)
 
     # df_per_pid["sleep_hours"] = df_per_pid[age_col].apply(cdc)
     # data = pd.merge(data, df_per_pid[["sleep_hours", "pid"]])
-    df_per_pid["participant_age"] = df_per_pid[age_col]
+    df_per_pid["participant_age"] = df_per_pid[age_col].copy()
     data = pd.merge(data, df_per_pid[["participant_age", "pid"]])
 
     handout_test_pids = df_per_day[df_per_day["fold"] == cv_folds-1]["pid"].unique()
@@ -140,7 +149,7 @@ for param in tqdm(parameters[:]):
     if predict_d_plus > 0:
         y = data[[target, "ml_sequence", "pid"]]
         x = data.drop(columns=[target])
-        y["ml_sequence"] = y.groupby(["pid"])["ml_sequence"].apply(lambda x: x - predict_d_plus)
+        y["ml_sequence"] = y.groupby(["pid"])["ml_sequence"].apply(lambda value: value - predict_d_plus)
         data = pd.merge(x, y)
 
     cols_to_remove = ["ml_sequence", "pid", "participant_age"]  # , "sleep_hours"]
@@ -165,13 +174,10 @@ for param in tqdm(parameters[:]):
                    silent=True
                   )
     print("USING GPU? %s" % (get_config('gpu_param')))
-    #class_metrics = {}
-    #class_metrics["MicroF1"] = make_scorer(f1_score, average="micro")
-    #class_metrics["MacroF1"] = make_scorer(f1_score, average="macro")
     macro_f1 = make_scorer(f1_score, average="macro")
     micro_f1 = make_scorer(f1_score, average="micro")
-    add_metric(id='micro_f1', name="Micro F1", score_func=lambda x,y: f1_score(x, y, average="macro"), greater_is_better=True)
-    add_metric(id='macro_f1', name="Macro F1", score_func=lambda x,y: f1_score(x, y, average="micro"), greater_is_better=True)
+    add_metric(id='micro_f1', name="Micro F1", score_func=lambda x,y: f1_score(x, y, average="micro"), greater_is_better=True)
+    add_metric(id='macro_f1', name="Macro F1", score_func=lambda x,y: f1_score(x, y, average="macro"), greater_is_better=True)
     # Metrics removed as it results in problem when using multiclass
     remove_metric('precision')
     remove_metric('recall')
@@ -188,7 +194,7 @@ for param in tqdm(parameters[:]):
         model = create_model(model_str)
         tunned_model = tune_model(model, n_iter=tunner_iterations,
                                   early_stopping=tunner_early_stopping,
-                                  search_library="optuna", choose_better=True, optimize='micro_f1') #  optimize="F1")
+                                  search_library="optuna", choose_better=True, optimize=OPT_METRIC)
 
     save_model(tunned_model, experiment_name)
     zip_pkl(experiment_name)
@@ -249,7 +255,7 @@ for param in tqdm(parameters[:]):
 # df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings = get_dataframes(dataset, cv_folds)
 
 # data = get_data(n_prev_days, predict_pa, include_past_ys,
-#                 df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings,
+#                 df_per_day, df_per_pid, df_keys, df_embeddings,
 #                 y_subset=y_subset,
 #                 x_subsets = feature_subset,
 #                 y_label = target, keep_pids=keep_pids)
