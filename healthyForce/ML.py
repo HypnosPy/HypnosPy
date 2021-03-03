@@ -64,20 +64,20 @@ else:
 #                            "cosinor", "demo", 'ae24', 'ae2880', 'vae24', 'vae2880', 'cvae']
     feature_subsets = [
         # First Batch:
-        ["bins", "stats", "bouts", "time", "cosinor", "demo"],  # 0
-        ["bins"],                                               # 1
-        ["stats", "houly_stats"],                               # 2
-        ["houly_stats"],                                        # 3
-        ["stats"],                                              # 4
-        ["hourly_stats"],                                       # 5
-        ["stats", "hourly_stats"],                              # 6
-        ["bouts"],                                              # 7
-        ["hourly_bouts"],                                       # 8
-        ["bouts", "hourly_bouts"],                              # 9
-        ["cosinor"],                                            # 10
-        ["bins", "houly_bins", "stats", "houly_stats", "bouts", "houly_bouts", "time", "cosinor", "demo"],  # 11
-        ["bins", "houly_bins", "stats", "houly_stats", "bouts", "houly_bouts", "time", "cosinor"],  # 12
-        ["bins", "houly_bins", "stats", "houly_stats", "bouts", "houly_bouts", "cosinor"],  # 13
+        ["bins", "stats", "bouts", "time", "cosinor", "demo"],                                                  # 0
+        ["bins"],                                                                                               # 1
+        ["stats", "hourly_stats"],                                                                              # 2
+        ["hourly_stats"],                                                                                       # 3
+        ["stats"],                                                                                              # 4
+        ["hourly_stats"],                                                                                       # 5
+        ["stats", "hourly_stats"],                                                                              # 6
+        ["bouts"],                                                                                              # 7
+        ["hourly_bouts"],                                                                                       # 8
+        ["bouts", "hourly_bouts"],                                                                              # 9
+        ["cosinor"],                                                                                            # 10
+        ["bins", "hourly_bins", "stats", "hourly_stats", "bouts", "hourly_bouts", "time", "cosinor", "demo"],   # 11
+        ["bins", "hourly_bins", "stats", "hourly_stats", "bouts", "hourly_bouts", "time", "cosinor"],           # 12
+        ["bins", "hourly_bins", "stats", "hourly_stats", "bouts", "hourly_bouts", "cosinor"],                   # 13
         # Up to here, select tset 0 - 13
         # Second Batch:
         # 11
@@ -111,7 +111,7 @@ for model_str in my_models:
 
 # %%
 order = -1 if reverse else 1
-for param in tqdm(parameters[::order])
+for param in tqdm(parameters[::order]):
 
     dataset, model_str, target, feature_subset, predict_d_plus, n_prev_days, include_past_ys = param
 
