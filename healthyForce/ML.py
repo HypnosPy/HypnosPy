@@ -78,6 +78,11 @@ else:
         ["bins", "hourly_bins", "stats", "hourly_stats", "bouts", "hourly_bouts", "time", "cosinor", "demo"],   # 11
         ["bins", "hourly_bins", "stats", "hourly_stats", "bouts", "hourly_bouts", "time", "cosinor"],           # 12
         ["bins", "hourly_bins", "stats", "hourly_stats", "bouts", "hourly_bouts", "cosinor"],                   # 13
+        ["ae_bouts"],                                                                                           # 14
+        ["ae24"],                                                                                               # 15
+        ["vae24"],                                                                                              # 16
+        ["bins", "hourly_bins", "stats", "hourly_stats", "bouts", "hourly_bouts", "time", "cosinor", "demo",
+                "ae_bouts", "ae24", "vae24"],                                                                   # 17
         # Up to here, select tset 0 - 13
         # Second Batch:
         # 11
@@ -115,7 +120,7 @@ for param in tqdm(parameters[::order]):
 
     dataset, model_str, target, feature_subset, predict_d_plus, n_prev_days, include_past_ys = param
 
-    experiment_name = "outputs/%s/%s/%s_%s_%s_%s_ipast%s_prev%d_future%d" % (OPT_METRIC, dataset, dataset, model_str, target, '-'.join(feature_subset),
+    experiment_name = "outputs/%s/%s/%s_%s_%s_%s_ipast%s_prev%d_future%d" % (OPT_METRIC, dataset, dataset, model_str, target, '-'.join(feature_subset).replace("_","+"),
                                                                include_past_ys, n_prev_days, predict_d_plus)
     experiment_filename = "%s.csv.gz" % (experiment_name)
 
@@ -207,7 +212,7 @@ for param in tqdm(parameters[::order]):
     dfresult["dataset"] = dataset
     dfresult["model"] = model_str
     dfresult["target"] = target
-    dfresult["feature_set"] = '_'.join(feature_subset)
+    dfresult["feature_set"] = '_'.join(f.replace("_", "+") for f in feature_subset)
     dfresult["day_plus_x"] = predict_d_plus
     dfresult["folds"] = cv_folds
     dfresult["tunner_iterations"] = tunner_iterations
@@ -228,7 +233,7 @@ for param in tqdm(parameters[::order]):
     dfresult["dataset"] = dataset
     dfresult["model"] = model_str
     dfresult["target"] = target
-    dfresult["feature_set"] = '_'.join(feature_subset)
+    dfresult["feature_set"] = '_'.join(f.replace("_", "+") for f in feature_subset)
     dfresult["day_plus_x"] = predict_d_plus
     dfresult["folds"] = cv_folds
     dfresult["include_past_ys"] = include_past_ys

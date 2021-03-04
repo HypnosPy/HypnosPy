@@ -9,8 +9,7 @@ import shutil
 from sklearn.model_selection import KFold
 
 # +
-valid_embedders = ['ae24', 'ae2880', 'vae24', 'vae2880', 'cvae']
-
+valid_embedders = ['ae24', 'ae2880', 'vae24', 'vae2880', 'cvae', 'ae_bouts']
 
 def get_columns(dfkeys, subset):
     return dfkeys.loc[subset]["value"]
@@ -44,20 +43,20 @@ def get_dataframes(dataset, nfolds):
     #         folder_name = 'acm_health_sleep_data-main/'
 
     if dataset == "hchs":
-        filenames = {"keys": folder_name + "processed_hchs/HCHS_day_keys.csv",
-                     "pids": folder_name + "processed_hchs/HCHS_pid.csv",
-                     "per_day": folder_name + "processed_hchs/HCHS_per_day.csv",
-                     "per_hour": folder_name + "processed_hchs/HCHS_per_hour.csv",
-                     "per_pid": folder_name + "processed_hchs/HCHS_per_pid.csv",
+        filenames = {"keys": folder_name + "processed_hchs/HCHS_day_keys.csv.gz",
+                     "pids": folder_name + "processed_hchs/HCHS_pid.csv.gz",
+                     "per_day": folder_name + "processed_hchs/HCHS_per_day.csv.gz",
+                     "per_hour": folder_name + "processed_hchs/HCHS_per_hour.csv.gz",
+                     "per_pid": folder_name + "processed_hchs/HCHS_per_pid.csv.gz",
                      "embeddings_train": folder_name + "processed_hchs/HCHS_embeddings_train.pkl.gz",
                      "embeddings_test": folder_name + "processed_hchs/HCHS_embeddings_test.pkl.gz"
                      }
     elif dataset == "mesa":
-        filenames = {"keys": folder_name + "processed_mesa/MESA_day_keys.csv",
-                     "pids": folder_name + "processed_mesa/MESA_pid.csv",
-                     "per_day": folder_name + "processed_mesa/MESA_per_day.csv",
-                     "per_hour": folder_name + "processed_mesa/MESA_per_hour.csv",
-                     "per_pid": folder_name + "processed_mesa/MESA_per_pid.csv",
+        filenames = {"keys": folder_name + "processed_mesa/MESA_day_keys.csv.gz",
+                     "pids": folder_name + "processed_mesa/MESA_pid.csv.gz",
+                     "per_day": folder_name + "processed_mesa/MESA_per_day.csv.gz",
+                     "per_hour": folder_name + "processed_mesa/MESA_per_hour.csv.gz",
+                     "per_pid": folder_name + "processed_mesa/MESA_per_pid.csv.gz",
                      "embeddings_train": folder_name + "processed_mesa/MESA_embeddings_train.pkl.gz",
                      "embeddings_test": folder_name + "processed_mesa/MESA_embeddings_test.pkl.gz"
                      }
@@ -82,7 +81,8 @@ def get_dataframes(dataset, nfolds):
 
     # Embeddings
     df_embeddings = load_embeddings(filenames['embeddings_train'], filenames['embeddings_test'])
-
+    df_embeddings = df_embeddings.rename(columns={'bout': 'ae_bouts'})
+    
     return df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings
 
 
