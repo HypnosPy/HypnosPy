@@ -4,12 +4,13 @@
 # Links:
 # - [imports](#imports)
 # - [Pytorch Lightning](#pytorch_lightning)
+# - [Bouts](#bouts)
 # - [Train](#train)
 # - [Plot](#plot)
 
 # # Imports <a id='imports'></a>
 
-# In[39]:
+# In[771]:
 
 
 import pandas as pd
@@ -29,18 +30,25 @@ from sklearn import ensemble
 from sklearn.model_selection import cross_val_score
 from sklearn.dummy import DummyRegressor, DummyClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
 
 import torch
 import torchvision
 from torch import nn
 from torch.autograd import Variable
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, Sampler
 from torchvision import transforms
 from torchvision.datasets import MNIST
 from torchvision.utils import save_image
 
 from torch.utils.data import DataLoader
 from skorch import NeuralNet, NeuralNetRegressor
+
+from hypnospy import Wearable, Experiment, Diary
+from hypnospy.data import MESAPreProcessing
+from hypnospy.analysis import NonWearingDetector, SleepBoudaryDetector, Viewer, PhysicalActivity, Validator, CircadianAnalysis
+from hypnospy.analysis import SleepMetrics, SleepWakeAnalysis
+from HypnosPy.healthyForce.ML_misc import get_dataframes
 
 class autoencoder(nn.Module):
     def __init__(self):
@@ -100,12 +108,10 @@ class ConvEncoder(nn.Module):
         super().__init__()
         
         # Expected input to CNN is (Batch, Channels, L)
+        # ()
         self.encode = nn.Sequential(
-            # input: b, 1, 2880
             nn.Conv1d(in_channels=1, out_channels=4, kernel_size=20, stride=10, padding=0), nn.ReLU(),
-            #nn.MaxPool1d(2, stride=2), # b, 4, 48
             nn.Conv1d(in_channels=4, out_channels=8, kernel_size=6, stride=4, padding=0), nn.ReLU(),
-            #nn.MaxPool1d(2, stride=2), # b, 8, 5
             nn.Dropout(0.2),
             nn.Flatten(),
             nn.Linear(568, 256), nn.ReLU(),
@@ -193,7 +199,7 @@ class AutoEncoderNet(NeuralNetRegressor):
         return loss_reconstruction + loss_l1  
 
 
-# In[40]:
+# In[772]:
 
 
 import matplotlib.pyplot as plt
@@ -220,11 +226,12 @@ def train(num_epochs,optimizer,criterion,model):
 my_plot([1, 2, 3, 4, 5], [100, 90, 60, 30, 10])
 
 
-# In[41]:
+# In[773]:
 
 
 
-df = pd.read_csv("acm_health_sleep_data-main/processed_hchs/HCHS_per_hour.csv",  converters={"raw_pa": lambda x: np.fromstring(x, sep=',')})
+# df = pd.read_csv("acm_health_sleep_data-main/processed_hchs/HCHS_per_hour.csv",  converters={"raw_pa": lambda x: np.fromstring(x, sep=',')})
+df = pd.read_csv("acm_health_sleep_data-main/processed_mesa/MESA_per_hour.csv",  converters={"raw_pa": lambda x: np.fromstring(x, sep=',')})
 #df = pd.read_csv("mesa/MESA_per_hour.csv",  converters={"raw_pa": lambda x: np.fromstring(x, sep=',')})
 
 rawpa = []
@@ -248,12 +255,6 @@ df_hour = pd.concat(dfs, axis=1)
 
 
 # -
-
-
-# In[42]:
-
-
-df_hour
 
 
 # In[43]:
@@ -300,7 +301,7 @@ scaler.inverse_transform(net.predict(X)[0])
 
 # # Tests
 
-# In[5]:
+# In[7]:
 
 
 # +
@@ -351,7 +352,7 @@ d(out).shape
 
 # ## Encoder/Decoder definition
 
-# In[44]:
+# In[774]:
 
 
 import os
@@ -507,11 +508,74 @@ class LinearDecoder24(nn.Module):
         decoded = self.decode(X)
         return decoded
     
+# x = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
+# x = layers.MaxPooling2D((2, 2), padding='same')(x)
+# x = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
+# x = layers.MaxPooling2D((2, 2), padding='same')(x)
+    
+class ConvEncoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+        self.encode = nn.Sequential(
+              nn.Conv2d(in_channels=1, out_channels=2, kernel_size=2, padding=1), nn.ReLU(), 
+              nn.MaxPool2d(kernel_size=2),
+              nn.Conv2d(in_channels=2, out_channels=4, kernel_size=2, padding=1), nn.ReLU(), 
+              nn.MaxPool2d(kernel_size=2), # torch.Size([n, 4, 6, 1])
+              nn.Flatten(), # torch.Size([n, 24])
+              nn.Linear(24, 8)
+        )
+
+    def forward(self, X):
+#         print(X.shape)
+#         print(X)
+        encoded = self.encode(X)
+        return encoded
+
+    
+class ConvDecoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+        # Received input size is (n, 168)
+        # nn.ConvTranspose2d has learnable parameters
+        # where as UpSample2d does not
+        self.decode = nn.Sequential(
+              nn.Linear(8, 24), nn.ReLU(),
+              nn.Unflatten(dim=1, unflattened_size=(4, 6, 1)), # dim is axis in numpy terms
+              nn.ConvTranspose2d(in_channels=4, out_channels=2, kernel_size=2, padding=0, stride=2), nn.ReLU(), 
+              nn.ConvTranspose2d(in_channels=2, out_channels=1, kernel_size=2, padding=0, stride=2), 
+        )
+
+    def forward(self, X):
+        decoded = self.decode(X)
+        return decoded
+
+
+# In[775]:
+
+
+
+# x = torch.randn(1, 1, 24, 4)
+# m = nn.Sequential(
+#       nn.Conv2d(in_channels=1, out_channels=2, kernel_size=2, padding=1), nn.ReLU(), 
+#       nn.MaxPool2d(kernel_size=2),
+#       nn.Conv2d(in_channels=2, out_channels=4, kernel_size=2, padding=1), nn.ReLU(), 
+#       nn.MaxPool2d(kernel_size=2), # torch.Size([n, 4, 6, 1])
+#       nn.Flatten(), # torch.Size([n, 96])
+#       nn.Linear(24, 8),
+#       nn.Linear(8, 24),
+#       nn.Unflatten(dim=1, unflattened_size=(4, 6, 1)), # dim is axis in numpy terms
+#       nn.ConvTranspose2d(in_channels=4, out_channels=2, kernel_size=2, padding=0, stride=2), nn.ReLU(), 
+#       nn.ConvTranspose2d(in_channels=2, out_channels=1, kernel_size=2, padding=0, stride=2), nn.ReLU(), 
+# )
+
+# m(x).shape
 
 
 # ## AE Definition
 
-# In[45]:
+# In[776]:
 
 
 
@@ -521,13 +585,16 @@ class LitAutoEncoder(pl.LightningModule):
     def __init__(self, input_dim=24):
         super().__init__()
         
-        self.skipconnection = AESkipConnection()
+        # self.skipconnection = AESkipConnection()
         if(input_dim == 2880):
             self.encoder = LinearEncoder2880()
             self.decoder = LinearDecoder2880()
-        else:
+        elif(input_dim == 24):
             self.encoder = LinearEncoder24()
             self.decoder = LinearDecoder24()
+        else:
+            self.encoder = ConvEncoder()
+            self.decoder = ConvDecoder()
 
     def forward(self, x):
         # in lightning, forward defines the prediction/inference actions
@@ -538,7 +605,7 @@ class LitAutoEncoder(pl.LightningModule):
         # training_step defined the train loop.
         # It is independent of forward
         x, y = batch
-        x = x.view(x.size(0), -1)
+        # x = x.view(x.size(0), -1)
         z = self.encoder(x)
         x_hat = self.decoder(z)
         loss = F.mse_loss(x_hat, x)
@@ -547,7 +614,7 @@ class LitAutoEncoder(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        x = x.view(x.size(0), -1)
+#         x = x.view(x.size(0), -1)
         z = self.encoder(x)
         x_hat = self.decoder(z)
         loss = F.mse_loss(x_hat, x)
@@ -595,7 +662,7 @@ class ResidualAutoEncoder(pl.LightningModule):
 
 # ## VAE Definition
 
-# In[46]:
+# In[777]:
 
 
 
@@ -713,11 +780,16 @@ class VAE(pl.LightningModule):
         return optimizer
 
 
-# In[47]:
+# # Datasets
+
+# In[781]:
 
 
-train_ids = pd.read_csv('acm_health_sleep_data-main/processed_hchs/HCHS_pid_train.csv')
-test_ids = pd.read_csv('acm_health_sleep_data-main/processed_hchs/HCHS_pid_test.csv')
+# train_ids = pd.read_csv('acm_health_sleep_data-main/processed_hchs/HCHS_pid_train.csv')
+# test_ids = pd.read_csv('acm_health_sleep_data-main/processed_hchs/HCHS_pid_test.csv')
+
+train_ids = pd.read_csv('acm_health_sleep_data-main/processed_mesa/MESA_pid_train.csv')
+test_ids = pd.read_csv('acm_health_sleep_data-main/processed_mesa/MESA_pid_test.csv')
 
 class AEDataset(torch.utils.data.Dataset):
     def __init__(self, df):
@@ -779,7 +851,72 @@ class CVAEDataset(torch.utils.data.Dataset):
     def unscale(self, x):
         return self.scaler.inverse_transform(x)
 
+class BoutDataset(torch.utils.data.Dataset):
+    def __init__(self, df):
+        ## - onehotencode hyp_time_col
+        ## - scale sedentary, light, medium, vigorous
+        ## - make sure activities are in order
+        ## - bout_train = BoutDataset(df_per_hour.loc[train_ids.pid])
+        ## - bout_test = BoutDataset(df_per_hour.loc[test_ids.pid])
+        
+        # One-Hot-Encode the hyp_time_col
+        self.columnTransformer = ColumnTransformer([('hour', 
+                                                     OneHotEncoder(handle_unknown='ignore', sparse=False), 
+                                                     ['hour'])], 
+                                              remainder='passthrough')
+        index = df.index
+        df = self.columnTransformer.fit_transform(df)
+        df = pd.DataFrame(df, columns=self.columnTransformer.get_feature_names(), index=index)
+
+        filter_columns = df.columns.str.startswith('hour')
+        columns = df.columns[filter_columns].str.split('__x0_').str.join('_')
+
+        # append last columns to renamed beginning columns
+        columns = columns.append(df.columns[len(columns):])
+        df.columns = columns
+
+        # reorder
+        reorder_columns = ['sedentary_bins', 'light_bins', 'medium_bins', 'vigorous_bins']
+        reorder_columns.extend(df.columns[filter_columns].tolist())
+        df = df[reorder_columns]
+        
+        # Scale
+        self.scaler = preprocessing.StandardScaler()
+        scaled = self.scaler.fit_transform(df[['sedentary_bins', 'light_bins', 'medium_bins', 'vigorous_bins']])
+        df[['sedentary_bins', 'light_bins', 'medium_bins', 'vigorous_bins']] = scaled
+        
+        # Set class object
+        self.df = df.sort_index()
+        self.df = self.df[['sedentary_bins', 'light_bins', 'medium_bins', 'vigorous_bins']]
+        self.hours_in_day = 24
+        
+    def __len__(self):
+        return len(self.df)
     
+    def __getitem__(self, pid):
+        # Select sample
+        X = self.df.loc[pid].values
+        X = np.expand_dims(X, axis=0)
+        y = self.df.loc[pid].values
+        y = np.expand_dims(y, axis=0)
+        return X, y
+
+class BoutSampler(Sampler):
+    r"""Samples elements sequentially, always in the same order.
+    Arguments:
+        pids (list): list of pids
+    """
+
+    def __init__(self, pids):
+        self.pids = pids
+
+    def __iter__(self):
+        return iter(self.pids)
+
+    def __len__(self):
+        return len(self.pids)  
+    
+
 D_train_2880 = AEDataset(df.loc[train_ids.pid])    
 D_test_2880 = AEDataset(df.loc[test_ids.pid])    
 
@@ -808,26 +945,126 @@ cvae_test = CVAEDataset(df_cvae.loc[test_ids.pid])
 cvae_train_loader = DataLoader(cvae_train, batch_size=512)
 cvae_test_loader = DataLoader(cvae_test, batch_size=512)
 
+# Bouts input - below line takes some time
+# df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings = get_dataframes("hchs", 11, folder_name='acm_health_sleep_data-main/')
+df_per_day, df_per_hour, df_per_pid, df_keys, df_embeddings = get_dataframes("mesa", 11, folder_name='acm_health_sleep_data-main/')
+# Duplicates because of bout_length
+# TODO: Investigate if we should filter by bout_length
+df_per_hour = df_per_hour[['pid','ml_sequence', 'hyp_time_col', 
+                           "light_bins", 'medium_bins', 
+                           'sedentary_bins',  'vigorous_bins']].drop_duplicates()
+
+
+
+# make sure to have 24 hour for every pid, ml_sequence
+# using df_cvae index since it has correct order
+df_per_hour = df_per_hour.set_index(['pid', 'ml_sequence', 'hyp_time_col']).reindex(df_cvae.index)
+df_per_hour = df_per_hour.fillna(0.0)
+df_per_hour = df_per_hour.reset_index(level=2)
+
+# Create Dataset
+bout_train = BoutDataset(df_per_hour.loc[train_ids.pid])
+bout_test = BoutDataset(df_per_hour.loc[test_ids.pid])
+
+# Create sampler
+pid_ml_sequence_train = df_per_hour.loc[train_ids.pid].index.unique().values
+pid_ml_sequence_test = df_per_hour.loc[test_ids.pid].index.unique().values
+
+train_sampler = BoutSampler(pid_ml_sequence_train)
+test_sampler = BoutSampler(pid_ml_sequence_test)
+
+def collate_fn(batch):
+    data = [item[0] for item in batch]
+    data = torch.Tensor(data)
+    
+    target = [item[1] for item in batch]
+    target = torch.Tensor(target)
+    return [data, target]
+
+# Create Loader
+bout_train_loader = DataLoader(bout_train, batch_size=512, sampler=train_sampler, collate_fn=collate_fn)
+bout_test_loader = DataLoader(bout_test, batch_size=512, sampler=test_sampler, collate_fn=collate_fn)
+
+
+# In[782]:
+
+
+# TODO: create BoutDataset
+## - onehotencode hy_time_col DONE
+## - scale sedentary, light, medium, vigorous DONE
+## - make sure activities are in order DONE
+## - bout_train = BoutDataset(df_per_hour.loc[train_ids.pid]) DONE
+## - bout_test = BoutDataset(df_per_hour.loc[test_ids.pid]) DONE
+
+## - bout_train_loader = DataLoader(bout_train, batch_size=512) DONE
+## - bout_test_loader = DataLoader(bout_test, batch_size=512) DONE
+
+# TODO: create Pytorch module 
+## - Create ConvEncoder(nn.Module) DONE
+## - Create ConvDecoder(nn.Module) DONE
+## - Create ConvAutoEncoder(pl.LightningModule)
+## - (optional) create ConvVAE
+## - Train the model: train_model(ConvAE, bout_train_loader, bout_test_loader, 'ConvAE')
+## - Plot
+## - Generate
+
+
+# In[783]:
+
+
+pa_levels = ["sedentary", "light", "medium", "vigorous"]
+
+# pa = PhysicalActivity(exp)
+# METS: 1.5, 3, 6
+# pa.set_cutoffs(cutoffs=[58, 399, 1404], names=pa_levels)
+# pa.generate_pa_columns(based_on="activity")
+# bouts = []
+# for act_level in pa_levels:
+#     tmp_list = []
+#     for length in [5, 10, 20, 30]:
+#         pa_bout = pa.get_bouts(act_level, length, length//2,
+#                                      resolution="hour", sleep_col="sleep_period_annotation")
+        
+#         if (type(pa_bout) == pd.DataFrame) and not pa_bout.empty:
+#             tmp_list.append(pa_bout)
+    
+#     if tmp_list:
+#         tmp_list = pd.concat(tmp_list)
+#         bouts.append(tmp_list)
+
+
+# # Merge PA datasets
+# bouts = functools.reduce(
+#     lambda left, right: pd.merge(left, right, on=["pid", exp_day_column, "hyp_time_col", "bout_length"],
+#                                  how='outer'), bouts).fillna(0.0)
+
+# # bouts_melted = bouts.melt(id_vars=["pid", exp_day_column, "bout_length"],
+# #                           value_vars=["sedentary", "light", "medium", "vigorous"])
+
+# bouts_melted = bouts.melt(id_vars=["pid", exp_day_column, "bout_length"],
+#                           value_vars=["sedentary", "light", "medium"])
+
 
 # # Train AE <a id='train'></a>
 
-# In[51]:
+# In[784]:
 
 
 from pytorch_lightning.loggers import CSVLogger
 
-def train_model(model, train, test, exp_name, epochs=100):  
+def train_model(model, train, test, exp_name, epochs=100, callbacks=None):  
     pl.seed_everything(42)
     logger = CSVLogger("logs", name=exp_name)
     
-    trainer = pl.Trainer(gpus=1, max_epochs=epochs, deterministic=True, logger=logger)
+    
+    trainer = pl.Trainer(gpus=1, max_epochs=epochs, deterministic=True, logger=logger, callbacks=callbacks)
     trainer.fit(model, train, test)
     return trainer
 
 
 # ## AE2880
 
-# In[52]:
+# In[785]:
 
 
 # init model
@@ -835,27 +1072,9 @@ autoencoder_2880 = ResidualAutoEncoder()
 train_model(autoencoder_2880, train_loader_2880, test_loader_2880, 'ae2880', epochs=30)
 
 
-# In[123]:
-
-
-test = torch.Tensor(D_train_2880.df)
-
-
-# In[131]:
-
-
-autoencoder_2880(test[:1])
-
-
-# In[142]:
-
-
-plot_train_test_loss('ae2880')
-
-
 # ## AE24
 
-# In[50]:
+# In[786]:
 
 
 # init model
@@ -863,11 +1082,36 @@ autoencoder_24 = LitAutoEncoder(input_dim=24)
 train_model(autoencoder_24, train_loader_24, test_loader_24, 'ae24')
 
 
+# ## Bout Conv Autoencoder
+
+# In[787]:
+
+
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import ModelCheckpoint
+
+# init model
+bout_autoencoder = LitAutoEncoder(input_dim=(1, 24, 28))
+
+
+# save epoch and val_loss in name
+# saves a file like: my/path/sample-mnist-epoch=02-val_loss=0.32.ckpt
+checkpoint_callback = ModelCheckpoint(
+     monitor='val_loss',
+     dirpath='mesa_models/',
+     filename='bout-autoencoder-{epoch:02d}-{val_loss:.2f}',
+     save_top_k=-1,
+     period=10
+)
+
+train_model(bout_autoencoder, bout_train_loader, bout_test_loader, 'bout_autoencoder', callbacks=[checkpoint_callback])
+
+
 # # Train VAE
 
 # ## VAE2880
 
-# In[53]:
+# In[788]:
 
 
 # init model
@@ -877,7 +1121,7 @@ train_model(vae_2880, train_loader_2880, test_loader_2880, 'vae2880')
 
 # ## VAE24
 
-# In[54]:
+# In[789]:
 
 
 # init model
@@ -887,13 +1131,13 @@ train_model(vae_24, train_loader_24, test_loader_24, 'vae24')
 
 # # Train CVAE
 
-# In[55]:
+# In[790]:
 
 
 df_cvae
 
 
-# In[56]:
+# In[791]:
 
 
 # init model
@@ -903,7 +1147,18 @@ train_model(cvae, cvae_train_loader, cvae_test_loader, 'cvae')
 
 # # Plot <a id='plot'></a>
 
-# In[57]:
+# In[792]:
+
+
+# Plot input image compared to decoded image
+# plot decoded image based on epoch number
+
+
+# checkpoints of model every 10% of total number of epochs
+# TODO: stacked denoising autoencoder
+
+
+# In[793]:
 
 
 import matplotlib.pyplot as plt
@@ -944,15 +1199,120 @@ def natural_keys(text):
 
 
 
-models = ['ae2880', 'ae24', 'vae2880', 'vae24', 'cvae']
+models = ['ae2880', 'ae24', 'vae2880', 'vae24', 'cvae', 'bout_autoencoder']
+# models = ['bout_autoencoder']
 
 for i, m in enumerate(models):
     plot_train_test_loss(m)
 
 
+# # Plot learning steps of Bout_autoencoder
+
+# In[794]:
+
+
+import seaborn as sns
+
+
+def get_bout_autoencoder_sample():
+    indices = bout_train.df.index.unique()
+    sample = np.random.choice(indices, 1)
+    sample = bout_train[sample][0]
+    predicted_sample = bout_autoencoder.decoder(bout_autoencoder.encoder(torch.Tensor([sample]))).detach().numpy()
+    return sample, predicted_sample
+
+def plot_sample_and_predicted_sample(sample, predicted_sample):
+    fig, axs = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(5, 6))
+    cbar_ax = fig.add_axes([1, .3, .03, .4])
+    xticklabels = ['Sedentary', 'Light', 'Moderate', 'Vigorous']
+    sns.heatmap(sample.squeeze(), ax=axs[0], vmin=-2, vmax=2, cbar=False, xticklabels=xticklabels)
+    sns.heatmap(predicted_sample.squeeze().squeeze(), ax=axs[1], vmin=-2, vmax=2, cbar_ax=cbar_ax, xticklabels=xticklabels)
+
+    # Set labels
+    axs[0].set_xlabel('Activity')
+    axs[0].set_ylabel('Hour')
+    axs[1].set_xlabel('Activity')
+
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(axs[0].get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+    plt.setp(axs[1].get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+    fig.tight_layout()
+    plt.show()
+    
+
+    
+    
+sample, predicted_sample = get_bout_autoencoder_sample()
+plot_sample_and_predicted_sample(sample, predicted_sample)
+
+
+# In[795]:
+
+
+checkpoint_model
+
+
+# In[797]:
+
+
+import os
+import pathlib
+
+path = pathlib.Path('C:/Development/projects/sleep/mesa_models')
+checkpoints = os.listdir(path)
+predicted_samples = []
+for c in checkpoints:
+    
+    checkpoint_model = torch.load(path.joinpath(c))
+    bout_autoencoder.load_state_dict(checkpoint_model['state_dict'])
+    predicted_sample = bout_autoencoder.decoder(bout_autoencoder.encoder(torch.Tensor([sample]))).detach().numpy()
+    predicted_samples.append(predicted_sample)
+    # Draw prediction
+    fig, ax = plt.subplots(1, figsize=(4, 5))
+    xticklabels = ['Sedentary', 'Light', 'Moderate', 'Vigorous']
+    sns.heatmap(predicted_sample.squeeze().squeeze(), ax=ax, vmin=-2, vmax=2, xticklabels=xticklabels)
+
+    # Set labels
+    ax.set_xlabel('Activity')
+    ax.set_ylabel('Hour')
+
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+    
+    fig.tight_layout()
+    plt.show()
+    
+
+
+# In[798]:
+
+
+fig, axs = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(6, 6))
+cbar_ax = fig.add_axes([1, .3, .03, .4])
+xticklabels = ['Sedentary', 'Light', 'Moderate', 'Vigorous']
+sns.heatmap(sample.squeeze(), ax=axs[0], vmin=-2, vmax=2, cbar=False, xticklabels=xticklabels)
+sns.heatmap(predicted_sample.squeeze().squeeze(), ax=axs[1], vmin=-2, vmax=2, cbar_ax=cbar_ax, xticklabels=xticklabels)
+
+# Set labels
+axs[0].set_xlabel('Activity')
+axs[0].set_ylabel('Hour')
+axs[1].set_xlabel('Activity')
+
+
+# Rotate the tick labels and set their alignment.
+plt.setp(axs[0].get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+plt.setp(axs[1].get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+fig.tight_layout()
+plt.show()
+
+
 # # Generate embeddings
 
-# In[60]:
+# In[799]:
 
 
 train = torch.Tensor(D_train_2880.df)
@@ -993,17 +1353,35 @@ cvae_embedded_test = cvae_embedded_test.reshape(D_test_2880.df.shape[0], feature
 cvae_embedded_test = pd.DataFrame(cvae_embedded_test)
 
 
-# In[61]:
+# In[800]:
+
+
+# Bout embeddings
+
+n = bout_train.df.values.shape[0] // 24
+train = bout_train.df.values.reshape((n, 1, 24, 4))
+train = torch.Tensor(train)
+
+n = bout_test.df.values.shape[0] // 24
+test = bout_test.df.values.reshape((n, 1, 24, 4))
+test = torch.Tensor(test)
+
+bout_embedded_train = pd.DataFrame(bout_autoencoder(train).detach().numpy())
+bout_embedded_test = pd.DataFrame(bout_autoencoder(test).detach().numpy())
+
+
+# In[801]:
 
 
 embeddings_train = [AE_embedded_train_2880, 
                     AE_embedded_train_24, 
                     VAE_embedded_train_2880, 
                     VAE_embedded_train_24,
-                    cvae_embedded_test]
+                    cvae_embedded_train,
+                    bout_embedded_train]
 
 embeddings_train = pd.concat(embeddings_train, 
-                               keys=['ae2880', 'ae24', 'vae2880', 'vae24', 'cvae'], 
+                               keys=['ae2880', 'ae24', 'vae2880', 'vae24', 'cvae', 'bout'], 
                                names=['joined_dfs'], axis=1)
 
 embeddings_train.index = df_hour.loc[train_ids.pid].index
@@ -1012,40 +1390,26 @@ embeddings_test = [AE_embedded_test_2880,
                    AE_embedded_test_24, 
                    VAE_embedded_test_2880, 
                    VAE_embedded_test_24,
-                   cvae_embedded_test]
+                   cvae_embedded_test,
+                   bout_embedded_test]
 
 embeddings_test = pd.concat(embeddings_test, 
-                               keys=['ae2880', 'ae24', 'vae2880', 'vae24', 'cvae'], 
+                               keys=['ae2880', 'ae24', 'vae2880', 'vae24', 'cvae', 'bout'], 
                                names=['joined_dfs'], axis=1)
 embeddings_test.index = df_hour.loc[test_ids.pid].index
 
 
-# In[77]:
-
-
-embeddings_train
-
-
-# In[78]:
+# In[802]:
 
 
 # remove joined_df column name
 embeddings_train.columns = embeddings_train.columns.rename(names=[None, None])
-# embeddings_train.to_csv('embeddings_train.csv', index=True, index_label=False)
-embeddings_train.to_pickle('embeddings_train.pkl')
+embeddings_train.to_pickle('MESA_embeddings_train.pkl')
+# embeddings_train.to_pickle('HCHS_embeddings_train.pkl')
 
 embeddings_test.columns = embeddings_test.columns.rename(names=[None, None])
-# embeddings_test.to_csv('embeddings_test.csv', index=True, index_label=False)
-embeddings_test.to_pickle('embeddings_test.pkl')
-
-
-# In[143]:
-
-
-t = torch.tensor(X[0])
-z = autoencoder(t)
-x_hat = autoencoder.decoder(z)
-print(x_hat)
+embeddings_test.to_pickle('MESA_embeddings_test.pkl')
+# embeddings_test.to_pickle('HCHS_embeddings_test.pkl')
 
 
 # In[ ]:
