@@ -1,0 +1,487 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analysis 🔬</title>
+    
+  <link rel="stylesheet" href="_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx-book-theme.40e2e510f6b7d1648584402491bb10fe.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <link rel="preload" as="script" href="_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/togglebutton.js"></script>
+    <script src="_static/clipboard.min.js"></script>
+    <script src="_static/copybutton.js"></script>
+    <script >var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="_static/sphinx-book-theme.d31b09fe5c1d09cb49b26a786de4a05d.js"></script>
+    <script async="async" src="https://unpkg.com/thebelab@latest/lib/index.js"></script>
+    <script >
+        const thebe_selector = ".thebe"
+        const thebe_selector_input = "pre"
+        const thebe_selector_output = ".output"
+    </script>
+    <script async="async" src="_static/sphinx-thebe.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Usage 💡" href="use-cases.html" />
+    <link rel="prev" title="Preprocessing ⚗" href="preprocessing.html" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+
+
+
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
+    
+        <div class="navbar-brand-box">
+<a class="navbar-brand text-wrap" href="index.html">
+  
+  <img src="_static/logo.png" class="logo" alt="logo">
+  
+  
+</a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+    <ul class="nav sidenav_l1">
+ <li class="toctree-l1">
+  <a class="reference internal" href="intro.html">
+   HypnosPy ⌚
+  </a>
+ </li>
+</ul>
+<p class="caption collapsible-parent">
+ <span class="caption-text">
+  Get Started
+ </span>
+</p>
+<ul class="nav sidenav_l1">
+ <li class="toctree-l1">
+  <a class="reference internal" href="getting_started.html">
+   Overview
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="installing.html">
+   Installing HypnosPy
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="referencing.html">
+   Citing us
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="development.html">
+   Collaborating with us
+  </a>
+ </li>
+</ul>
+<p class="caption collapsible-parent">
+ <span class="caption-text">
+  Modules
+ </span>
+</p>
+<ul class="current nav sidenav_l1">
+ <li class="toctree-l1 current active collapsible-parent">
+  <a class="reference internal" href="modules.html">
+   Modules
+  </a>
+  <ul class="current collapse-ul">
+   <li class="toctree-l2">
+    <a class="reference internal" href="preprocessing.html">
+     Pre-processing
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     Analysis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="use-cases.html">
+     Use Cases
+    </a>
+   </li>
+  </ul>
+  <i class="fas fa-chevron-down">
+  </i>
+ </li>
+</ul>
+
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  Powered by <a href="https://jupyterbook.org">Jupyter Book</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="row topbar fixed-top container-xl">
+    <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show">
+    </div>
+    <div class="col pl-2 topbar-main">
+        
+        <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+            data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+            aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+            title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+            <i class="fas fa-bars"></i>
+            <i class="fas fa-arrow-left"></i>
+            <i class="fas fa-arrow-up"></i>
+        </button>
+        
+        
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
+            class="fas fa-download"></i></button>
+
+    <div class="dropdown-buttons">
+        <!-- ipynb file if we had a myst markdown file -->
+        
+        <!-- Download raw file -->
+        <a class="dropdown-buttons" href="_sources/analysis.md"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
+                data-placement="left">.md</button></a>
+        <!-- Download PDF via print -->
+        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
+            onClick="window.print()" data-toggle="tooltip" data-placement="left">.pdf</button>
+    </div>
+</div>
+
+        <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/ippozuelo/HypnosPy"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        <a class="issues-button"
+            href="https://github.com/ippozuelo/HypnosPy/issues/new?title=Issue%20on%20page%20%2Fanalysis.html&body=Your%20issue%20content%20here."><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
+        
+    </div>
+</div>
+
+
+        <!-- Full screen (wrap in <a> to have style consistency -->
+        <a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+                data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+                title="Fullscreen mode"><i
+                    class="fas fa-expand"></i></button></a>
+
+        <!-- Launch buttons -->
+
+    </div>
+
+    <!-- Table of contents -->
+    <div class="d-none d-md-block col-md-2 bd-toc show">
+        
+        <div class="tocsection onthispage pt-5 pb-3">
+            <i class="fas fa-list"></i> Contents
+        </div>
+        <nav id="bd-toc-nav">
+            <ul class="nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#sleep-annotations">
+   Sleep Annotations 🛏
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#individual-analysis">
+   Individual Analysis 🗓
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#sleep-labelling">
+     <strong>
+      Sleep Labelling
+     </strong>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#circadian-analysis">
+     <strong>
+      Circadian Analysis
+     </strong>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#physical-activity-analysis">
+     <strong>
+      Physical Activity Analysis
+     </strong>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#validation">
+     <strong>
+      Validation
+     </strong>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#visualization">
+   Visualization 🖥
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#population-analysis">
+   Population Analysis
+  </a>
+ </li>
+</ul>
+
+        </nav>
+        
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+        
+              <div>
+                
+  <div class="section" id="analysis">
+<h1>Analysis 🔬<a class="headerlink" href="#analysis" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="sleep-annotations">
+<h2>Sleep Annotations 🛏<a class="headerlink" href="#sleep-annotations" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/diary.py">diary.py</a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Diary</span>
+<span class="n">w</span> <span class="o">=</span> <span class="n">Wearable</span><span class="p">(</span><span class="n">preprocessed_object</span><span class="p">)</span>
+<span class="n">w</span><span class="o">.</span><span class="n">add_diary</span><span class="p">(</span><span class="n">Diary</span><span class="p">()</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">diary_file</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="individual-analysis">
+<h2>Individual Analysis 🗓<a class="headerlink" href="#individual-analysis" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="sleep-labelling">
+<h3><strong>Sleep Labelling</strong><a class="headerlink" href="#sleep-labelling" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Wearable</span>
+<span class="kn">from</span> <span class="nn">hypnospy.data</span> <span class="kn">import</span> <span class="n">MESAPreProcessing</span>
+<span class="kn">from</span> <span class="nn">hypnospy.analysis</span> <span class="kn">import</span> <span class="n">SleepWakeAnalysis</span><span class="p">,</span> <span class="n">SleepMetrics</span><span class="p">,</span> <span class="n">SleepBoudaryDetector</span>
+
+<span class="c1"># MESAPreProcessing is a specialized class to preprocess csv files from Philips Actiwatch Spectrum devices used in the MESA Sleep experiment</span>
+<span class="c1"># MESA Sleep dataset can be found here: https://sleepdata.org/datasets/mesa/</span>
+<span class="n">preprocessed</span> <span class="o">=</span> <span class="n">MESAPreProcessing</span><span class="p">(</span><span class="s2">&quot;../data/examples_mesa/mesa-sample.csv&quot;</span><span class="p">)</span>
+
+<span class="c1"># Wearable is the main object in HypnosPy.</span>
+<span class="n">w</span> <span class="o">=</span> <span class="n">Wearable</span><span class="p">(</span><span class="n">preprocessed</span><span class="p">)</span>
+
+<span class="c1"># In HypnosPy, we have the concept of ``experiment day&#39;&#39; which by default starts at midnight (00 hours).</span>
+<span class="c1"># We can easily change it to any other time we wish. For example, lets run this script with experiment days</span>
+<span class="c1"># that start at 3pm (15h)</span>
+<span class="n">w</span><span class="o">.</span><span class="n">change_start_hour_for_experiment_day</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+
+<span class="c1"># Sleep Wake Analysis module</span>
+<span class="n">sw</span> <span class="o">=</span> <span class="n">SleepWakeAnalysis</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">sw</span><span class="o">.</span><span class="n">run_sleep_algorithm</span><span class="p">(</span><span class="s2">&quot;ScrippsClinic&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># runs alg and creates new col named &#39;ScrippsClinic&#39;</span>
+<span class="n">sw</span><span class="o">.</span><span class="n">run_sleep_algorithm</span><span class="p">(</span><span class="s2">&quot;Cole-Kripke&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># runs alg and creates new col named &#39;Cole-Kripke&#39;</span>
+
+<span class="c1"># Detect the boundaries of sleep labels </span>
+<span class="n">sb</span> <span class="o">=</span> <span class="n">SleepBounaryDetector</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">sb</span><span class="o">.</span><span class="n">detect_sleep_boundaries</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="n">output_col</span><span class="p">:</span> <span class="s2">&quot;hyp_sleep_period&quot;</span><span class="p">,</span>
+                                <span class="n">annotation_hour_to_start_search</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span> <span class="n">annotation_col</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                                <span class="n">annotation_merge_tolerance_in_minutes</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+                                <span class="n">annotation_only_largest_sleep_period</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                <span class="n">hr_quantile</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">hr_volarity_threshold</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                                <span class="n">hr_rolling_win_in_minutes</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> 
+                                <span class="n">hr_sleep_search_window</span><span class="p">:</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span>
+                                <span class="n">hr_min_window_length_in_minutes</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span> 
+                                <span class="n">hr_volatility_window_in_minutes</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                                <span class="n">hr_merge_blocks_gap_time_in_min</span><span class="p">:</span> <span class="mi">240</span><span class="p">,</span>
+                                <span class="n">hr_sleep_only_in_sleep_search_window</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                <span class="n">hr_only_largest_sleep_period</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                <span class="n">angle_cols</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[],</span>
+                                <span class="n">angle_use_triaxial_activity</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> 
+                                <span class="n">angle_start_hour</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
+                                <span class="n">angle_quantile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> 
+                                <span class="n">angle_minimum_len_in_minutes</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+                                <span class="n">angle_merge_tolerance_in_minutes</span><span class="p">:</span> <span class="mi">180</span><span class="p">,</span>
+                                <span class="n">angle_only_largest_sleep_period</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Calculate and evaluate sleep metrics against ground truth. </span>
+<span class="n">sm</span> <span class="o">=</span> <span class="n">SleepMetrics</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">sm</span><span class="o">.</span><span class="n">calculate_sleep_efficiency</span><span class="p">(</span><span class="n">sm</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">sleep_wake_col</span><span class="p">:</span> <span class="s1">&#39;hyp_sleep_period&#39;</span><span class="p">,</span> <span class="n">ignore_awakenings_smaller_than_X_epochs</span><span class="p">:</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">sm</span><span class="o">.</span><span class="n">evaluate_sleep_metric</span><span class="p">(</span><span class="n">ground_truth</span><span class="p">:</span> <span class="n">Diary</span><span class="p">(</span><span class="n">w</span><span class="p">)</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">diary_file</span><span class="p">),</span> <span class="n">sleep_wake_col</span><span class="p">:</span> <span class="s1">&#39;hyp_sleep_period&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/sleep_boundary_detector.py">sleep_boundary_detector.py</a>\</p>
+<p><strong>SleepBoundaryDetector</strong> labels the sleep-wake periods on the Wearable.data dataframe using any of the following strategies:</p>
+<ul class="simple">
+<li><p>HR-based algorithm - HR-only signals</p></li>
+<li><p>Angle-algorithm - accelerometer-only signals</p></li>
+<li><p>Annotation-only - diaries or expert labels</p></li>
+</ul>
+<p>Parameters used:</p>
+<ul class="simple">
+<li><p><em>hr_quantile</em> - looks below that quantile in the daily heart rate ECDF (empirical cumulative distribution function) - specific to subject and day / time period</p></li>
+<li><p><em>hr_volarity_threshold</em> - volatility threshold (in beats per minute) for refining the initial sleep boundary labels from the quantile step</p></li>
+<li><p><em>hr_rolling_win_in_minutes</em> - number of minutes over which to apply the HR rolling average</p></li>
+<li><p><em>hr_sleep_search_window</em> - adjusts the start and end time when looking for sleep boundaries. Eg. (20,12) will only look betwee 8pm and 12 noon</p></li>
+<li><p><em>hr_min_window_length_in_minutes</em> - threshold duration for considering an initial sleep-labelled period as sleep. Eg. if 40, then all periods shorter thna 40 min are ignored</p></li>
+<li><p><em>hr_volatility_window_in_minutes</em> - how many minutes to use when calculating HR volatility (epochs for standard deviation)</p></li>
+<li><p><em>hr_merge_blocks_gap_time_in_min</em> - if two sleep blocks are separated by less than this period, then they are merged into a single sleep blocks</p></li>
+<li><p><em>hr_sleep_only_in_sleep_search_window</em> - only look for sleep within search window (boundaries can not be outside pre-defined times)</p></li>
+<li><p><em>hr_only_largest_sleep_period</em> - only keeps longest daily sleep period, if ‘False’, then naps can be detected too\</p></li>
+<li><p><em>angle_cols</em> - columns where the accelerometry data is stored</p></li>
+<li><p><em>angle_start_hour</em> - time to start each 24-hour analysis</p></li>
+<li><p><em>angle-quantile</em> - threshold of activity below which the angle algorithm initially labels sleep</p></li>
+<li><p><em>angle_minimum_len_in_minutes</em> - threshold duration for initial sleep period labels</p></li>
+<li><p><em>angle_merge_tolerance_in_minutes</em> - if two sleep blocks are separated by less than this period, then they are merged into a single sleep blocks</p></li>
+<li><p><em>angle_only_largest_sleep_period</em> - only keeps longest daily sleep period, if ‘False’, then naps can be detected too</p></li>
+</ul>
+<p>The angle algorithm was developed by <a class="reference external" href="https://www.nature.com/articles/s41598-018-31266-z">van Hess et al. (2018)</a></p>
+<p><a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/sleep_wake_analysis.py">sleep_wake_analysis.py</a><br />
+<a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/sleep_metrics.py">sleep_metrics.py</a>\</p>
+<p>Sleep metrics implemented:</p>
+<ul class="simple">
+<li><p><strong>Sleep efficiency</strong> - 0-1 - (total sleep time - duration of awakenings) / total sleep time</p></li>
+<li><p><strong>Awakenings</strong> - int - number of awakenings longer than x epochs during each night</p></li>
+<li><p><strong>SRI (Sleep Regularity Index)</strong> - percent - indicates how regular one’s main sleep windows are, from 0 (sleeps at random times each days) to 100 (sleep between the same interval each day) - metric developed in <a class="reference external" href="https://www.nature.com/articles/s41598-017-03171-4">this paper</a></p></li>
+<li><p><strong>Total Sleep Time</strong> - hours - duration of main labelled sleep window</p></li>
+<li><p><strong>Total Time in Bed</strong> - Total Sleep Time + Sedentary Time detected before and after main sleep window</p></li>
+<li><p><strong>Total Wake Time</strong> - total duration of awakenings during each main sleep window</p></li>
+</ul>
+<p>If sleep annotations such as polysomnography-derived expert labels or subject-annotated sleep diaries are available, they can serve as
+ground truth for evaluating the performance of HypnosPy in terms of the usual evaluation metrics:</p>
+<ul class="simple">
+<li><p><em>Accuracy</em></p></li>
+<li><p><em>Precision</em></p></li>
+<li><p><em>Recall</em></p></li>
+<li><p><em>F1_score</em></p></li>
+<li><p><em>ROC_AUC</em></p></li>
+<li><p><em>Cohen’s kappa</em></p></li>
+</ul>
+</div>
+<div class="section" id="circadian-analysis">
+<h3><strong>Circadian Analysis</strong><a class="headerlink" href="#circadian-analysis" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/circadian_analysis.py">circadian_analysis.py</a></p>
+</div>
+<div class="section" id="physical-activity-analysis">
+<h3><strong>Physical Activity Analysis</strong><a class="headerlink" href="#physical-activity-analysis" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/phyisical_activity.py">physical_activity.py</a>
+<a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/non_wearing_detector.py">non_wearing_detector.py</a></p>
+</div>
+<div class="section" id="validation">
+<h3><strong>Validation</strong><a class="headerlink" href="#validation" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/validator.py">validator.py</a></p>
+</div>
+</div>
+<div class="section" id="visualization">
+<h2>Visualization 🖥<a class="headerlink" href="#visualization" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/visualization.py">visualization.py</a></p>
+</div>
+<div class="section" id="population-analysis">
+<h2>Population Analysis<a class="headerlink" href="#population-analysis" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/experiment.py">experiment.py</a></p>
+</div>
+</div>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            kernelName: "python3",
+            path: "./."
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+              </div>
+              
+        </div>
+    </div>
+    
+    
+    <div class='prev-next-bottom'>
+        
+    <a class='left-prev' id="prev-link" href="preprocessing.html" title="previous page">Preprocessing ⚗</a>
+    <a class='right-next' id="next-link" href="use-cases.html" title="next page">Usage 💡</a>
+
+    </div>
+    <footer class="footer mt-5 mt-md-0">
+    <div class="container">
+      <p>
+        
+          By Hypnospy Developers<br/>
+        
+            &copy; Copyright 2021.<br/>
+      </p>
+    </div>
+  </footer>
+</main>
+
+
+      </div>
+    </div>
+
+    
+  <script src="_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    
+  </body>
+</html>

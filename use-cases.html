@@ -1,0 +1,341 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Usage 💡</title>
+    
+  <link rel="stylesheet" href="_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+  <link rel="stylesheet"
+    href="_static/vendor/open-sans_all/1.44.1/index.css">
+  <link rel="stylesheet"
+    href="_static/vendor/lato_latin-ext/1.44.1/index.css">
+
+    
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx-book-theme.40e2e510f6b7d1648584402491bb10fe.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    
+  <link rel="preload" as="script" href="_static/js/index.d3f166471bb80abb5163.js">
+
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/togglebutton.js"></script>
+    <script src="_static/clipboard.min.js"></script>
+    <script src="_static/copybutton.js"></script>
+    <script >var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="_static/sphinx-book-theme.d31b09fe5c1d09cb49b26a786de4a05d.js"></script>
+    <script async="async" src="https://unpkg.com/thebelab@latest/lib/index.js"></script>
+    <script >
+        const thebe_selector = ".thebe"
+        const thebe_selector_input = "pre"
+        const thebe_selector_output = ".output"
+    </script>
+    <script async="async" src="_static/sphinx-thebe.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Analysis 🔬" href="analysis.html" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+
+
+
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
+    
+        <div class="navbar-brand-box">
+<a class="navbar-brand text-wrap" href="index.html">
+  
+  <img src="_static/logo.png" class="logo" alt="logo">
+  
+  
+</a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form>
+<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+    <ul class="nav sidenav_l1">
+ <li class="toctree-l1">
+  <a class="reference internal" href="intro.html">
+   HypnosPy :sleeping_bed:
+  </a>
+ </li>
+</ul>
+<p class="caption collapsible-parent">
+ <span class="caption-text">
+  Get Started
+ </span>
+</p>
+<ul class="nav sidenav_l1">
+ <li class="toctree-l1">
+  <a class="reference internal" href="getting_started.html">
+   Overview
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="installing.html">
+   Installing HypnosPy
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="referencing.html">
+   Cite our work! 📝✏️
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="referencing.html#research-that-uses-hypnospy">
+   Research that uses HypnosPy 🚀
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="development.html">
+   Contributing 🤝
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="development.html#acknowledgements">
+   Acknowledgements 🙏
+  </a>
+ </li>
+</ul>
+<p class="caption collapsible-parent">
+ <span class="caption-text">
+  Modules
+ </span>
+</p>
+<ul class="current nav sidenav_l1">
+ <li class="toctree-l1 current active collapsible-parent">
+  <a class="reference internal" href="modules.html">
+   Modules
+  </a>
+  <ul class="current collapse-ul">
+   <li class="toctree-l2">
+    <a class="reference internal" href="preprocessing.html">
+     Pre-processing
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="analysis.html">
+     Analysis
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     Use Cases
+    </a>
+   </li>
+  </ul>
+  <i class="fas fa-chevron-down">
+  </i>
+ </li>
+</ul>
+
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  Powered by <a href="https://jupyterbook.org">Jupyter Book</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="row topbar fixed-top container-xl">
+    <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show">
+    </div>
+    <div class="col pl-2 topbar-main">
+        
+        <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+            data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+            aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+            title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+            <i class="fas fa-bars"></i>
+            <i class="fas fa-arrow-left"></i>
+            <i class="fas fa-arrow-up"></i>
+        </button>
+        
+        
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
+            class="fas fa-download"></i></button>
+
+    <div class="dropdown-buttons">
+        <!-- ipynb file if we had a myst markdown file -->
+        
+        <!-- Download raw file -->
+        <a class="dropdown-buttons" href="_sources/use-cases.md"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
+                data-placement="left">.md</button></a>
+        <!-- Download PDF via print -->
+        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
+            onClick="window.print()" data-toggle="tooltip" data-placement="left">.pdf</button>
+    </div>
+</div>
+
+        <!-- Source interaction buttons -->
+
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Connect with source repository"><i class="fab fa-github"></i></button>
+    <div class="dropdown-buttons sourcebuttons">
+        <a class="repository-button"
+            href="https://github.com/ippozuelo/HypnosPy"><button type="button" class="btn btn-secondary topbarbtn"
+                data-toggle="tooltip" data-placement="left" title="Source repository"><i
+                    class="fab fa-github"></i>repository</button></a>
+        <a class="issues-button"
+            href="https://github.com/ippozuelo/HypnosPy/issues/new?title=Issue%20on%20page%20%2Fuse-cases.html&body=Your%20issue%20content%20here."><button
+                type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip" data-placement="left"
+                title="Open an issue"><i class="fas fa-lightbulb"></i>open issue</button></a>
+        
+    </div>
+</div>
+
+
+        <!-- Full screen (wrap in <a> to have style consistency -->
+        <a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+                data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+                title="Fullscreen mode"><i
+                    class="fas fa-expand"></i></button></a>
+
+        <!-- Launch buttons -->
+
+    </div>
+
+    <!-- Table of contents -->
+    <div class="d-none d-md-block col-md-2 bd-toc show">
+        
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+        
+              <div>
+                
+  <div class="section" id="usage">
+<h1>Usage 💡<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p>Here is a simple example of how you can use HypnosPy in your research:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Wearable</span>
+<span class="kn">from</span> <span class="nn">hypnospy.data</span> <span class="kn">import</span> <span class="n">MESAPreProcessing</span>
+<span class="kn">from</span> <span class="nn">hypnospy.analysis</span> <span class="kn">import</span> <span class="n">SleepWakeAnalysis</span><span class="p">,</span> <span class="n">Viewer</span><span class="p">,</span> <span class="n">NonWearingDetector</span>
+
+<span class="c1"># MESAPreProcessing is a specialized class to preprocess csv files from Philips Actiwatch Spectrum devices used in the MESA Sleep experiment</span>
+<span class="c1"># MESA Sleep dataset can be found here: https://sleepdata.org/datasets/mesa/</span>
+<span class="n">preprocessed</span> <span class="o">=</span> <span class="n">MESAPreProcessing</span><span class="p">(</span><span class="s2">&quot;../data/examples_mesa/mesa-sample.csv&quot;</span><span class="p">)</span>
+
+<span class="c1"># Wearable is the main object in HypnosPy.</span>
+<span class="n">w</span> <span class="o">=</span> <span class="n">Wearable</span><span class="p">(</span><span class="n">preprocessed</span><span class="p">)</span>
+
+<span class="c1"># In HypnosPy, we have the concept of ``experiment day&#39;&#39; which by default starts at midnight (00 hours).</span>
+<span class="c1"># We can easily change it to any other time we wish. For example, lets run this script with experiment days</span>
+<span class="c1"># that start at 3pm (15h)</span>
+<span class="n">w</span><span class="o">.</span><span class="n">change_start_hour_for_experiment_day</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+
+<span class="c1"># Sleep Wake Analysis module</span>
+<span class="n">sw</span> <span class="o">=</span> <span class="n">SleepWakeAnalysis</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">sw</span><span class="o">.</span><span class="n">run_sleep_algorithm</span><span class="p">(</span><span class="s2">&quot;ScrippsClinic&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># runs alg and creates new col named &#39;ScrippsClinic&#39;</span>
+<span class="n">sw</span><span class="o">.</span><span class="n">run_sleep_algorithm</span><span class="p">(</span><span class="s2">&quot;Cole-Kripke&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># runs alg and creates new col named &#39;Cole-Kripke&#39;</span>
+
+<span class="c1"># View results</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">Viewer</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">v</span><span class="o">.</span><span class="n">view_signals</span><span class="p">(</span><span class="n">signal_categories</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;activity&quot;</span><span class="p">],</span> <span class="n">signal_as_area</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ScrippsClinic&quot;</span><span class="p">,</span> <span class="s2">&quot;Cole-Kripke&quot;</span><span class="p">,</span> <span class="s2">&quot;Oakley&quot;</span><span class="p">],</span>
+               <span class="n">colors</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;area&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">]},</span> <span class="n">alphas</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;area&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">})</span>
+
+<span class="c1"># Easily remove non-wearing epochs/days.</span>
+<span class="n">nwd</span> <span class="o">=</span> <span class="n">NonWearingDetector</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">nwd</span><span class="o">.</span><span class="n">detect_non_wear</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;choi&quot;</span><span class="p">)</span>
+<span class="n">nwd</span><span class="o">.</span><span class="n">check_valid_days</span><span class="p">(</span><span class="n">max_non_wear_minutes_per_day</span><span class="o">=</span><span class="mi">180</span><span class="p">)</span>
+<span class="n">nwd</span><span class="o">.</span><span class="n">drop_invalid_days</span><span class="p">()</span>
+
+</pre></div>
+</div>
+<p>Some of the amazing features of HypnosPy are showcased <a class="reference external" href="https://github.com/ippozuelo/HypnosPy/blob/master/mdpi_sensors/">here</a>.
+Try it out! 🧪</p>
+</div>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            kernelName: "python3",
+            path: "./."
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+              </div>
+              
+        </div>
+    </div>
+    
+    
+    <div class='prev-next-bottom'>
+        
+    <a class='left-prev' id="prev-link" href="analysis.html" title="previous page">Analysis 🔬</a>
+
+    </div>
+    <footer class="footer mt-5 mt-md-0">
+    <div class="container">
+      <p>
+        
+          By Hypnospy Developers<br/>
+        
+            &copy; Copyright 2021.<br/>
+      </p>
+    </div>
+  </footer>
+</main>
+
+
+      </div>
+    </div>
+
+    
+  <script src="_static/js/index.d3f166471bb80abb5163.js"></script>
+
+
+    
+  </body>
+</html>
