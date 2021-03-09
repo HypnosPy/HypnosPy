@@ -24,3 +24,5 @@
           title: Analysis
         - file: use-cases
           title: Use Cases
+        - file: usage
+          title: Notebook 1
