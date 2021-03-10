@@ -24,5 +24,7 @@
           title: Analysis
         - file: use-cases
           title: Use Cases
-        - file: usage
-          title: Notebook 1
+        - file: basic_use
+          title: Basic Use
+        - file: population_analysis
+          title: Population Analysis
