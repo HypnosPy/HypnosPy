@@ -66,8 +66,8 @@ else:
         # First Batch:
         ["bins", "stats", "bouts", "time", "cosinor", "demo"],                                                  # 0
         ["bins"],                                                                                               # 1
-        ["stats", "hourly_stats"],                                                                              # 2
-        ["hourly_stats"],                                                                                       # 3
+        ["bins", "hourly_bins"],                                                                                # 2
+        ["hourly_bins"],                                                                                        # 3
         ["stats"],                                                                                              # 4
         ["hourly_stats"],                                                                                       # 5
         ["stats", "hourly_stats"],                                                                              # 6
@@ -144,9 +144,8 @@ for param in tqdm(parameters[::order]):
     df_per_pid["participant_age"] = df_per_pid[age_col].copy()
     data = pd.merge(data, df_per_pid[["participant_age", "pid"]])
 
-    handout_test_pids = df_per_day[df_per_day["fold"] == cv_folds-1]["pid"].unique()
-#     #handout_test_pids
-
+    #handout_test_pids = df_per_day[df_per_day["fold"] == cv_folds-1]["pid"].unique()
+    
     data = data.fillna(-1)
     data = modify_data_target(data, "participant_age", target)
 

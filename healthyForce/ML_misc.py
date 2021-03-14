@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pathlib import Path
 
 import pandas as pd
@@ -360,11 +361,16 @@ def modify_data_target(data, age_col, target, keep_others=False):
 
 
 def force_categories(dataset, feature_subset):
+    force_cat, force_num = [], []
+    
+    if "time" in feature_subset:
+        force_cat.append("hyp_weekday")
+    
     if "demo" not in feature_subset:
-        return [], []
+        return force_cat, force_num
 
     if dataset == "hchs":
-        force_cat = ["FLAG_NARC", 'FLAG_AHIGT50', 'FLAG_AGEGE65', 'GENDERNUM', 'AGEGROUP_C2',
+        force_cat.extend(["FLAG_NARC", 'FLAG_AHIGT50', 'FLAG_AGEGE65', 'GENDERNUM', 'AGEGROUP_C2',
                      'AGEGROUP_C2_SUENO', 'AGEGROUP_C5_SUENO', 'AGEGROUP_C6', 'AGEGROUP_C6_NHANES',
                      'EDUCATION_C2', 'EDUCATION_C3', 'EMPLOYED', 'INCOME', 'INCOME_C3', 'INCOME_C5',
                      'MARITAL_STATUS', 'N_HC', 'OCCUPATION_CURR', 'OCCUPATION_LONG', 'SHIFTWORKERYN',
@@ -388,21 +394,20 @@ def force_categories(dataset, feature_subset):
                      'SPEA17', 'SPEA18', 'SPEA3', 'SPEA4', 'SPEA5', 'SPEA6', 'SPEA7', 'SPEA8', 'SPEA9', 'SQEA2',
                      'SQEA20', 'SQEA25', 'SQEA3', 'SQEA4', 'SQEA5', 'SQEA6', 'SQEA7', 'SQEA8', 'SQEA9',
                      'SQEA1', 'SQEA10', 'SQEA11', 'SQEA12', 'SQEA13', 'SQEA14', 'SQEA15', 'SQEA16', 'SQEA17',
-                     'SQEA18', 'SQEA19',
-                     ]
-        force_num = ['AGE', 'AGE_SUENO', 'COMMUTEHOME', 'COMMUTEWORK', 'SHIFT_LENGTH', 'TOTCOMMUTE_DAY',
+                     'SQEA18', 'SQEA19'])
+        force_num.extend(['AGE', 'AGE_SUENO', 'COMMUTEHOME', 'COMMUTEWORK', 'SHIFT_LENGTH', 'TOTCOMMUTE_DAY',
                      'TOTCOMMUTE_WEEK', 'WORK_HRS_DAY', 'WORK_HRS_WEEK', 'CIGARETTE_PACK_YEARS',
                      'CIGARETTES_YEAR', 'EXPOSURE_YEAR', 'FRAME_CVD_RISK_10YR', 'HBA1C_SI', 'HOMA_B',
                      'HOMA_IR', 'TOTALDRINKS_PER_WEEK', 'SQEA21', 'SQEA22', 'SQEA23', 'SQEA24',
-                     'SLEA1A_2401', 'SLEA1C_2401', 'SLEA2A_2401', 'SLEA2C_2401']
+                     'SLEA1A_2401', 'SLEA1C_2401', 'SLEA2A_2401', 'SLEA2C_2401'])
     else:
-        force_cat = ['race1c', 'gender1', 'trbleslpng5', 'bcksleep5', 'wakeup5', 'wakeearly5', 'slpngpills5',
+        force_cat.extend(['race1c', 'gender1', 'trbleslpng5', 'bcksleep5', 'wakeup5', 'wakeearly5', 'slpngpills5',
                      'irritable5', 'sleepy5', 'typicalslp5', 'readng5', 'tv5', 'sittng5', 'riding5', 'lyngdwn5',
                      'talkng5', 'quietly5', 'car5', 'dinner5', 'driving5', 'snored5', 'stpbrthng5', 'legsdscmfrt5',
                      'rubbnglgs5', 'wrserest5', 'wrseltr5', 'feelngbstr5', 'tired5', 'mosttired4', 'feelngbstpk5',
                      'types5', 'slpapnea5', 'cpap5', 'dntaldv5', 'uvula5', 'insmnia5', 'rstlesslgs5',
-                     'wrksched5', 'extrahrs5']
-        force_num = ['sleepage5c', 'wkendsleepdur5t', 'nap5', 'whiirs5c', 'epslpscl5c', 'hoostmeq5c']
+                     'wrksched5', 'extrahrs5'])
+        force_num.extend(['sleepage5c', 'wkendsleepdur5t', 'nap5', 'whiirs5c', 'epslpscl5c', 'hoostmeq5c'])
 
     return force_cat, force_num
 
@@ -466,3 +471,6 @@ def delete_pkl(filename, zipped=False):
         os.remove(filename + ".pkl.gz")
     else:
         os.remove(filename + ".pkl")
+# -
+
+
