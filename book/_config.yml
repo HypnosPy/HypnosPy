@@ -29,4 +29,5 @@ html:
   use_repository_button: true
 
 launch_buttons:
+  notebook_interface: "jupyterlab"
   binderhub_url: https://mybinder.org/v2/gh/ippozuelo/HypnosPy/cd818b1a7c2d880e34f61a40fcad255913a1571a
