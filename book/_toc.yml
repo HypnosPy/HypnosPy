@@ -24,11 +24,8 @@
           title: Analysis
         - file: use-cases
           title: Use Cases
-        - file: basic_use
-          title: Basic Use
-        - file: population_analysis
-          title: Population Analysis
-        - file: Test
-        - file: shiftworker
-        - title: Shiftworker analysis
+        - file: basic_use.ipynb
+        - file: population_analysis.ipynb
+        - file: Test.ipynb
+        - file: shiftworker.ipynb
           
