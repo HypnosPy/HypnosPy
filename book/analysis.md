@@ -114,6 +114,29 @@ ground truth for evaluating the performance of HypnosPy in terms of the usual ev
 
 [circadian_analysis.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/circadian_analysis.py)
 
+HypnosPy offers two options for analyzing circadian rhythms:
+* *cosinor analysis* - based on [CosinorPy](https://github.com/mmoskon/CosinorPy) methods
+* *SSA* (singular spectrum analysis) - based on code developed by [Fossion et al. (2017)](https://doi.org/10.1371/journal.pone.0188674)
+
+Cosinor analysis fits one sine waves or a sum of sine waves to a time series using a least-squares approach. It assumes a given period (usually 24 hours) produces a number of parameters:
+* mesor - signal mean over a period. For example the mean heart rate (HR) 
+* amplitude - the distance between peak value and mesor
+* acrophase - timing of peak value relative to each cycle. For example, this would be the minute / hour of maximum activity, or highest heart rate during a day
+It has been the historical method of choice for circadian analysis, as it can work with time series shorter than the assumed period. However, there are some drawbacks. Heart rate and physical activity are nonstationary rhythms whose parameters change from cycle to cycle in ways that are biologically significant, but which cosinor analysis can miss. For example, mean HR can increase during bouts of illness of overtraining. Someone who exercises strenuously once a day, but is sedentary otherwise is different than someone who is constantly doing light physical activities. Cosinor analysis only fits once curve to the entire time series, which limits its ability to analyse intraindividual variation.
+
+[SSA](https://en.wikipedia.org/wiki/Singular_spectrum_analysis) is a non-parametric method that aims to decompose a time series into a sum of interpretable components:
+* trend
+* periodic components
+* noise
+While it has been used less in chronobiological research, it does not rely on a priori assumptions about period, unlike cosinor rhythmometry. Taking the daily peak of the main periodic components produced by SSA produces an acrophase-like metric that is free to vary from day to day according to the subject's activity. For example, if someone exercise at 10am on Day 1, 6pm on Day 2, and 10am again on Day 3, the resulting periods will be 32 hours and 16 hours respectively. Cosinor can not accomodate that variation if applied to the entire time series.
+
+This means that SSA-derived metrics are easier to integrate with sleep labels such as sleep onset and offset. New metrics such as acrophase-onset could prove useful in research studies looking at how the timing of physical activity influences sleep and viceversa.
+
+```python
+from hypnospy import Wearable
+from hypnospy.analysis import CircadianAnalysis
+```
+
 ### **Physical Activity Analysis**
 
 [physical_activity.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/phyisical_activity.py)
