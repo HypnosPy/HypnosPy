@@ -27,3 +27,6 @@ repository:
 html:
   use_issues_button: true
   use_repository_button: true
+
+launch_buttons:
+  binderhub_url: https://mybinder.org/v2/gh/ippozuelo/HypnosPy/cace77370f4e0a72369f734b3ee422d5e561deae
