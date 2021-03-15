@@ -409,6 +409,30 @@ ground truth for evaluating the performance of HypnosPy in terms of the usual ev
 <div class="section" id="circadian-analysis">
 <h3><strong>Circadian Analysis</strong><a class="headerlink" href="#circadian-analysis" title="Permalink to this headline">¶</a></h3>
 <p><a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/circadian_analysis.py">circadian_analysis.py</a></p>
+<p>HypnosPy offers two options for analyzing circadian rhythms:</p>
+<ul class="simple">
+<li><p><em>cosinor analysis</em> - based on <a class="reference external" href="https://github.com/mmoskon/CosinorPy">CosinorPy</a> methods</p></li>
+<li><p><em>SSA</em> (singular spectrum analysis) - based on code developed by <a class="reference external" href="https://doi.org/10.1371/journal.pone.0188674">Fossion et al. (2017)</a></p></li>
+</ul>
+<p>Cosinor analysis fits one sine waves or a sum of sine waves to a time series using a least-squares approach. It assumes a given period (usually 24 hours) produces a number of parameters:</p>
+<ul class="simple">
+<li><p>mesor - signal mean over a period. For example the mean heart rate (HR)</p></li>
+<li><p>amplitude - the distance between peak value and mesor</p></li>
+<li><p>acrophase - timing of peak value relative to each cycle. For example, this would be the minute / hour of maximum activity, or highest heart rate during a day
+It has been the historical method of choice for circadian analysis, as it can work with time series shorter than the assumed period. However, there are some drawbacks. Heart rate and physical activity are nonstationary rhythms whose parameters change from cycle to cycle in ways that are biologically significant, but which cosinor analysis can miss. For example, mean HR can increase during bouts of illness of overtraining. Someone who exercises strenuously once a day, but is sedentary otherwise is different than someone who is constantly doing light physical activities. Cosinor analysis only fits once curve to the entire time series, which limits its ability to analyse intraindividual variation.</p></li>
+</ul>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Singular_spectrum_analysis">SSA</a> is a non-parametric method that aims to decompose a time series into a sum of interpretable components:</p>
+<ul class="simple">
+<li><p>trend</p></li>
+<li><p>periodic components</p></li>
+<li><p>noise
+While it has been used less in chronobiological research, it does not rely on a priori assumptions about period, unlike cosinor rhythmometry. Taking the daily peak of the main periodic components produced by SSA produces an acrophase-like metric that is free to vary from day to day according to the subject’s activity. For example, if someone exercise at 10am on Day 1, 6pm on Day 2, and 10am again on Day 3, the resulting periods will be 32 hours and 16 hours respectively. Cosinor can not accomodate that variation if applied to the entire time series.</p></li>
+</ul>
+<p>This means that SSA-derived metrics are easier to integrate with sleep labels such as sleep onset and offset. New metrics such as acrophase-onset could prove useful in research studies looking at how the timing of physical activity influences sleep and viceversa.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Wearable</span>
+<span class="kn">from</span> <span class="nn">hypnospy.analysis</span> <span class="kn">import</span> <span class="n">CircadianAnalysis</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="physical-activity-analysis">
 <h3><strong>Physical Activity Analysis</strong><a class="headerlink" href="#physical-activity-analysis" title="Permalink to this headline">¶</a></h3>
