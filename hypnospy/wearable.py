@@ -1,6 +1,6 @@
 import hypnospy
 import pandas as pd
-from hypnospy import Diary, misc
+from hypnospy import Diary, misc, CGM
 import h5py
 
 
@@ -156,6 +156,12 @@ class Wearable(object):
             if not pd.isna(row["sleep_onset"]) and not pd.isna(row["sleep_offset"]):
                 self.data.loc[(self.data[self.time_col] >= row["sleep_onset"]) & (
                         self.data[self.time_col] <= row["sleep_offset"]), self.diary_sleep] = True
+
+    def add_cgm(self, cgm: CGM):
+        cgm.data = cgm.data[cgm.data["pid"] == self.get_pid()]
+        self.data.set_index(self.time_col,inplace=True)
+        self.data = self.data.join(cgm.data[['pid','device','serial','hyp_time_col','auto0_man1','gluc_mgdl','ket_mmol']],
+                                   how='outer', on='hyp_time_col', rsuffix='_cgm')
 
     def get_total_sleep_time_per_day(self, sleep_col: str = None, based_on_diary: bool = False):
         """

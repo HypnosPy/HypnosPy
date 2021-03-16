@@ -24,12 +24,50 @@ class RawProcessing(object):
                  additional_data: object = None,
                  device_location: str = None,
                  ):
+        """
+
+
+        Parameters
+        ----------
+        filename : str
+        
+        # Configuration for activity                 
+        cols_for_activity : list / str
+            DESCRIPTION. Which columns record activity
+        col_for_mets : object, optional
+            DESCRIPTION. Column that records METs.
+        is_emno : bool, optional
+            DESCRIPTION. True if the cols_for_activity are already computed as the ENMO (Euclidean Norm Minus One)
+        is_act_count : bool, optional
+            DESCRIPTION. The default is False. True us cols_for_activity are already computed as counts
+        # Datetime parameters                 
+        col_for_datetime : str, optional
+            DESCRIPTION. The default is "time". Name of timestamp column.
+        start_of_week : int, optional
+            DESCRIPTION. The default is -1. Integer that represents the day at the start of the week
+        strftime : str, optional
+            DESCRIPTION. The default is None. Format to parse col_for_datetime
+        # PID parameters                 
+        col_for_pid : str, optional
+            DESCRIPTION. The default is None. Participant ID columns
+        pid : int, optional
+            DESCRIPTION. The default is -1.
+        # HR parameters                 
+        col_for_hr : str, optional
+            DESCRIPTION. The default is None. Column with heart rate data
+        # Any additional data?                 
+        additional_data : object, optional
+            DESCRIPTION. The default is None.
+        device_location : str, optional
+            DESCRIPTION. The default is None. Where this device was located (options are: "bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all")
+
+        Returns
+        -------
+        None.
 
         """
-        :param filename: input filepath
-        :param device_location: where this device was located (options are: "bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all")
-        :param additional_data:
-        """
+        
+        
         # self.possible_locations = ["bw", "hip", "dw", "ndw", "chest", "hp_ch", "hp_bw", "all"]
         self.device = None
         self.filename = filename
@@ -57,13 +95,63 @@ class RawProcessing(object):
         return self.pid
 
     def set_time_col(self, new_name: str):
+        """
+        
+
+        Parameters
+        ----------
+        new_name : str
+            DESCRIPTION. Name of new time col
+
+        Returns
+        -------
+        None.
+
+        """
         if new_name is not None:
             self.internal_time_col = new_name
 
     def __configure_hr(self, col_for_hr):
+        """
+        
+
+        Parameters
+        ----------
+        col_for_hr : str
+            DESCRIPTION. Record heart rate column name
+
+        Returns
+        -------
+        None.
+
+        """
         self.internal_hr_col = col_for_hr
 
     def __configure_activity(self, cols_for_activity, col_for_mets, is_emno, is_act_count):
+        """
+        
+
+        Parameters
+        ----------
+        cols_for_activity : str / list
+            DESCRIPTION. Column(s) where the participant's activity is recorded. Up to 3 for triaxial accelerometry
+        col_for_mets : str
+            DESCRIPTION. Column where METs are recorded
+        is_emno : bool
+            DESCRIPTION. Is the activity column already in ENMO form
+        is_act_count : bool
+            DESCRIPTION. Is the activity column already recorded as activity counts
+
+        Raises
+        ------
+        ValueError
+            DESCRIPTION. Need at least one col and at most 3 columns to represent activity.
+
+        Returns
+        -------
+        None.
+
+        """
         self.is_act_count = is_act_count
         self.is_emno = is_emno
         self.naxis = len(cols_for_activity)
@@ -100,6 +188,28 @@ class RawProcessing(object):
             self.pid = pid
 
     def __configure_datetime(self, col_for_datetime, strftime, start_of_week):
+        """
+        Sets timestamp column for the wearable signal
+
+        Parameters
+        ----------
+        col_for_datetime : str
+            DESCRIPTION. Name of desired timestamp column.
+        start_of_week : int
+            DESCRIPTION. The default is -1. Integer that represents the day at the start of the week
+        strftime : str, optional
+            DESCRIPTION. Format to parse col_for_datetime
+
+        Raises
+        ------
+        ValueError
+            DESCRIPTION. Either strftime or start_of_week is required.
+
+        Returns
+        -------
+        None.
+
+        """
         if strftime is None and start_of_week is None:
             raise ValueError("Either strftime or start_of_week need to have a valid value.")
 
@@ -161,9 +271,18 @@ class RawProcessing(object):
 
     def export_hypnospy(self, filename):
         """
+        
 
-        :param filename:
-        :return:
+        Parameters
+        ----------
+        filename : str
+            DESCRIPTION. Path where file should be saved.
+
+        Returns
+        ----------
+        None
+        Saves preprocessed file to disk
+
         """
 
         # TODO: find a better way to save these fields to file
@@ -195,7 +314,15 @@ class RawProcessing(object):
         """ Obtain device type
         Used to decide which way to parse the data from input file
 
-        :return: Wearable type (Axivity, GeneActiv, Actigraph, Actiwatch and Apple Watch currently supported)
+        Parameters
+        ----------
+        filename : str
+            DESCRIPTION : Path of file to be analysed.
+
+        Returns
+        ----------
+        Wearable type (Axivity, GeneActiv, Actigraph, Actiwatch and Apple Watch currently supported)
+        
         """
         f = filename.lower()
         if f.endswith('.cwa') or f.endswith('.cwa.gz') or f.endswith('CWA'):
@@ -249,8 +376,23 @@ class RawProcessing(object):
 
 
 class ActiwatchSleepData(RawProcessing):
-
+    """ RawProcessing child class to be used when working with Actiwatch data
+    """
+        
+        
     def __init__(self, filename, device_location=None, col_for_datetime="time", col_for_pid="pid"):
+        """
+        
+
+        Parameters
+        ----------
+        Specific for files from Actiwatch devices. See RawProcessing() documentation for further info.
+
+        Returns
+        -------
+        None.
+
+        """
         super().__init__(filename, device_location=device_location,
                          cols_for_activity=["activity"],
                          is_act_count=True,
@@ -267,8 +409,24 @@ class ActiwatchSleepData(RawProcessing):
 # TODO: missing Actiheart (Fenland, BBVS), Axivity (BBVS, Biobank)
 
 class MESAPreProcessing(RawProcessing):
+    """ RawProcessing child class to be used when working with data from the MESA study
+       https://www.mesa-nhlbi.org/
+    
+    """
 
     def __init__(self, filename, device_location=None, col_for_datetime="linetime", col_for_pid="mesaid"):
+        """
+        
+
+        Parameters
+        ----------
+        Specific for files from the MESA Study. See RawProcessing() documentation for further info.
+
+        Returns
+        -------
+        None.
+
+        """
         super().__init__(filename, device_location=device_location,
                          cols_for_activity=["activity"],
                          is_act_count=True,
@@ -283,9 +441,25 @@ class MESAPreProcessing(RawProcessing):
 
 
 class MMASHPreProcessing(RawProcessing):
+    """ RawProcessing child class to be used when working with data from the MMASH dataset
+       https://physionet.org/content/mmash/1.0.0/
+    
+    """
 
     def __init__(self, filename, device_location=None, col_for_datetime="time", col_for_pid="pid",
                  col_for_hr="HR", cols_for_activity=["Axis1", "Axis2", "Axis3"], strftime="%Y-%b-%d %H:%M:%S"):
+        """
+        
+
+        Parameters
+        ----------
+        Specific for files from the MMASH dataset. See RawProcessing() documentation for further info.
+
+        Returns
+        -------
+        None.
+
+        """
         super().__init__(filename, device_location=device_location,
                          # Activity information
                          cols_for_activity=cols_for_activity,
@@ -300,8 +474,24 @@ class MMASHPreProcessing(RawProcessing):
         self.device = "actigraphy"
 
 class HCHSPreProcessing(RawProcessing):
+    """RawProcessing child class to be used when working with data from the MMASH dataset
+       https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs000810.v1.p1
+    
+    """
 
     def __init__(self, filename, device_location=None, col_for_datetime="time", col_for_pid="pid"):
+        """
+        
+
+        Parameters
+        ----------
+        Specific for files from the HCHS dataset. See RawProcessing() documentation for further info.
+
+        Returns
+        -------
+        None.
+
+        """
         super().__init__(filename, device_location=device_location,
                          cols_for_activity=["activity"],
                          is_act_count=True,
