@@ -7,7 +7,11 @@ import numpy as np
 
 
 class PhysicalActivity(object):
-
+    """
+    
+    Class used to analyse the device wearer's activity signals based on the Wearable.data df
+    
+    """
     def __init__(self, input: {Experiment, Wearable}, cutoffs: list = None, names: list = None):
         """
 

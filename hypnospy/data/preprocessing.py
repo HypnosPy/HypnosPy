@@ -30,7 +30,7 @@ class RawProcessing(object):
         Parameters
         ----------
         filename : str
-        
+            DESCRIPTION. Path/to/file to be analysed.
         # Configuration for activity                 
         cols_for_activity : list / str
             DESCRIPTION. Which columns record activity

@@ -137,11 +137,22 @@
      Analysis
     </a>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="use-cases.html">
-     Use Cases
-    </a>
-   </li>
+  </ul>
+  <i class="fas fa-chevron-down">
+  </i>
+ </li>
+</ul>
+<p class="caption collapsible-parent">
+ <span class="caption-text">
+  Use Cases
+ </span>
+</p>
+<ul class="nav sidenav_l1">
+ <li class="toctree-l1 collapsible-parent">
+  <a class="reference internal" href="use-cases.html">
+   Use Pattern
+  </a>
+  <ul class="collapse-ul">
    <li class="toctree-l2">
     <a class="reference internal" href="basic_use.html">
      Basic Use
@@ -150,11 +161,6 @@
    <li class="toctree-l2">
     <a class="reference internal" href="population_analysis.html">
      Population Analysis
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="Test.html">
-     test
     </a>
    </li>
    <li class="toctree-l2">
@@ -294,6 +300,8 @@
 <p>Hypnospy is implemented in Python with standard data science dependencies and uses the object-oriented paradigm. This makes Hypnospy an open-source framework that is both easy to use and to extend (please <strong>join us</strong> for this mission! :rocket:). Data inputs in HypnosPy rely only on the module called <strong>RawProcessing</strong> and its descendants. <strong>RawProcessing</strong> is used to translate the raw data captured by a wearable device (i.e., what is the input data format? A .csv file? What are the columns, if any, for the activity count or heart rate?) to Hypnospy’s <strong>Wearable</strong> module. We already provide a set of pre-defined preprocessors for different open collections commonly used in research, such as the Multi-Ethnic Study of Atherosclerosis (MESA) and the Hispanic Community Health Study (HCHS) collections from <a class="reference external" href="http://www.sleepdata.org">http://www.sleepdata.org</a>, which have been increasingly used in machine learning and epidemiological studies. Nevertheless, users can easily specific their own preprocessing module using or extending the <strong>RawProcessing</strong> module.</p>
 <p>While all data analysis in HypnosPy can be performed on one single wearable, Hypnospy provides a layer of abstraction for experiments containing multiple wearables, namely, the <strong>Experiment</strong> module. All further data analysis can be performed on a single wearable or on a set of them (using the <strong>Experiment</strong> module). With Hypnospy, it is straightforward to perform complex data analysis, such as <strong>sleep inferences, circadian analysis or non-wear detection, among many other wearable related functionalities</strong>. At the core of HypnosPy is the modularity and choice of algorithms for these different purposes. A holistic overview of the software architecture is provided in the Figure bellow:</p>
 <p><img alt="architecture" src="_images/SoftwareArchitecture.png" /></p>
+<div class="toctree-wrapper compound">
+</div>
 <div class="toctree-wrapper compound">
 </div>
 <div class="toctree-wrapper compound">

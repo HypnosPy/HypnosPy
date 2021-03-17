@@ -8,6 +8,11 @@ import warnings
 
 
 class SleepBoudaryDetector(object):
+    """
+    
+    Class used to label sleep/wake periods for data in a Wearable object. See HypnosPy book for use example.
+    
+    """
 
     def __init__(self, input: {Wearable, Experiment}):
 
@@ -325,17 +330,67 @@ class SleepBoudaryDetector(object):
                                 angle_merge_tolerance_in_minutes: int = 180,
                                 angle_only_largest_sleep_period: bool = True):
         """
-            Detected the sleep boundaries.
+        Detects and labels sleep boundaries - calls the static labelling methods for each specific labelling strategy
 
-            param
-            -----
+        Parameters
+        ----------
+        strategy : str
+            DESCRIPTION. "hr", "angle","annotation"
+            "hr" - HypnosPy HR-based algorithm    
+            "angle" - algorithm based on triaxial accelerometry as adapted from van Hees et al. (2018). See HypnosPy page.
+            "annotation" - boundaries from sleep diaries or PSG
+        
+        output_col : str, optional
+            DESCRIPTION. The default is "hyp_sleep_period". This is where the sleep/wake period appears as a bool (sleep=1)
+        annotation_hour_to_start_search : int, optional
+            DESCRIPTION. The default is 18. Start of each analysis day.
+        annotation_col : str, optional
+            DESCRIPTION. The default is None. Columns that holds the sleep diary / PSG annotations.
+        annotation_merge_tolerance_in_minutes : int, optional
+            DESCRIPTION. The default is 20. Sleep periods shorter than this are merged. 
+        annotation_only_largest_sleep_period : bool, optional
+            DESCRIPTION. The default is True. Only keeps one sleep period per analysis day.
+        hr_quantile : float, optional
+            DESCRIPTION. The default is 0.4. All epochs with HR < hr_quantile (based on 24-hour ECDF) are initially considered as sleep
+        hr_volarity_threshold : int, optional
+            DESCRIPTION. The default is 5. HR standard deviation threshold (over hr_volatility_window_in_minutes) 
+                        used to determine final sleep/wake boundaries  
+        hr_rolling_win_in_minutes : int, optional
+            DESCRIPTION. The default is 5. Smoothing window for taking the HR rolling average applying the sleep labelling algorithm.
+        hr_sleep_search_window : tuple, optional
+            DESCRIPTION. The default is (20, 12). Hour window when sleep is assumed to be present (i.e. 8pm-12 noon default)
+        hr_min_window_length_in_minutes : int, optional
+            DESCRIPTION. The default is 40. Minimum duration for initial sleep windows to progress to the further stages of the algorithm
+        hr_volatility_window_in_minutes : int, optional
+            DESCRIPTION. The default is 10. Window over which to take the HR volatility/stdev
+        hr_merge_blocks_gap_time_in_min : int, optional
+            DESCRIPTION. The default is 240. Maximum gap between consecutive sleep periods that can be merged to give the final sleep periods
+        hr_sleep_only_in_sleep_search_window : bool, optional
+            DESCRIPTION. The default is False. Look for sleep only in the sleep_search_window or the entire analysis day
+        hr_only_largest_sleep_period : bool, optional
+            DESCRIPTION. The default is False. If True, the algorithm only keeps the largest detected sleep window in each analysis day
+        angle_cols : list, optional
+            DESCRIPTION. The default is []. Where the accelerometry data is to be taken from.
+        angle_use_triaxial_activity : bool, optional
+            DESCRIPTION. The default is False. Is the data triaxial (are there 3 angle_cols to analyse?)
+        angle_start_hour : int, optional
+            DESCRIPTION. The default is 15. Start of each analysis day.
+        angle_quantile : float, optional
+            DESCRIPTION. The default is 0.1. Activity threshold (based on 24-hour activity ECDF) under which the epoch is initially labelled as sleep
+        angle_minimum_len_in_minutes : int, optional
+            DESCRIPTION. The default is 30. Minimum duration for initial sleep windows to progress to the further stages of the algorithm
+        angle_merge_tolerance_in_minutes : int, optional
+            DESCRIPTION. The default is 180. Maximum gap between consecutive sleep periods that can be merged to give the final sleep periods
+        angle_only_largest_sleep_period : bool, optional
+            DESCRIPTION. The default is True. If True, the algorithm only keeps the largest detected sleep window in each analysis day
 
-            strategy: "annotation", "hr", "angle"
-
-            Creates a new col (output_col, default: 'hyp_sleep_period')
-            which has value 1 if inside the sleep boundaries and 0 otherwise.
+        Returns
+        -------
+        Original Wearable.data, but with a bool output_col containing the sleep/wake label for each epoch
 
         """
+            
+        
         # (1) HR sleeping window approach here (SLEEP 2020 paper)
         # (2) expert annotations or PSG
         # (3) Van Hees heuristic method
@@ -380,6 +435,22 @@ class SleepBoudaryDetector(object):
 
 
     def _evaluate_sleep_boundaries_pair(self, ground_truth: str, other: str) -> pd.DataFrame:
+        """
+        Evaluate sleep labels versus ground truth, producing a df with TST, sleep onset, sleep offset, MSE (mean squared error) and Cohen's kappa
+
+        Parameters
+        ----------
+        ground_truth : str
+            DESCRIPTION. file with annotations (sleep diaries or PSG expeert annotations)
+        other : str
+            DESCRIPTION.
+
+        Returns
+        -------
+        df_acc : DataFrame
+            DESCRIPTION. Evaluation summary
+
+        """
 
         df_acc = []
         expid = 0

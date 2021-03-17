@@ -12,7 +12,10 @@ from hypnospy import Experiment
 import warnings
 
 class Viewer(object):
-
+    """
+    Class used for plotting sleep, activity and HR signals from the Wearable.data df.
+    """
+    
     def __init__(self, input: {Wearable, Experiment}):
 
         if input is None:

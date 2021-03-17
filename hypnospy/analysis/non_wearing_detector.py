@@ -25,7 +25,40 @@ class NonWearingDetector(object):
                         window_spike_tolerance=0,
                         use_vector_magnitude=False,
                         ):
+        """
+        Detects periods of device non-wear in the Wearable.data df according to the selected non-wear strategy / algorithm. Labels non-wear in the boolean wearing_col
 
+        Parameters
+        ----------
+        strategy : TYPE
+            DESCRIPTION.
+        wearing_col : TYPE, optional
+            DESCRIPTION. The default is "hyp_wearing".
+        activity_threshold : TYPE, optional
+            DESCRIPTION. The default is 0. The activity threshold is the value of the count that is considered "zero", since we are searching for a sequence of zero counts.
+        min_period_len_minutes : TYPE, optional
+            DESCRIPTION. The default is 90. The minimum length of the consecutive zeros that can be considered valid non wear time.
+        spike_tolerance : TYPE, optional
+            DESCRIPTION. The default is 2, meaning that we allow for 2 spikes in the act_data, i.e. artifical movement. 
+                        Any count that is above the activity threshold is considered a spike.
+                        The tolerance defines the number of spikes that are acceptable within a sequence of zeros.
+                        
+        min_window_len_minutes : TYPE, optional
+            DESCRIPTION. The default is 30. Minimum length of upstream or downstream time window (referred to as window2 in the paper) for consecutive zero counts required before and after the artifactual movement interval to be considered a nonwear time interval.
+        window_spike_tolerance : TYPE, optional
+            DESCRIPTION. The default is 0.
+        use_vector_magnitude : bool, optional
+            DESCRIPTION. The default is False. If set to True, then use the vector magniturde of X,Y, and Z axis, otherwise, use X-axis only.
+
+        Raises
+        ------
+        ValueError
+            DESCRIPTION. When the participant was not wearing the device. These epochs' activity is filled with -0.0001.
+
+        Returns
+        -------
+
+        """
         for wearable in self.wearables:
 
             if strategy in ["choi", "choi2011", "choi11"]:
@@ -48,6 +81,30 @@ class NonWearingDetector(object):
     # combine the first two strategies, then will chain the result on the
     # remaining strategies.
     def combine_non_wearing_strategies(self, strategies, output_col="combined_strategy", func=np.logical_and):
+        """
+        Method that combines the vote of 2 or more non-wear detection strategies. Non-wear is labelled if all strategies agree.
+
+        Parameters
+        ----------
+        strategies : list
+            DESCRIPTION. Which non-wear strategies to combine.
+        output_col : TYPE, optional
+            DESCRIPTION. The default is "combined_strategy". Name of column to add to df
+        func : TYPE, optional
+            DESCRIPTION. The default is np.logical_and.
+
+        Raises
+        ------
+        ValueError
+            DESCRIPTION. List 2 or more strategies.
+        KeyError
+            DESCRIPTION. When no wearing detection column is found for wearables.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if len(strategies) < 2:
             raise ValueError("Strategies need to be 2 or more to combine them.")

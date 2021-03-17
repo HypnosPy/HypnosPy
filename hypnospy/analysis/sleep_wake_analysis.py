@@ -121,7 +121,13 @@ class SleepWakeAnalysis(object):
 
     # %%
     def run_all_sleep_algorithms(self, activityIdx=None, rescoring=False, inplace=False):
-        """ This function runs the algorithm of choice"
+        """ 
+        Runs all the sleep algorithms in one go, both the original and rescored according to Webster rules.
+        
+        Returns
+        ----------
+        df with a column for each sleep algorithm label
+        
         """
 
         results = {}
@@ -268,6 +274,22 @@ class SleepWakeAnalysis(object):
     # Webster Rescoring Rules
     @staticmethod
     def webster_rescoring_rules(act, rescoring_rules="abcde"):
+        """
+        
+
+        Parameters
+        ----------
+        act : TYPE
+            DESCRIPTION.
+        rescoring_rules : TYPE, optional
+            DESCRIPTION. The default is "abcde". Applies the Webster rescoring rules. Add and delete letters (case insensitive) according to which rules you want to run.
+
+        Returns
+        -------
+        df
+            DESCRIPTION. Contains columns with rescored sleep labels
+
+        """
 
         if act.empty:
             return act

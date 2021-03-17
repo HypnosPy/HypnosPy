@@ -54,7 +54,7 @@
     <script async="async" src="_static/sphinx-thebe.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Title: Dont forget to add a title!" href="Test.html" />
+    <link rel="prev" title="Population analysis" href="population_analysis.html" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="en" />
@@ -121,12 +121,12 @@
   Modules
  </span>
 </p>
-<ul class="current nav sidenav_l1">
- <li class="toctree-l1 current active collapsible-parent">
+<ul class="nav sidenav_l1">
+ <li class="toctree-l1 collapsible-parent">
   <a class="reference internal" href="modules.html">
    Modules
   </a>
-  <ul class="current collapse-ul">
+  <ul class="collapse-ul">
    <li class="toctree-l2">
     <a class="reference internal" href="preprocessing.html">
      Pre-processing
@@ -137,11 +137,22 @@
      Analysis
     </a>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="use-cases.html">
-     Use Cases
-    </a>
-   </li>
+  </ul>
+  <i class="fas fa-chevron-down">
+  </i>
+ </li>
+</ul>
+<p class="caption collapsible-parent">
+ <span class="caption-text">
+  Use Cases
+ </span>
+</p>
+<ul class="current nav sidenav_l1">
+ <li class="toctree-l1 current active collapsible-parent">
+  <a class="reference internal" href="use-cases.html">
+   Use Pattern
+  </a>
+  <ul class="current collapse-ul">
    <li class="toctree-l2">
     <a class="reference internal" href="basic_use.html">
      Basic Use
@@ -150,11 +161,6 @@
    <li class="toctree-l2">
     <a class="reference internal" href="population_analysis.html">
      Population Analysis
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="Test.html">
-     test
     </a>
    </li>
    <li class="toctree-l2 current active">
@@ -295,7 +301,21 @@
 <span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="ne">ModuleNotFoundError</span>: No module named &#39;hypnospy&#39;
+<span class="ne">c</span>:\users\mariu\.conda\envs\p37\lib\site-packages\hypnospy\__init__.py in &lt;module&gt;
+<span class="g g-Whitespace">      </span><span class="mi">2</span> 
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">.diary</span> <span class="kn">import</span> <span class="n">Diary</span>
+<span class="ne">----&gt; </span><span class="mi">4</span> <span class="kn">from</span> <span class="nn">.wearable</span> <span class="kn">import</span> <span class="n">Wearable</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">from</span> <span class="nn">.experiment</span> <span class="kn">import</span>  <span class="n">Experiment</span>
+<span class="g g-Whitespace">      </span><span class="mi">6</span> 
+
+<span class="ne">c</span>:\users\mariu\.conda\envs\p37\lib\site-packages\hypnospy\wearable.py in &lt;module&gt;
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Diary</span>
+<span class="ne">----&gt; </span><span class="mi">4</span> <span class="kn">import</span> <span class="nn">h5py</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> 
+<span class="g g-Whitespace">      </span><span class="mi">6</span> 
+
+<span class="ne">ModuleNotFoundError</span>: No module named &#39;h5py&#39;
 </pre></div>
 </div>
 </div>
@@ -461,7 +481,7 @@ C:\Users\mariu\AppData\Roaming\Python\Python37\site-packages\matplotlib\axes\_ba
         
         <div class='prev-next-bottom'>
             
-    <a class='left-prev' id="prev-link" href="Test.html" title="previous page">Title: Dont forget to add a title!</a>
+    <a class='left-prev' id="prev-link" href="population_analysis.html" title="previous page">Population analysis</a>
 
         </div>
         
