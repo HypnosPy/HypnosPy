@@ -30,9 +30,9 @@
       sections:
         - file: basic_use
           title: Basic Use
-      -   file: population_analysis
+        -  file: population_analysis
           title: Population Analysis
-      -   file: shiftworker
+        - file: shiftworker
           title: Shiftworker analysis
 
           
