@@ -22,17 +22,17 @@
           title: Pre-processing
         - file: analysis
           title: Analysis
-        - file: use-cases
-          title: Use Pattern
 
 - part: Use Cases
   chapters:
-    sections:
-      - file: basic_use
-        title: Basic Use
-      - file: population_analysis
-        title: Population Analysis
-      - file: shiftworker
-        title: Shiftworker analysis
+    - file: use-cases
+      title: Use Pattern
+      sections:
+        - file: basic_use
+          title: Basic Use
+      -   file: population_analysis
+          title: Population Analysis
+      -   file: shiftworker
+          title: Shiftworker analysis
 
           
