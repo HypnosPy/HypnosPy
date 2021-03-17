@@ -23,13 +23,16 @@
         - file: analysis
           title: Analysis
         - file: use-cases
-          title: Use Cases
-        - file: basic_use
-          title: Basic Use
-        - file: population_analysis
-          title: Population Analysis
-        - file: Test
-          title: test
-        - file: shiftworker
-          title: Shiftworker analysis
+          title: Use Pattern
+
+- part: Use Cases
+  chapters:
+    sections:
+      - file: basic_use
+        title: Basic Use
+      - file: population_analysis
+        title: Population Analysis
+      - file: shiftworker
+        title: Shiftworker analysis
+
           

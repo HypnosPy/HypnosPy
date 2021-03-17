@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>&lt;no title&gt;</title>
+    <title>Population analysis</title>
     
   <link rel="stylesheet" href="_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
 
@@ -26,7 +26,7 @@
 
     
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/sphinx-book-theme.40e2e510f6b7d1648584402491bb10fe.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx-book-theme.e7340bb3dbd8dde6db86f25597f54a1b.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="_static/togglebutton.css" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.css" />
@@ -44,7 +44,7 @@
     <script src="_static/clipboard.min.js"></script>
     <script src="_static/copybutton.js"></script>
     <script >var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
-    <script src="_static/sphinx-book-theme.d31b09fe5c1d09cb49b26a786de4a05d.js"></script>
+    <script src="_static/sphinx-book-theme.7d483ff0a819d6edff12ce0b1ead3928.js"></script>
     <script async="async" src="https://unpkg.com/thebelab@latest/lib/index.js"></script>
     <script >
         const thebe_selector = ".thebe"
@@ -54,8 +54,8 @@
     <script async="async" src="_static/sphinx-thebe.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="Test.html" />
-    <link rel="prev" title="&lt;no title&gt;" href="basic_use.html" />
+    <link rel="next" title="Title: Dont forget to add a title!" href="Test.html" />
+    <link rel="prev" title="Basic Use" href="basic_use.html" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="en" />
@@ -122,12 +122,12 @@
   Modules
  </span>
 </p>
-<ul class="nav sidenav_l1">
- <li class="toctree-l1 collapsible-parent">
+<ul class="current nav sidenav_l1">
+ <li class="toctree-l1 current active collapsible-parent">
   <a class="reference internal" href="modules.html">
    Modules
   </a>
-  <ul class="collapse-ul">
+  <ul class="current collapse-ul">
    <li class="toctree-l2">
     <a class="reference internal" href="preprocessing.html">
      Pre-processing
@@ -141,6 +141,26 @@
    <li class="toctree-l2">
     <a class="reference internal" href="use-cases.html">
      Use Cases
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basic_use.html">
+     Basic Use
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     Population Analysis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="Test.html">
+     test
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="shiftworker.html">
+     Shiftworker analysis
     </a>
    </li>
   </ul>
@@ -164,21 +184,21 @@
           
 <main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
     
-    <div class="row topbar fixed-top container-xl">
-    <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show">
-    </div>
-    <div class="col pl-2 topbar-main">
-        
-        <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
-            data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
-            aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
-            title="Toggle navigation" data-toggle="tooltip" data-placement="left">
-            <i class="fas fa-bars"></i>
-            <i class="fas fa-arrow-left"></i>
-            <i class="fas fa-arrow-up"></i>
-        </button>
-        
-        
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            
+            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+                <i class="fas fa-bars"></i>
+                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            
 <div class="dropdown-buttons-trigger">
     <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
             class="fas fa-download"></i></button>
@@ -196,7 +216,7 @@
     </div>
 </div>
 
-        <!-- Source interaction buttons -->
+            <!-- Source interaction buttons -->
 
 <div class="dropdown-buttons-trigger">
     <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
@@ -215,28 +235,94 @@
 </div>
 
 
-        <!-- Full screen (wrap in <a> to have style consistency -->
-        <a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
-                data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
-                title="Fullscreen mode"><i
-                    class="fas fa-expand"></i></button></a>
+            <!-- Full screen (wrap in <a> to have style consistency -->
+            <a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+                    data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+                    title="Fullscreen mode"><i
+                        class="fas fa-expand"></i></button></a>
 
-        <!-- Launch buttons -->
+            <!-- Launch buttons -->
 
-    </div>
-
-    <!-- Table of contents -->
-    <div class="d-none d-md-block col-md-2 bd-toc show">
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Launch interactive content"><i class="fas fa-rocket"></i></button>
+    <div class="dropdown-buttons">
         
+        <a class="binder-button" href="https://mybinder.org/v2/gh/ippozuelo/HypnosPy/cd818b1a7c2d880e34f61a40fcad255913a1571a/v2/gh/ippozuelo/HypnosPy/master?urlpath=lab/tree/book/population_analysis.ipynb"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Launch Binder" data-toggle="tooltip"
+                data-placement="left"><img class="binder-button-logo"
+                    src="_static/images/logo_binder.svg"
+                    alt="Interact on binder">Binder</button></a>
+        
+        
+        
+        
+    </div>
+</div>
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show">
+            
         <div class="tocsection onthispage pt-5 pb-3">
-            <i class="fas fa-list"></i> Contents
+            <i class="fas fa-list"></i>
+            Contents
         </div>
         <nav id="bd-toc-nav">
-            <ul class="simple nav section-nav flex-column">
+            <ul class="nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#defining-an-experiment-over-a-small-group-from-the-open-source-mmash-study">
+   Defining an experiment over a small group from the open-source MMASH study
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#importing-dependencies">
+     1. Importing dependencies
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#defining-an-experiment-function-to-process-all-subject-data">
+     2. Defining an experiment function to process all subject data
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#defining-the-parameters-of-the-experiment">
+     3. Defining the parameters of the experiment
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#validating-data-completeness">
+     4. Validating data completeness
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#sleep-labelling">
+     5. Sleep Labelling
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#evaluating-sleep-metrics">
+     6. Evaluating sleep metrics
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#recording-the-results-of-the-experiment">
+     7. Recording the results of the experiment
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#visualizing-the-experiment">
+     8. Visualizing the experiment
+    </a>
+   </li>
+  </ul>
+ </li>
 </ul>
 
         </nav>
         
+        </div>
     </div>
 </div>
     <div id="main-content" class="row">
@@ -244,7 +330,376 @@
         
               <div>
                 
-  
+  <div class="section" id="population-analysis">
+<h1>Population analysis<a class="headerlink" href="#population-analysis" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="defining-an-experiment-over-a-small-group-from-the-open-source-mmash-study">
+<h2>Defining an experiment over a small group from the open-source MMASH study<a class="headerlink" href="#defining-an-experiment-over-a-small-group-from-the-open-source-mmash-study" title="Permalink to this headline">¶</a></h2>
+<p>Link to study: Rossi, A., Da Pozzo, E., Menicagli, D., Tremolanti, C., Priami, C., Sirbu, A., Clifton, D., Martini, C., &amp; Morelli, D. (2020). Multilevel Monitoring of Activity and Sleep in Healthy People (version 1.0.0). PhysioNet. <a class="reference external" href="https://doi.org/10.13026/cerq-fc86">https://doi.org/10.13026/cerq-fc86</a>.</p>
+<div class="section" id="importing-dependencies">
+<h3>1. Importing dependencies<a class="headerlink" href="#importing-dependencies" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#HypnosPy</span>
+<span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Wearable</span><span class="p">,</span> <span class="n">Diary</span>
+<span class="kn">from</span> <span class="nn">hypnospy.data</span> <span class="kn">import</span> <span class="n">RawProcessing</span>
+<span class="kn">from</span> <span class="nn">hypnospy.analysis</span> <span class="kn">import</span> <span class="n">NonWearingDetector</span><span class="p">,</span> <span class="n">SleepBoudaryDetector</span><span class="p">,</span> <span class="n">Validator</span><span class="p">,</span> <span class="n">Viewer</span>
+<span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Experiment</span>
+<span class="c1">#Evaluation</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">mean_squared_error</span><span class="p">,</span> <span class="n">cohen_kappa_score</span>
+<span class="c1">#Other packages</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">ModuleNotFoundError</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">17160</span><span class="n">b1af127</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="c1">#HypnosPy</span>
+<span class="ne">----&gt; </span><span class="mi">2</span> <span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Wearable</span><span class="p">,</span> <span class="n">Diary</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">hypnospy.data</span> <span class="kn">import</span> <span class="n">RawProcessing</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="kn">from</span> <span class="nn">hypnospy.analysis</span> <span class="kn">import</span> <span class="n">NonWearingDetector</span><span class="p">,</span> <span class="n">SleepBoudaryDetector</span><span class="p">,</span> <span class="n">Validator</span><span class="p">,</span> <span class="n">Viewer</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Experiment</span>
+
+<span class="ne">ModuleNotFoundError</span>: No module named &#39;hypnospy&#39;
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="defining-an-experiment-function-to-process-all-subject-data">
+<h3>2. Defining an experiment function to process all subject data<a class="headerlink" href="#defining-an-experiment-function-to-process-all-subject-data" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">load_experiment</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">diary_path</span><span class="p">,</span> <span class="n">start_hour</span><span class="p">):</span>
+    <span class="c1"># Configure an Experiment</span>
+    <span class="n">exp</span> <span class="o">=</span> <span class="n">Experiment</span><span class="p">()</span>
+
+    <span class="c1"># Iterates over a set of files in a directory.</span>
+    <span class="c1"># Unfortunately, we have to do it manually with RawProcessing because we are modifying the annotations</span>
+    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">glob</span><span class="p">(</span><span class="n">data_path</span><span class="p">):</span>
+        <span class="n">pp</span> <span class="o">=</span> <span class="n">RawProcessing</span><span class="p">(</span><span class="n">file</span><span class="p">,</span>
+                           <span class="c1"># HR information</span>
+                           <span class="n">col_for_hr</span><span class="o">=</span><span class="s2">&quot;HR&quot;</span><span class="p">,</span>
+                           <span class="c1"># Activity information</span>
+                           <span class="n">cols_for_activity</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Axis1&quot;</span><span class="p">,</span> <span class="s2">&quot;Axis2&quot;</span><span class="p">,</span> <span class="s2">&quot;Axis3&quot;</span><span class="p">],</span>
+                           <span class="n">is_act_count</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="c1"># Datetime information</span>
+                           <span class="n">col_for_datetime</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">,</span>
+                           <span class="n">strftime</span><span class="o">=</span><span class="s2">&quot;%Y-%b-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">,</span>
+                           <span class="c1"># Participant information</span>
+                           <span class="n">col_for_pid</span><span class="o">=</span><span class="s2">&quot;pid&quot;</span><span class="p">)</span>
+
+        <span class="n">w</span> <span class="o">=</span> <span class="n">Wearable</span><span class="p">(</span><span class="n">pp</span><span class="p">)</span>  <span class="c1"># Creates a wearable from a pp object</span>
+        <span class="n">exp</span><span class="o">.</span><span class="n">add_wearable</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+
+    <span class="c1"># Set frequency for every wearable in the collection</span>
+    <span class="c1"># exp.set_freq_in_secs(5)</span>
+
+    <span class="c1"># Changing the hour the experiment starts from midnight (0) to 3pm (15)</span>
+    <span class="n">exp</span><span class="o">.</span><span class="n">change_start_hour_for_experiment_day</span><span class="p">(</span><span class="n">start_hour</span><span class="p">)</span>
+
+    <span class="n">diary</span> <span class="o">=</span> <span class="n">Diary</span><span class="p">()</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">diary_path</span><span class="p">)</span>
+    <span class="n">exp</span><span class="o">.</span><span class="n">add_diary</span><span class="p">(</span><span class="n">diary</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">exp</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="defining-the-parameters-of-the-experiment">
+<h3>3. Defining the parameters of the experiment<a class="headerlink" href="#defining-the-parameters-of-the-experiment" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Path to find the wearables data and the sleep diaries</span>
+<span class="n">diary_path</span> <span class="o">=</span> <span class="s2">&quot;./data/examples_mmash/diary/mmash_diary.csv&quot;</span>
+<span class="n">data_path</span> <span class="o">=</span> <span class="s2">&quot;./data/examples_mmash/*.csv&quot;</span>
+
+<span class="c1"># Parameters for the HypnosPy HR-based sleep algorithm</span>
+<span class="n">hr_quantile</span> <span class="o">=</span> <span class="mf">0.4</span>
+<span class="n">hr_min_window_length</span> <span class="o">=</span> <span class="mi">40</span>
+<span class="n">hr_merge_blocks</span> <span class="o">=</span> <span class="mi">180</span>
+
+<span class="n">hr_volarity</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="c1">#Time to consider as start and end of each experiment day - if equal the sleep labelling occurs</span>
+<span class="c1">#over the entire 24 hours</span>
+<span class="n">start_hour</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">end_hour</span> <span class="o">=</span> <span class="mi">15</span>
+
+<span class="c1">#Giving the experiment a number</span>
+<span class="n">exp_id</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="validating-data-completeness">
+<h3>4. Validating data completeness<a class="headerlink" href="#validating-data-completeness" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">exp</span> <span class="o">=</span> <span class="n">load_experiment</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">diary_path</span><span class="p">,</span> <span class="n">start_hour</span><span class="p">)</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">fill_no_activity</span><span class="p">(</span><span class="o">-</span><span class="mf">0.0001</span><span class="p">)</span>
+
+<span class="n">va</span> <span class="o">=</span> <span class="n">Validator</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+<span class="c1"># Do diaries exist for all subjects? Remove those who don&#39;t have them</span>
+<span class="n">va</span><span class="o">.</span><span class="n">remove_wearables_without_diary</span><span class="p">()</span>
+
+<span class="c1"># Flag times with less activity than set threshold, or non-wearing periods</span>
+<span class="n">va</span><span class="o">.</span><span class="n">flag_epoch_physical_activity_less_than</span><span class="p">(</span><span class="n">min_activity_threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">va</span><span class="o">.</span><span class="n">flag_epoch_null_cols</span><span class="p">(</span><span class="n">col_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hyp_act_x&quot;</span><span class="p">])</span>
+<span class="n">va</span><span class="o">.</span><span class="n">flag_day_max_nonwearing</span><span class="p">(</span><span class="n">max_non_wear_minutes_per_day</span><span class="o">=</span><span class="mi">3</span><span class="o">*</span><span class="mi">60</span><span class="p">)</span>
+
+<span class="n">va</span><span class="o">.</span><span class="n">flag_day_if_invalid_epochs_larger_than</span><span class="p">(</span><span class="n">max_invalid_minutes_per_day</span><span class="o">=</span><span class="mi">5</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="c1"># Flag when the diary annotation is missing</span>
+<span class="n">va</span><span class="o">.</span><span class="n">flag_day_without_diary</span><span class="p">()</span>
+
+<span class="c1"># Accounting for removed days and subjects (referred to as wearables)</span>
+<span class="n">n_removed_days</span> <span class="o">=</span> <span class="n">va</span><span class="o">.</span><span class="n">remove_flagged_days</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Removed </span><span class="si">%d</span><span class="s2"> days (non wearing).&quot;</span> <span class="o">%</span> <span class="n">n_removed_days</span><span class="p">)</span>
+<span class="n">n_users</span> <span class="o">=</span> <span class="n">va</span><span class="o">.</span><span class="n">remove_wearables_without_valid_days</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Removed </span><span class="si">%d</span><span class="s2"> wearables.&quot;</span> <span class="o">%</span> <span class="n">n_users</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Removed 3 days (non wearing).
+Removed 0 wearables.
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="sleep-labelling">
+<h3>5. Sleep Labelling<a class="headerlink" href="#sleep-labelling" title="Permalink to this headline">¶</a></h3>
+<p>Using 3 algorithms:</p>
+<ul class="simple">
+<li><p>HypnosPy - HR-based</p></li>
+<li><p>Adapted van Hees - angle-based</p></li>
+<li><p>Adapted van Hess - angle-based, using pitch and roll</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sbd</span> <span class="o">=</span> <span class="n">SleepBoudaryDetector</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
+
+<span class="n">sbd</span><span class="o">.</span><span class="n">detect_sleep_boundaries</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;hr&quot;</span><span class="p">,</span> <span class="n">output_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_hr&quot;</span><span class="p">,</span> <span class="n">hr_quantile</span><span class="o">=</span><span class="n">hr_quantile</span><span class="p">,</span>
+                                <span class="n">hr_volarity_threshold</span><span class="o">=</span><span class="n">hr_volarity</span><span class="p">,</span> <span class="n">hr_rolling_win_in_minutes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                                <span class="n">hr_sleep_search_window</span><span class="o">=</span><span class="p">(</span><span class="n">start_hour</span><span class="p">,</span> <span class="n">end_hour</span><span class="p">),</span>
+                                <span class="n">hr_min_window_length_in_minutes</span><span class="o">=</span><span class="n">hr_min_window_length</span><span class="p">,</span>
+                                <span class="n">hr_volatility_window_in_minutes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">hr_merge_blocks_gap_time_in_min</span><span class="o">=</span><span class="n">hr_merge_blocks</span><span class="p">,</span>
+                                <span class="n">hr_sleep_only_in_sleep_search_window</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">hr_only_largest_sleep_period</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">sbd</span><span class="o">.</span><span class="n">detect_sleep_boundaries</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;adapted_van_hees&quot;</span><span class="p">,</span> <span class="n">output_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_vanhees&quot;</span><span class="p">,</span> <span class="n">angle_cols</span><span class="o">=</span><span class="p">[],</span>
+                                <span class="n">angle_use_triaxial_activity</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">angle_start_hour</span><span class="o">=</span><span class="n">start_hour</span><span class="p">,</span> <span class="n">angle_quantile</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                                <span class="n">angle_minimum_len_in_minutes</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">angle_merge_tolerance_in_minutes</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+
+<span class="n">sbd</span><span class="o">.</span><span class="n">detect_sleep_boundaries</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;adapted_van_hees&quot;</span><span class="p">,</span> <span class="n">output_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_vanheespr&quot;</span><span class="p">,</span>
+                                <span class="n">angle_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;pitch&quot;</span><span class="p">,</span> <span class="s2">&quot;roll&quot;</span><span class="p">],</span> <span class="n">angle_use_triaxial_activity</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                <span class="n">angle_start_hour</span><span class="o">=</span><span class="n">start_hour</span><span class="p">,</span> <span class="n">angle_quantile</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">angle_minimum_len_in_minutes</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+                                <span class="n">angle_merge_tolerance_in_minutes</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="evaluating-sleep-metrics">
+<h3>6. Evaluating sleep metrics<a class="headerlink" href="#evaluating-sleep-metrics" title="Permalink to this headline">¶</a></h3>
+<p>For all 3 algorithms used we calculate:</p>
+<ul class="simple">
+<li><p>TST (total sleep time)</p></li>
+<li><p>Sleep onset</p></li>
+<li><p>Sleep offset (awakening)</p></li>
+</ul>
+<p>Other sleep quality metrics are available using the SleepMetrics class.</p>
+<p>Evaluation metrics used:</p>
+<ul class="simple">
+<li><p>MSE (mean squared error) - 0 if all epoch labels are identical between algorithm and ground truth, 1 if all are different</p></li>
+<li><p>Cohen’s kappa</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_acc</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">mses</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">cohens</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Calculating evaluation measures...&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">exp</span><span class="o">.</span><span class="n">get_all_wearables</span><span class="p">():</span>
+
+    <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data for PID </span><span class="si">%s</span><span class="s2"> is empty!&quot;</span> <span class="o">%</span> <span class="n">w</span><span class="o">.</span><span class="n">get_pid</span><span class="p">())</span>
+        <span class="k">continue</span>
+
+    <span class="n">sleep</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">sleep</span><span class="p">[</span><span class="s2">&quot;diary&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">w</span><span class="o">.</span><span class="n">diary_sleep</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">[</span><span class="s2">&quot;hr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;hyp_sleep_period_hr&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">[</span><span class="s2">&quot;vanhees&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;hyp_sleep_period_vanhees&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">[</span><span class="s2">&quot;vanheespr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;hyp_sleep_period_vanheespr&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sleep</span><span class="p">[</span><span class="s2">&quot;diary&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">continue</span>
+
+    <span class="k">for</span> <span class="n">comb</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;diary_hr&quot;</span><span class="p">,</span> <span class="s2">&quot;diary_vanhees&quot;</span><span class="p">,</span> <span class="s2">&quot;hr_vanhees&quot;</span><span class="p">,</span> <span class="s2">&quot;diary_vanheespr&quot;</span><span class="p">,</span> <span class="s2">&quot;hr_vanheespr&quot;</span><span class="p">,</span> <span class="s2">&quot;vanhees_vanheespr&quot;</span><span class="p">]:</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">comb</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="n">mses</span><span class="p">[</span><span class="n">comb</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_squared_error</span><span class="p">(</span><span class="n">sleep</span><span class="p">[</span><span class="n">a</span><span class="p">],</span> <span class="n">sleep</span><span class="p">[</span><span class="n">b</span><span class="p">])</span>
+        <span class="n">cohens</span><span class="p">[</span><span class="n">comb</span><span class="p">]</span> <span class="o">=</span> <span class="n">cohen_kappa_score</span><span class="p">(</span><span class="n">sleep</span><span class="p">[</span><span class="n">a</span><span class="p">],</span> <span class="n">sleep</span><span class="p">[</span><span class="n">b</span><span class="p">])</span>
+
+    <span class="n">tst_diary</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_total_sleep_time_per_day</span><span class="p">(</span><span class="n">based_on_diary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">tst_hr</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_total_sleep_time_per_day</span><span class="p">(</span><span class="n">sleep_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_hr&quot;</span><span class="p">)</span>
+    <span class="n">tst_vanhees</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_total_sleep_time_per_day</span><span class="p">(</span><span class="n">sleep_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_vanhees&quot;</span><span class="p">)</span>
+    <span class="n">tst_vanheespr</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_total_sleep_time_per_day</span><span class="p">(</span><span class="n">sleep_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_vanheespr&quot;</span><span class="p">)</span>
+
+    <span class="n">onset_diary</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_onset_sleep_time_per_day</span><span class="p">(</span><span class="n">based_on_diary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">onset_diary</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;onset_diary&quot;</span>
+    <span class="n">onset_hr</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_onset_sleep_time_per_day</span><span class="p">(</span><span class="n">sleep_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_hr&quot;</span><span class="p">)</span>
+    <span class="n">onset_hr</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;onset_hr&quot;</span>
+    <span class="n">onset_vanhees</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_onset_sleep_time_per_day</span><span class="p">(</span><span class="n">sleep_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_vanhees&quot;</span><span class="p">)</span>
+    <span class="n">onset_vanhees</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;onset_vanhees&quot;</span>
+    <span class="n">onset_vanheespr</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_onset_sleep_time_per_day</span><span class="p">(</span><span class="n">sleep_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_vanheespr&quot;</span><span class="p">)</span>
+    <span class="n">onset_vanheespr</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;onset_vanheespr&quot;</span>
+
+    <span class="n">offset_diary</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_offset_sleep_time_per_day</span><span class="p">(</span><span class="n">based_on_diary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">offset_diary</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;offset_diary&quot;</span>
+    <span class="n">offset_hr</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_offset_sleep_time_per_day</span><span class="p">(</span><span class="n">sleep_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_hr&quot;</span><span class="p">)</span>
+    <span class="n">offset_hr</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;offset_hr&quot;</span>
+    <span class="n">offset_vanhees</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_offset_sleep_time_per_day</span><span class="p">(</span><span class="n">sleep_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_vanhees&quot;</span><span class="p">)</span>
+    <span class="n">offset_vanhees</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;offset_vanhees&quot;</span>
+    <span class="n">offset_vanheespr</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_offset_sleep_time_per_day</span><span class="p">(</span><span class="n">sleep_col</span><span class="o">=</span><span class="s2">&quot;hyp_sleep_period_vanheespr&quot;</span><span class="p">)</span>
+    <span class="n">offset_vanheespr</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;offset_vanheespr&quot;</span>
+    <span class="c1"># Putting together the data for each subject / wearable </span>
+    <span class="n">df_res</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">onset_hr</span><span class="p">,</span> <span class="n">onset_diary</span><span class="p">,</span> <span class="n">onset_vanhees</span><span class="p">,</span> <span class="n">onset_vanheespr</span><span class="p">,</span>
+                        <span class="n">offset_hr</span><span class="p">,</span> <span class="n">offset_diary</span><span class="p">,</span> <span class="n">offset_vanhees</span><span class="p">,</span> <span class="n">offset_vanheespr</span><span class="p">,</span>
+                        <span class="n">tst_diary</span><span class="p">,</span> <span class="n">tst_hr</span><span class="p">,</span> <span class="n">tst_vanhees</span><span class="p">,</span> <span class="n">tst_vanheespr</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">df_res</span><span class="p">[</span><span class="s2">&quot;pid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">get_pid</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">comb</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;diary_hr&quot;</span><span class="p">,</span> <span class="s2">&quot;diary_vanhees&quot;</span><span class="p">,</span> <span class="s2">&quot;hr_vanhees&quot;</span><span class="p">,</span> <span class="s2">&quot;diary_vanheespr&quot;</span><span class="p">,</span> <span class="s2">&quot;hr_vanheespr&quot;</span><span class="p">,</span> <span class="s2">&quot;vanhees_vanheespr&quot;</span><span class="p">]:</span>
+        <span class="n">df_res</span><span class="p">[</span><span class="s2">&quot;mse_&quot;</span> <span class="o">+</span> <span class="n">comb</span><span class="p">]</span> <span class="o">=</span> <span class="n">mses</span><span class="p">[</span><span class="n">comb</span><span class="p">]</span>
+        <span class="n">df_res</span><span class="p">[</span><span class="s2">&quot;cohens_&quot;</span> <span class="o">+</span> <span class="n">comb</span><span class="p">]</span> <span class="o">=</span> <span class="n">cohens</span><span class="p">[</span><span class="n">comb</span><span class="p">]</span>
+    <span class="c1"># Appending each subject&#39;s dataframe into a list of all subject data ready for population analyses</span>
+    <span class="n">df_acc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_res</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Calculating evaluation measures...
+                       onset_hr         onset_diary       onset_vanhees  \
+hyp_exp_day                                                               
+0           2020-01-02 00:44:05 2020-01-02 00:46:00 2020-01-02 00:44:20   
+
+                onset_vanheespr           offset_hr        offset_diary  \
+hyp_exp_day                                                               
+0           2020-01-02 00:44:25 2020-01-02 07:34:40 2020-01-02 03:31:00   
+
+                 offset_vanhees    offset_vanheespr  hyp_diary_sleep  \
+hyp_exp_day                                                            
+0           2020-01-02 07:50:10 2020-01-02 07:50:15       165.083333   
+
+             hyp_sleep_period_hr  ...  mse_diary_vanhees  \
+hyp_exp_day                       ...                      
+0                     410.666667  ...           0.231715   
+
+             cohens_diary_vanhees mse_hr_vanhees  cohens_hr_vanhees  \
+hyp_exp_day                                                           
+0                        0.440362       0.013992           0.970047   
+
+             mse_diary_vanheespr  cohens_diary_vanheespr  mse_hr_vanheespr  \
+hyp_exp_day                                                                  
+0                       0.231715                0.440362           0.01414   
+
+             cohens_hr_vanheespr  mse_vanhees_vanheespr  \
+hyp_exp_day                                               
+0                        0.96973               0.000148   
+
+             cohens_vanhees_vanheespr  
+hyp_exp_day                            
+0                            0.999685  
+
+[1 rows x 25 columns]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Check out the format of the experiment output dataframe</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df_acc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Index([&#39;onset_hr&#39;, &#39;onset_diary&#39;, &#39;onset_vanhees&#39;, &#39;onset_vanheespr&#39;,
+       &#39;offset_hr&#39;, &#39;offset_diary&#39;, &#39;offset_vanhees&#39;, &#39;offset_vanheespr&#39;,
+       &#39;hyp_diary_sleep&#39;, &#39;hyp_sleep_period_hr&#39;, &#39;hyp_sleep_period_vanhees&#39;,
+       &#39;hyp_sleep_period_vanheespr&#39;, &#39;pid&#39;, &#39;mse_diary_hr&#39;, &#39;cohens_diary_hr&#39;,
+       &#39;mse_diary_vanhees&#39;, &#39;cohens_diary_vanhees&#39;, &#39;mse_hr_vanhees&#39;,
+       &#39;cohens_hr_vanhees&#39;, &#39;mse_diary_vanheespr&#39;, &#39;cohens_diary_vanheespr&#39;,
+       &#39;mse_hr_vanheespr&#39;, &#39;cohens_hr_vanheespr&#39;, &#39;mse_vanhees_vanheespr&#39;,
+       &#39;cohens_vanhees_vanheespr&#39;],
+      dtype=&#39;object&#39;)
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="recording-the-results-of-the-experiment">
+<h3>7. Recording the results of the experiment<a class="headerlink" href="#recording-the-results-of-the-experiment" title="Permalink to this headline">¶</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">exp_id</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="c1">#df_acc = pd.concat(df_acc)</span>
+<span class="n">df_acc</span><span class="p">[</span><span class="s2">&quot;exp_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">exp_id</span>
+<span class="n">df_acc</span><span class="p">[</span><span class="s2">&quot;quantile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hr_quantile</span>
+<span class="n">df_acc</span><span class="p">[</span><span class="s2">&quot;window_lengths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hr_min_window_length</span>
+<span class="n">df_acc</span><span class="p">[</span><span class="s2">&quot;time_merge_blocks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hr_merge_blocks</span>
+
+<span class="n">output_path</span> <span class="o">=</span> <span class="s1">&#39;./data/examples_mmash/experiments&#39;</span>
+
+<span class="n">df_acc</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">&quot;exp_</span><span class="si">%d</span><span class="s2">.csv&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">exp_id</span><span class="p">)),</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="visualizing-the-experiment">
+<h3>8. Visualizing the experiment<a class="headerlink" href="#visualizing-the-experiment" title="Permalink to this headline">¶</a></h3>
+<p>Use the Viewer class to plot the signals and sleep labels</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">Viewer</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+
+<span class="n">v</span><span class="o">.</span><span class="n">view_signals</span><span class="p">([</span><span class="s2">&quot;activity&quot;</span><span class="p">,</span> <span class="s2">&quot;hr&quot;</span><span class="p">,</span> <span class="s2">&quot;sleep&quot;</span><span class="p">,</span> <span class="s2">&quot;diary&quot;</span><span class="p">],</span>
+                <span class="n">sleep_cols</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hyp_sleep_period_vanhees&quot;</span><span class="p">,</span> <span class="s2">&quot;hyp_sleep_period_hr&quot;</span><span class="p">],</span>
+              <span class="n">alphas</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sleep&#39;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>C:\Users\mariu\AppData\Roaming\Python\Python37\site-packages\matplotlib\cbook\__init__.py:1402: FutureWarning: Support for multi-dimensional indexing (e.g. `obj[:, None]`) is deprecated and will be removed in a future version.  Convert to a numpy array before indexing instead.
+  x[:, None]
+C:\Users\mariu\AppData\Roaming\Python\Python37\site-packages\matplotlib\axes\_base.py:276: FutureWarning: Support for multi-dimensional indexing (e.g. `obj[:, None]`) is deprecated and will be removed in a future version.  Convert to a numpy array before indexing instead.
+  x = x[:, np.newaxis]
+C:\Users\mariu\AppData\Roaming\Python\Python37\site-packages\matplotlib\axes\_base.py:278: FutureWarning: Support for multi-dimensional indexing (e.g. `obj[:, None]`) is deprecated and will be removed in a future version.  Convert to a numpy array before indexing instead.
+  y = y[:, np.newaxis]
+C:\Users\mariu\AppData\Roaming\Python\Python37\site-packages\matplotlib\cbook\__init__.py:1402: FutureWarning: Support for multi-dimensional indexing (e.g. `obj[:, None]`) is deprecated and will be removed in a future version.  Convert to a numpy array before indexing instead.
+  x[:, None]
+C:\Users\mariu\AppData\Roaming\Python\Python37\site-packages\matplotlib\axes\_base.py:276: FutureWarning: Support for multi-dimensional indexing (e.g. `obj[:, None]`) is deprecated and will be removed in a future version.  Convert to a numpy array before indexing instead.
+  x = x[:, np.newaxis]
+C:\Users\mariu\AppData\Roaming\Python\Python37\site-packages\matplotlib\axes\_base.py:278: FutureWarning: Support for multi-dimensional indexing (e.g. `obj[:, None]`) is deprecated and will be removed in a future version.  Convert to a numpy array before indexing instead.
+  y = y[:, np.newaxis]
+</pre></div>
+</div>
+<img alt="_images/population_analysis_16_1.png" src="_images/population_analysis_16_1.png" />
+</div>
+</div>
+</div>
+</div>
+</div>
+
     <script type="text/x-thebe-config">
     {
         requestKernel: true,
@@ -267,15 +722,15 @@
 
               </div>
               
-        </div>
-    </div>
-    
-    
-    <div class='prev-next-bottom'>
         
-    <a class='left-prev' id="prev-link" href="basic_use.html" title="previous page">&lt;no title&gt;</a>
-    <a class='right-next' id="next-link" href="Test.html" title="next page">&lt;no title&gt;</a>
+        <div class='prev-next-bottom'>
+            
+    <a class='left-prev' id="prev-link" href="basic_use.html" title="previous page">Basic Use</a>
+    <a class='right-next' id="next-link" href="Test.html" title="next page">Title: Dont forget to add a title!</a>
 
+        </div>
+        
+        </div>
     </div>
     <footer class="footer mt-5 mt-md-0">
     <div class="container">
