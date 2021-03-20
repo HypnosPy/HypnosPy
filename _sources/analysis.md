@@ -3,6 +3,8 @@
 ## Sleep Annotations 🛏
 [diary.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/diary.py)
 
+The **Diary** class can be used to add sleep annotations created by subjects or experts to the Wearable object. Once this is done, they can be used as ground truth to evaluate the HypnosPy sleep labels created using the heart-rate or angle-based algorithms.
+
 ```python
 from hypnospy import Diary
 w = Wearable(preprocessed_object)
@@ -90,8 +92,8 @@ Parameters used:
 The angle algorithm was developed by [van Hess et al. (2018)](https://www.nature.com/articles/s41598-018-31266-z)
 
 
-[sleep_wake_analysis.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/sleep_wake_analysis.py)\
-[sleep_metrics.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/sleep_metrics.py)\
+[sleep_wake_analysis.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/sleep_wake_analysis.py) \
+[sleep_metrics.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/sleep_metrics.py) \
 
 Sleep metrics implemented:
 * **Sleep efficiency** - 0-1 - (total sleep time - duration of awakenings) / total sleep time
@@ -127,7 +129,8 @@ It has been the historical method of choice for circadian analysis, as it can wo
 [SSA](https://en.wikipedia.org/wiki/Singular_spectrum_analysis) is a non-parametric method that aims to decompose a time series into a sum of interpretable components:
 * trend
 * periodic components
-* noise
+* noise \
+
 While it has been used less in chronobiological research, it does not rely on a priori assumptions about period, unlike cosinor rhythmometry. Taking the daily peak of the main periodic components produced by SSA produces an acrophase-like metric that is free to vary from day to day according to the subject's activity. For example, if someone exercise at 10am on Day 1, 6pm on Day 2, and 10am again on Day 3, the resulting periods will be 32 hours and 16 hours respectively. Cosinor can not accomodate that variation if applied to the entire time series.
 
 This means that SSA-derived metrics are easier to integrate with sleep labels such as sleep onset and offset. New metrics such as acrophase-onset could prove useful in research studies looking at how the timing of physical activity influences sleep and viceversa.
@@ -140,10 +143,52 @@ from hypnospy.analysis import CircadianAnalysis
 ### **Physical Activity Analysis**
 
 [physical_activity.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/phyisical_activity.py)
+
+The **PhysicalActivity** class performs the analysis of the subject's physical activity, as stored in the Wearable.data dataframe. It's methods are:
+* *set_cutoff* - to deal with each devices different recording of activity levels. We suggest the user to read the latest research on it.
+        Vincent van Hees' GGIR has a summarized documentation on this topic: see https://cran.r-project.org/web/packages/GGIR/vignettes/GGIR.html#published-cut-points-and-how-to-use-them
+* *generate_pa_columns* - sets physical activity attributes to each wearable, namely the pa_cutoffs (lsit of numbers - activity cutoff thresholds) and pa_names (list of names representing the numbers). Takes a parameter based_on as the Wearable.data column the physical activity will be read from
+* *get_bouts* - return the number of consecutive minutes that a subject has been physically active, as define by the previous threshold. The user can set the sleep_col parameters to make sure the activity bouts do not occur during labelled sleep (make sure to use the SleepBoundaryDetector.detect_sleep_boundaries() first). Returns a dataframe counting the number of bouts for the given physical activity level.
+* *get_binned_pa_representation* - counts the number of epochs for each physical activity level per hour of each day. It captures activities shorter than the threshold for the get_bouts method
+* *get_stats_pa_representation* - geenral statistics for each wearable (median, std, min, max, skewness, kurtosis, nunique) per hour and per day
+* *get_raw_pa* - returns a dataframe with the raw physical activity signal
+
+
 [non_wearing_detector.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/non_wearing_detector.py)
 
+The **NonWearingDetector** class can detect when a subject was not wearing the device. Until now, we have implemented the detection strategy used by [Choi et al. (2011)](https://journals.lww.com/acsm-msse/Fulltext/2011/02000/Validation_of_Accelerometer_Wear_and_Nonwear_Time.22.aspx), with the code inspired by [shaheen-syed](https://github.com/shaheen-syed/ActiGraph-ActiWave-Analysis/blob/master/algorithms/non_wear_time/choi_2011.py)
+
+```python
+from hypnospy.analysis import NonWearingDetector
+nwd = NonWearingDetector(wearable)
+nwd.detect_non_wear()
+```
+
 ### **Validation**
+
 [validator.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/analysis/validator.py)
+
+This **Validator** class can flag whether an epoch or day is invalid if passed a Wearable or Experiment object.
+
+At the epoch level, it can detect and flag whether the epoch has:
+* physical activity less then a given threshold
+* null columns, from a specified list of columns
+* been considered as non-wearing by the NonWearingDetector()
+
+At the day level, the methods can detect:
+* if there is less or more sleep present than a given duration
+* if there are more non-wearing epochs than desired, and if any of these is larger that a given duration
+* days without diary, if a diary has been previously added to the Wearable
+
+After a day has been flagged, the available actions are:
+* *remove_flagged_days* - deletes these days from the Wearable
+* *get_invalid_days* - returns the numbers of the removed days
+* *get_valid_days* - returns the numbers of the remaining days
+* *remove_wearables_without_valid_days* - deletes these from the Experiment
+* *remove_wearables_without_diary* - deletes these from Experiment
+* *flag_day_if_not_enough_consecutive_days* - if there are fewer than a given number of consecutive valid days, all remaining days in the wearable are marked as invalid
+* *validation_report* - returns the state of the flagged and/or removed days
+
 
 ## Visualization 🖥
 
@@ -152,3 +197,16 @@ from hypnospy.analysis import CircadianAnalysis
 ## Population Analysis
 
 [experiment.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/experiment.py)
+
+Aggregating, analysing and saving data from multiple wearables is done with the **Experiment** class. Its methods include:
+* *configure_experiment* - input metadata for the columns to be used for analysis across all the wearable. For example, parameter col_for_datetime is the column name of the timestamp in all wearables. At this time, all wearables must have the same data structure for use in an experiment.
+* *add_wearable*
+* *remove_wearable*
+* *get_wearable* - return the Wearable object with the desired pid (participant ID).
+* *size* - how many wearables are in the experiment?
+* *get_all_wearables* - which subjects have been input into the experiment?
+* *set_freq_in_secs* - sets a common sampling frequency for all Wearables.
+* *overall_stats* - prints total no. of wearables, experiment days, average no. of days per subject and average number of epochs per subject.
+* *add_diary* - takes in sleep annotations as a Diary class.
+* *add_cgm* - takes in a .csv file with data from a continuous glucose sensor. At this time, only the Freestyle Libre format is supported.
+

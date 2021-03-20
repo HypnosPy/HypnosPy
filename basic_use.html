@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>&lt;no title&gt;</title>
+    <title>Basic Use</title>
     
   <link rel="stylesheet" href="_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
 
@@ -26,7 +26,7 @@
 
     
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/sphinx-book-theme.40e2e510f6b7d1648584402491bb10fe.css" type="text/css" />
+    <link rel="stylesheet" href="_static/sphinx-book-theme.e7340bb3dbd8dde6db86f25597f54a1b.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="_static/togglebutton.css" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.css" />
@@ -44,7 +44,7 @@
     <script src="_static/clipboard.min.js"></script>
     <script src="_static/copybutton.js"></script>
     <script >var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
-    <script src="_static/sphinx-book-theme.d31b09fe5c1d09cb49b26a786de4a05d.js"></script>
+    <script src="_static/sphinx-book-theme.7d483ff0a819d6edff12ce0b1ead3928.js"></script>
     <script async="async" src="https://unpkg.com/thebelab@latest/lib/index.js"></script>
     <script >
         const thebe_selector = ".thebe"
@@ -54,7 +54,7 @@
     <script async="async" src="_static/sphinx-thebe.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="population_analysis.html" />
+    <link rel="next" title="Population analysis" href="population_analysis.html" />
     <link rel="prev" title="Usage 💡" href="use-cases.html" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -138,9 +138,35 @@
      Analysis
     </a>
    </li>
+  </ul>
+  <i class="fas fa-chevron-down">
+  </i>
+ </li>
+</ul>
+<p class="caption collapsible-parent">
+ <span class="caption-text">
+  Use Cases
+ </span>
+</p>
+<ul class="current nav sidenav_l1">
+ <li class="toctree-l1 current active collapsible-parent">
+  <a class="reference internal" href="use-cases.html">
+   Use Pattern
+  </a>
+  <ul class="current collapse-ul">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     Basic Use
+    </a>
+   </li>
    <li class="toctree-l2">
-    <a class="reference internal" href="use-cases.html">
-     Use Cases
+    <a class="reference internal" href="population_analysis.html">
+     Population Analysis
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="shiftworker.html">
+     Shiftworker analysis
     </a>
    </li>
   </ul>
@@ -164,21 +190,21 @@
           
 <main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
     
-    <div class="row topbar fixed-top container-xl">
-    <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show">
-    </div>
-    <div class="col pl-2 topbar-main">
-        
-        <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
-            data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
-            aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
-            title="Toggle navigation" data-toggle="tooltip" data-placement="left">
-            <i class="fas fa-bars"></i>
-            <i class="fas fa-arrow-left"></i>
-            <i class="fas fa-arrow-up"></i>
-        </button>
-        
-        
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            
+            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+                <i class="fas fa-bars"></i>
+                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            
 <div class="dropdown-buttons-trigger">
     <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
             class="fas fa-download"></i></button>
@@ -196,7 +222,7 @@
     </div>
 </div>
 
-        <!-- Source interaction buttons -->
+            <!-- Source interaction buttons -->
 
 <div class="dropdown-buttons-trigger">
     <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
@@ -215,28 +241,37 @@
 </div>
 
 
-        <!-- Full screen (wrap in <a> to have style consistency -->
-        <a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
-                data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
-                title="Fullscreen mode"><i
-                    class="fas fa-expand"></i></button></a>
+            <!-- Full screen (wrap in <a> to have style consistency -->
+            <a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+                    data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+                    title="Fullscreen mode"><i
+                        class="fas fa-expand"></i></button></a>
 
-        <!-- Launch buttons -->
+            <!-- Launch buttons -->
 
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn"
+        aria-label="Launch interactive content"><i class="fas fa-rocket"></i></button>
+    <div class="dropdown-buttons">
+        
+        <a class="binder-button" href="https://mybinder.org/v2/gh/ippozuelo/HypnosPy/cd818b1a7c2d880e34f61a40fcad255913a1571a/v2/gh/ippozuelo/HypnosPy/master?urlpath=lab/tree/book/basic_use.ipynb"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Launch Binder" data-toggle="tooltip"
+                data-placement="left"><img class="binder-button-logo"
+                    src="_static/images/logo_binder.svg"
+                    alt="Interact on binder">Binder</button></a>
+        
+        
+        
+        
     </div>
+</div>
 
-    <!-- Table of contents -->
-    <div class="d-none d-md-block col-md-2 bd-toc show">
-        
-        <div class="tocsection onthispage pt-5 pb-3">
-            <i class="fas fa-list"></i> Contents
         </div>
-        <nav id="bd-toc-nav">
-            <ul class="simple nav section-nav flex-column">
-</ul>
 
-        </nav>
-        
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show">
+            
+        </div>
     </div>
 </div>
     <div id="main-content" class="row">
@@ -244,7 +279,142 @@
         
               <div>
                 
-  
+  <div class="section" id="basic-use">
+<h1>Basic Use<a class="headerlink" href="#basic-use" title="Permalink to this headline">¶</a></h1>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Wearable</span>
+<span class="kn">from</span> <span class="nn">hypnospy.data</span> <span class="kn">import</span> <span class="n">MESAPreProcessing</span>
+<span class="kn">from</span> <span class="nn">hypnospy.analysis</span> <span class="kn">import</span> <span class="n">Viewer</span><span class="p">,</span> <span class="n">NonWearingDetector</span><span class="p">,</span> <span class="n">SleepWakeAnalysis</span>
+<span class="c1">#from tf.keras.preprocessing import timeseries_dataset_from_array</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">ModuleNotFoundError</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">94781</span><span class="n">a92fd99</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Wearable</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">from</span> <span class="nn">hypnospy.data</span> <span class="kn">import</span> <span class="n">MESAPreProcessing</span>
+<span class="ne">----&gt; </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">hypnospy.analysis</span> <span class="kn">import</span> <span class="n">Viewer</span><span class="p">,</span> <span class="n">NonWearingDetector</span><span class="p">,</span> <span class="n">SleepWakeAnalysis</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="c1">#from tf.keras.preprocessing import timeseries_dataset_from_array</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="ne">c</span>:\users\mariu\.conda\envs\p37\lib\site-packages\hypnospy\analysis\__init__.py in &lt;module&gt;
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="kn">from</span> <span class="nn">.circadian_analysis</span> <span class="kn">import</span> <span class="n">CircadianAnalysis</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">from</span> <span class="nn">.sleep_wake_analysis</span> <span class="kn">import</span> <span class="n">SleepWakeAnalysis</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">.non_wearing_detector</span> <span class="kn">import</span> <span class="n">NonWearingDetector</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="kn">from</span> <span class="nn">.phyisical_activity</span> <span class="kn">import</span> <span class="n">PhysicalActivity</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">from</span> <span class="nn">.sleep_metrics</span> <span class="kn">import</span> <span class="n">SleepMetrics</span>
+
+<span class="ne">c</span>:\users\mariu\.conda\envs\p37\lib\site-packages\hypnospy\analysis\circadian_analysis.py in &lt;module&gt;
+<span class="g g-Whitespace">      </span><span class="mi">6</span> <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">entropy</span>
+<span class="g g-Whitespace">      </span><span class="mi">7</span> <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">linalg</span>  <span class="c1"># linear algebra (matrix) processing package</span>
+<span class="ne">----&gt; </span><span class="mi">8</span> <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span><span class="p">,</span> <span class="n">trange</span>
+<span class="g g-Whitespace">      </span><span class="mi">9</span> <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="g g-Whitespace">     </span><span class="mi">10</span> <span class="kn">from</span> <span class="nn">tensorflow.keras.preprocessing</span> <span class="kn">import</span> <span class="n">timeseries_dataset_from_array</span>
+
+<span class="ne">ModuleNotFoundError</span>: No module named &#39;tqdm&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># MESAPreProcessing is a specialized class to preprocess csv files from Philips Actiwatch Spectrum devices used in the MESA Sleep experiment</span>
+<span class="c1"># MESA Sleep dataset can be found here: https://sleepdata.org/datasets/mesa/</span>
+<span class="n">preprocessed</span> <span class="o">=</span> <span class="n">MESAPreProcessing</span><span class="p">(</span><span class="s2">&quot;./data/examples_mesa/mesa-sample.csv&quot;</span><span class="p">)</span>
+
+<span class="c1"># Wearable is the main object in HypnosPy.</span>
+<span class="n">w</span> <span class="o">=</span> <span class="n">Wearable</span><span class="p">(</span><span class="n">preprocessed</span><span class="p">)</span>
+
+<span class="c1"># In HypnosPy, we have the concept of ``experiment day&#39;&#39; which by default starts at midnight (00 hours).</span>
+<span class="c1"># We can easily change it to any other time we wish. For example, lets run this script with experiment days</span>
+<span class="c1"># that start at 3pm (15h)</span>
+<span class="n">w</span><span class="o">.</span><span class="n">change_start_hour_for_experiment_day</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+
+<span class="c1"># Sleep Wake Analysis module</span>
+<span class="n">sw</span> <span class="o">=</span> <span class="n">SleepWakeAnalysis</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">sw</span><span class="o">.</span><span class="n">run_sleep_algorithm</span><span class="p">(</span><span class="s2">&quot;ScrippsClinic&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># runs alg and creates new col named &#39;ScrippsClinic&#39;</span>
+<span class="n">sw</span><span class="o">.</span><span class="n">run_sleep_algorithm</span><span class="p">(</span><span class="s2">&quot;Cole-Kripke&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># runs alg and creates new col named &#39;Cole-Kripke&#39;</span>
+<span class="n">sw</span><span class="o">.</span><span class="n">run_sleep_algorithm</span><span class="p">(</span><span class="s2">&quot;Sazonov&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># runs alg and creates new col named &#39;Sazonov&#39;</span>
+
+<span class="c1"># View results</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">Viewer</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">v</span><span class="o">.</span><span class="n">view_signals</span><span class="p">(</span><span class="n">signal_categories</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;activity&quot;</span><span class="p">],</span> <span class="n">signal_as_area</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ScrippsClinic&quot;</span><span class="p">,</span> <span class="s2">&quot;Cole-Kripke&quot;</span><span class="p">,</span> <span class="s2">&quot;Sazonov&quot;</span><span class="p">],</span>
+               <span class="n">colors</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;area&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">]},</span> <span class="n">alphas</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;area&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">})</span>
+
+<span class="n">v</span><span class="o">.</span><span class="n">view_signals</span><span class="p">(</span><span class="n">signal_categories</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;pa_intensity&quot;</span><span class="p">],</span> <span class="n">alphas</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;area&quot;</span><span class="p">:</span><span class="mf">0.6</span><span class="p">})</span>
+
+<span class="c1"># Easily remove non-wearing epochs/days.</span>
+<span class="n">nwd</span> <span class="o">=</span> <span class="n">NonWearingDetector</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="n">nwd</span><span class="o">.</span><span class="n">detect_non_wear</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;choi&quot;</span><span class="p">)</span>
+<span class="c1">#nwd.check_valid_days(max_non_wear_minutes_per_day=180)</span>
+<span class="c1">#nwd.drop_invalid_days()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/basic_use_2_0.png" src="_images/basic_use_2_0.png" />
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">ValueError</span><span class="g g-Whitespace">                                </span>Traceback (most recent call last)
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">46</span><span class="o">-</span><span class="mi">7</span><span class="n">a0d12537e67</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="g g-Whitespace">     </span><span class="mi">22</span>                <span class="n">colors</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;area&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">]},</span> <span class="n">alphas</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;area&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">})</span>
+<span class="g g-Whitespace">     </span><span class="mi">23</span> 
+<span class="ne">---&gt; </span><span class="mi">24</span> <span class="n">v</span><span class="o">.</span><span class="n">view_signals</span><span class="p">(</span><span class="n">signal_categories</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;pa_intensity&quot;</span><span class="p">],</span> <span class="n">alphas</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;area&quot;</span><span class="p">:</span><span class="mf">0.6</span><span class="p">})</span>
+<span class="g g-Whitespace">     </span><span class="mi">25</span> 
+<span class="g g-Whitespace">     </span><span class="mi">26</span> <span class="c1"># Easily remove non-wearing epochs/days.</span>
+
+<span class="nn">~\OneDrive - University of Cambridge\HypnosPy\hypnospy\analysis\visualization.py</span> in <span class="ni">view_signals</span><span class="nt">(self, signal_categories, other_signals, signal_as_area, resample_to, sleep_cols, select_days, zoom, alphas, colors, edgecolors, labels, text)</span>
+<span class="g g-Whitespace">     </span><span class="mi">84</span>         <span class="c1"># Many days, one day per panel</span>
+<span class="g g-Whitespace">     </span><span class="mi">85</span>         <span class="k">for</span> <span class="n">wearable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wearables</span><span class="p">:</span>
+<span class="ne">---&gt; </span><span class="mi">86</span>             <span class="n">Viewer</span><span class="o">.</span><span class="n">view_signals_wearable</span><span class="p">(</span><span class="n">wearable</span><span class="p">,</span> <span class="n">signal_categories</span><span class="p">,</span> <span class="n">other_signals</span><span class="p">,</span> <span class="n">signal_as_area</span><span class="p">,</span> <span class="n">resample_to</span><span class="p">,</span>
+<span class="g g-Whitespace">     </span><span class="mi">87</span>                                          <span class="n">sleep_cols</span><span class="p">,</span> <span class="n">select_days</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">alphas</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">edgecolors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">88</span> 
+
+<span class="nn">~\OneDrive - University of Cambridge\HypnosPy\hypnospy\analysis\visualization.py</span> in <span class="ni">view_signals_wearable</span><span class="nt">(wearable, signal_categories, other_signals, signal_as_area, resample_to, sleep_cols, select_days, zoom, alphas, colors, edgecolors, labels, text)</span>
+<span class="g g-Whitespace">    </span><span class="mi">115</span>                         <span class="k">if</span> <span class="n">pa</span> <span class="ow">in</span> <span class="n">wearable</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+<span class="g g-Whitespace">    </span><span class="mi">116</span>                             <span class="n">cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pa</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">117</span>                 <span class="k">else</span><span class="p">:</span>
+<span class="g g-Whitespace">    </span><span class="mi">118</span>                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;PA Intensity levels not available for PID </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">wearable</span><span class="o">.</span><span class="n">get_pid</span><span class="p">()))</span>
+<span class="g g-Whitespace">    </span><span class="mi">119</span> 
+
+<span class="ne">ValueError</span>: PA Intensity levels not available for PID 1
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">NameError</span><span class="g g-Whitespace">                                 </span>Traceback (most recent call last)
+<span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="n">beea5c490651</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="nb">print</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="nb">print</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+<span class="ne">NameError</span>: name &#39;w&#39; is not defined
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
     <script type="text/x-thebe-config">
     {
         requestKernel: true,
@@ -267,15 +437,15 @@
 
               </div>
               
-        </div>
-    </div>
-    
-    
-    <div class='prev-next-bottom'>
         
+        <div class='prev-next-bottom'>
+            
     <a class='left-prev' id="prev-link" href="use-cases.html" title="previous page">Usage 💡</a>
-    <a class='right-next' id="next-link" href="population_analysis.html" title="next page">&lt;no title&gt;</a>
+    <a class='right-next' id="next-link" href="population_analysis.html" title="next page">Population analysis</a>
 
+        </div>
+        
+        </div>
     </div>
     <footer class="footer mt-5 mt-md-0">
     <div class="container">

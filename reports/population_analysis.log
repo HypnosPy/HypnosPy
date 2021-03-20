@@ -1,0 +1,61 @@
+Traceback (most recent call last):
+  File "c:\users\mariu\.conda\envs\p37\lib\site-packages\jupyter_cache\executors\utils.py", line 56, in single_nb_execution
+    record_timing=False,
+  File "c:\users\mariu\.conda\envs\p37\lib\site-packages\nbclient\client.py", line 1112, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+  File "c:\users\mariu\.conda\envs\p37\lib\site-packages\nbclient\util.py", line 74, in wrapped
+    return just_run(coro(*args, **kwargs))
+  File "c:\users\mariu\.conda\envs\p37\lib\site-packages\nbclient\util.py", line 53, in just_run
+    return loop.run_until_complete(coro)
+  File "c:\users\mariu\.conda\envs\p37\lib\asyncio\base_events.py", line 587, in run_until_complete
+    return future.result()
+  File "c:\users\mariu\.conda\envs\p37\lib\site-packages\nbclient\client.py", line 554, in async_execute
+    cell, index, execution_count=self.code_cells_executed + 1
+  File "c:\users\mariu\.conda\envs\p37\lib\site-packages\nbclient\client.py", line 857, in async_execute_cell
+    self._check_raise_for_error(cell, exec_reply)
+  File "c:\users\mariu\.conda\envs\p37\lib\site-packages\nbclient\client.py", line 760, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+#HypnosPy
+from hypnospy import Wearable, Diary
+from hypnospy.data import RawProcessing
+from hypnospy.analysis import NonWearingDetector, SleepBoudaryDetector, Validator, Viewer
+from hypnospy import Experiment
+#Evaluation
+from sklearn.metrics import mean_squared_error, cohen_kappa_score
+#Other packages
+import tempfile
+import os
+import pandas as pd
+import numpy as np
+from glob import glob
+from tqdm import tqdm
+------------------
+
+[1;31m---------------------------------------------------------------------------[0m
+[1;31mModuleNotFoundError[0m                       Traceback (most recent call last)
+[1;32m<ipython-input-1-17160b1af127>[0m in [0;36m<module>[1;34m[0m
+[0;32m      2[0m [1;32mfrom[0m [0mhypnospy[0m [1;32mimport[0m [0mWearable[0m[1;33m,[0m [0mDiary[0m[1;33m[0m[1;33m[0m[0m
+[0;32m      3[0m [1;32mfrom[0m [0mhypnospy[0m[1;33m.[0m[0mdata[0m [1;32mimport[0m [0mRawProcessing[0m[1;33m[0m[1;33m[0m[0m
+[1;32m----> 4[1;33m [1;32mfrom[0m [0mhypnospy[0m[1;33m.[0m[0manalysis[0m [1;32mimport[0m [0mNonWearingDetector[0m[1;33m,[0m [0mSleepBoudaryDetector[0m[1;33m,[0m [0mValidator[0m[1;33m,[0m [0mViewer[0m[1;33m[0m[1;33m[0m[0m
+[0m[0;32m      5[0m [1;32mfrom[0m [0mhypnospy[0m [1;32mimport[0m [0mExperiment[0m[1;33m[0m[1;33m[0m[0m
+[0;32m      6[0m [1;31m#Evaluation[0m[1;33m[0m[1;33m[0m[1;33m[0m[0m
+
+[1;32mc:\users\mariu\.conda\envs\p37\lib\site-packages\hypnospy\analysis\__init__.py[0m in [0;36m<module>[1;34m[0m
+[1;32m----> 1[1;33m [1;32mfrom[0m [1;33m.[0m[0mcircadian_analysis[0m [1;32mimport[0m [0mCircadianAnalysis[0m[1;33m[0m[1;33m[0m[0m
+[0m[0;32m      2[0m [1;32mfrom[0m [1;33m.[0m[0msleep_wake_analysis[0m [1;32mimport[0m [0mSleepWakeAnalysis[0m[1;33m[0m[1;33m[0m[0m
+[0;32m      3[0m [1;32mfrom[0m [1;33m.[0m[0mnon_wearing_detector[0m [1;32mimport[0m [0mNonWearingDetector[0m[1;33m[0m[1;33m[0m[0m
+[0;32m      4[0m [1;32mfrom[0m [1;33m.[0m[0mphyisical_activity[0m [1;32mimport[0m [0mPhysicalActivity[0m[1;33m[0m[1;33m[0m[0m
+[0;32m      5[0m [1;32mfrom[0m [1;33m.[0m[0msleep_metrics[0m [1;32mimport[0m [0mSleepMetrics[0m[1;33m[0m[1;33m[0m[0m
+
+[1;32mc:\users\mariu\.conda\envs\p37\lib\site-packages\hypnospy\analysis\circadian_analysis.py[0m in [0;36m<module>[1;34m[0m
+[0;32m      6[0m [1;32mfrom[0m [0mscipy[0m[1;33m.[0m[0mstats[0m [1;32mimport[0m [0mentropy[0m[1;33m[0m[1;33m[0m[0m
+[0;32m      7[0m [1;32mfrom[0m [0mscipy[0m [1;32mimport[0m [0mlinalg[0m  [1;31m# linear algebra (matrix) processing package[0m[1;33m[0m[1;33m[0m[0m
+[1;32m----> 8[1;33m [1;32mfrom[0m [0mtqdm[0m [1;32mimport[0m [0mtqdm[0m[1;33m,[0m [0mtrange[0m[1;33m[0m[1;33m[0m[0m
+[0m[0;32m      9[0m [1;32mfrom[0m [0mcollections[0m [1;32mimport[0m [0mdefaultdict[0m[1;33m[0m[1;33m[0m[0m
+[0;32m     10[0m [1;32mfrom[0m [0mtensorflow[0m[1;33m.[0m[0mkeras[0m[1;33m.[0m[0mpreprocessing[0m [1;32mimport[0m [0mtimeseries_dataset_from_array[0m[1;33m[0m[1;33m[0m[0m
+
+[1;31mModuleNotFoundError[0m: No module named 'tqdm'
+ModuleNotFoundError: No module named 'tqdm'
+
