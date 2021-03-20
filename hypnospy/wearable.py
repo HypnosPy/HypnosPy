@@ -1,6 +1,7 @@
 import hypnospy
 import pandas as pd
-from hypnospy import Diary, misc, CGM
+from hypnospy import Diary, misc
+from .cgm import CGM
 import h5py
 
 

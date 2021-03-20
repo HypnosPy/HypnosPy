@@ -7,7 +7,7 @@ import warnings
 from hypnospy.data import RawProcessing
 from hypnospy import Wearable
 from hypnospy import Diary
-from hypnospy import CGM
+from .cgm import CGM
 
 
 class Experiment(object):

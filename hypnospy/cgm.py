@@ -6,6 +6,7 @@ import numpy as np
 
 class CGM(object):
     """
+    
     For Freestyle Libre, the imported .csv files have the following descriptions:
             'Serial Number' ID of the row.
 

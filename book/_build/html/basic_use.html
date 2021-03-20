@@ -297,27 +297,27 @@
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
 <span class="ne">ModuleNotFoundError</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
 <span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="mi">94781</span><span class="n">a92fd99</span><span class="o">&gt;</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-<span class="ne">----&gt; </span><span class="mi">1</span> <span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Wearable</span>
+<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Wearable</span>
 <span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">from</span> <span class="nn">hypnospy.data</span> <span class="kn">import</span> <span class="n">MESAPreProcessing</span>
-<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">hypnospy.analysis</span> <span class="kn">import</span> <span class="n">Viewer</span><span class="p">,</span> <span class="n">NonWearingDetector</span><span class="p">,</span> <span class="n">SleepWakeAnalysis</span>
+<span class="ne">----&gt; </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">hypnospy.analysis</span> <span class="kn">import</span> <span class="n">Viewer</span><span class="p">,</span> <span class="n">NonWearingDetector</span><span class="p">,</span> <span class="n">SleepWakeAnalysis</span>
 <span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="c1">#from tf.keras.preprocessing import timeseries_dataset_from_array</span>
 <span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="ne">c</span>:\users\mariu\.conda\envs\p37\lib\site-packages\hypnospy\__init__.py in &lt;module&gt;
-<span class="g g-Whitespace">      </span><span class="mi">2</span> 
-<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">.diary</span> <span class="kn">import</span> <span class="n">Diary</span>
-<span class="ne">----&gt; </span><span class="mi">4</span> <span class="kn">from</span> <span class="nn">.wearable</span> <span class="kn">import</span> <span class="n">Wearable</span>
-<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">from</span> <span class="nn">.experiment</span> <span class="kn">import</span>  <span class="n">Experiment</span>
-<span class="g g-Whitespace">      </span><span class="mi">6</span> 
+<span class="ne">c</span>:\users\mariu\.conda\envs\p37\lib\site-packages\hypnospy\analysis\__init__.py in &lt;module&gt;
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="kn">from</span> <span class="nn">.circadian_analysis</span> <span class="kn">import</span> <span class="n">CircadianAnalysis</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">from</span> <span class="nn">.sleep_wake_analysis</span> <span class="kn">import</span> <span class="n">SleepWakeAnalysis</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">.non_wearing_detector</span> <span class="kn">import</span> <span class="n">NonWearingDetector</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="kn">from</span> <span class="nn">.phyisical_activity</span> <span class="kn">import</span> <span class="n">PhysicalActivity</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">from</span> <span class="nn">.sleep_metrics</span> <span class="kn">import</span> <span class="n">SleepMetrics</span>
 
-<span class="ne">c</span>:\users\mariu\.conda\envs\p37\lib\site-packages\hypnospy\wearable.py in &lt;module&gt;
-<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Diary</span>
-<span class="ne">----&gt; </span><span class="mi">4</span> <span class="kn">import</span> <span class="nn">h5py</span>
-<span class="g g-Whitespace">      </span><span class="mi">5</span> 
-<span class="g g-Whitespace">      </span><span class="mi">6</span> 
+<span class="ne">c</span>:\users\mariu\.conda\envs\p37\lib\site-packages\hypnospy\analysis\circadian_analysis.py in &lt;module&gt;
+<span class="g g-Whitespace">      </span><span class="mi">6</span> <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">entropy</span>
+<span class="g g-Whitespace">      </span><span class="mi">7</span> <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">linalg</span>  <span class="c1"># linear algebra (matrix) processing package</span>
+<span class="ne">----&gt; </span><span class="mi">8</span> <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span><span class="p">,</span> <span class="n">trange</span>
+<span class="g g-Whitespace">      </span><span class="mi">9</span> <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="g g-Whitespace">     </span><span class="mi">10</span> <span class="kn">from</span> <span class="nn">tensorflow.keras.preprocessing</span> <span class="kn">import</span> <span class="n">timeseries_dataset_from_array</span>
 
-<span class="ne">ModuleNotFoundError</span>: No module named &#39;h5py&#39;
+<span class="ne">ModuleNotFoundError</span>: No module named &#39;tqdm&#39;
 </pre></div>
 </div>
 </div>
