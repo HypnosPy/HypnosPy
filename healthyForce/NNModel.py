@@ -534,6 +534,8 @@ class MyNet(pl.LightningModule):
                   "dropout_input_layers", "dropout_inner_layets", "opt_step_size", "opt_weight_decay",
                   "output_strategy", "shared_output_size", "batch_size"]:
             row[p] = self.hparams[p]
+        for k, v in return_dict.items():
+            row[k] = v
 
         pd.DataFrame([row]).to_csv("nn_results/nn_test_%s.csv.gz" % (self.timestamp), index=False)
 
