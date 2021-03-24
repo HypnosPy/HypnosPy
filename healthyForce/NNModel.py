@@ -24,6 +24,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+import sys
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
@@ -493,12 +494,11 @@ class MyNet(pl.LightningModule):
         self.saved_results.append(row)
         print("Saving results to disk!")
 
-        pd.DataFrame(self.saved_results).to_csv("nn_results/nn_val_%s.out" % (self.timestamp), index=False)
+        pd.DataFrame(self.saved_results).to_csv("nn_results/nn_val_%s.csv.gz" % (self.timestamp), index=False)
 
         for k, v in return_dict.items():
             self.log(k, v)
         self.log("val_loss", val_loss)
-        return return_dict
 
     def test_epoch_end(self, outputs):
         return_dict = {}
@@ -535,7 +535,7 @@ class MyNet(pl.LightningModule):
                   "output_strategy", "shared_output_size", "batch_size"]:
             row[p] = self.hparams[p]
 
-        pd.DataFrame([row]).to_csv("nn_results/nn_test_%s.out" % (self.timestamp), index=False)
+        pd.DataFrame([row]).to_csv("nn_results/nn_test_%s.csv.gz" % (self.timestamp), index=False)
 
         for k, v in return_dict.items():
             self.log(k, v)
@@ -543,15 +543,15 @@ class MyNet(pl.LightningModule):
 
 
 # +
-batch_size = 32
-DATASET = "hchs"
+#batch_size = 32
+#DATASET = "hchs"
 
-with open("%s_to_NN.pkl" % (DATASET), "rb") as f:
-    X, Y = pickle.load(f)
+#with open("%s_to_NN.pkl" % (DATASET), "rb") as f:
+#    X, Y = pickle.load(f)
 
-train = DataLoader(myXYDataset(X["train"], Y["train"]), batch_size=batch_size, shuffle=True, drop_last=True, num_workers=8)
-val   = DataLoader(myXYDataset(X["val"],   Y["val"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
-test  = DataLoader(myXYDataset(X["test"],  Y["test"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
+#train = DataLoader(myXYDataset(X["train"], Y["train"]), batch_size=batch_size, shuffle=True, drop_last=True, num_workers=8)
+#val   = DataLoader(myXYDataset(X["val"],   Y["val"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
+#test  = DataLoader(myXYDataset(X["test"],  Y["test"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
 
 
 # +
@@ -625,18 +625,23 @@ params = []
 for sleep_metrics in [["sleepEfficiency"]]:
     for loss_method in ["equal"]:
         for shared_output_size in [8, 16, 32, 64, 128]:
-            for learning_rate in [0.1, 0.01, 0.005, 0.001, 0.0005, 0.0001]:
+            for learning_rate in [0.1, 0.01, 0.003, 0.005, 0.001, 0.0005, 0.0001]:
                 for opt_step_size in [5, 10, 20]:
                     for weight_decay in [0.01, 0.001]:
                         for dropout_input_layers in [0.0, 0.05, 0.1]:
                             for dropout_inner_layets in [0.0, 0.05, 0.1, 0.2]:
                                 params.append([sleep_metrics, shared_output_size, learning_rate, loss_method, opt_step_size, weight_decay, dropout_input_layers, dropout_inner_layets])
 
+print("Exploring %d parameter combinations" % len(params))
 DATASET = "hchs"
 with open("%s_to_NN.pkl" % (DATASET), "rb") as f:
     X, Y = pickle.load(f)
 
-for batch_size in [8, 16, 32, 64, 128]:
+idx = int(sys.argv[1])
+batch_sizes = [8, 16, 32, 64, 128][idx: idx+1]
+
+for batch_size in batch_sizes:
+    print("BATCH SIZE: %d" % batch_size)
     train = DataLoader(myXYDataset(X["train"], Y["train"]), batch_size=batch_size, shuffle=True, drop_last=True, num_workers=8)
     val   = DataLoader(myXYDataset(X["val"],   Y["val"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
     test  = DataLoader(myXYDataset(X["test"],  Y["test"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
