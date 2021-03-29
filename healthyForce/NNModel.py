@@ -61,6 +61,13 @@ class myXYDataset(Dataset):
         return x, y
 
 
+def calculate_classification_metrics(labels, predictions):
+    return metrics.accuracy_score(labels, predictions),\
+           metrics.f1_score(labels, predictions, average='macro', labels=[0, 1, 2]), \
+           metrics.f1_score(labels, predictions, average='micro', labels=[0, 1, 2]), \
+           metrics.matthews_corrcoef(labels, predictions)
+
+
 # +
 class NetDemographics(pl.LightningModule):
 
@@ -199,17 +206,71 @@ class Net128Input(pl.LightningModule):
         x = self.act(self.lin3(x))
         #x = self.act(self.lin4(x))
         return x
+   
+    
+def get_number_internal_layers(n, output_size):
+    """
+    E.g.:
+        get_number_internal_layers(20, 3) --> [16, 8, 4]
+        get_number_internal_layers(192, 16) # --> [128, 64, 32]
+    """
+    i = 1; d = 2; s = []
+    while (n - 1) / d > 1: 
+        s.append(d)
+        i += 1
+        d = 2**i;
+        
+    s = [e for e in s if e > output_size]
+    return s[::-1]
+
+
+class LSTMLayer(pl.LightningModule):
+    def __init__(self,
+                 input_size=8,
+                 hidden_dim=10,
+                 output_dim=2,
+                 dropout_rate=0.0,
+                 break_point=24,
+                 ):
+        super(LSTMLayer, self).__init__()
+
+        self.lstm = nn.LSTM(break_point, hidden_dim, num_layers=1, dropout=dropout_rate,
+                            batch_first=True, bidirectional=False)
+        self.linlayers = nn.ModuleList() 
+        
+        last_d = hidden_dim * input_size//break_point
+        for lay_size in get_number_internal_layers(last_d, output_dim):
+            print("Last: %d, Next: %d" % (last_d, lay_size))
+            self.linlayers.append(nn.Linear(last_d, lay_size))
+            last_d = lay_size
+            
+        print("Very Last: %d, Out: %d" % (last_d, output_dim))
+        print("#Lin layers: ", len(self.linlayers))
+        self.last_lin  = nn.Linear(last_d, output_dim)
+        self.act = nn.ReLU()
+        self.break_point = break_point
+        
+    def forward(self, x):
+        #print("INPUT:", x.shape)
+        x = x.view(x.shape[0], x.shape[1]//self.break_point, -1)
+        #print("Reshaped to:", x.shape)
+        
+        x, hidden = self.lstm(x)
+        #print("After LSTM:", x.shape)
+        
+        #x = x.squeeze()
+        x = x.reshape(x.shape[0], -1)
+        
+        #print("After reshape:", x.shape)
+        for lay in self.linlayers:
+            x = self.act(lay(x))
+        
+        x = self.act(self.last_lin(x))
+        return x
 
 
 
 # -
-
-def calculate_classification_metrics(labels, predictions):
-    return metrics.accuracy_score(labels, predictions),\
-           metrics.f1_score(labels, predictions, average='macro', labels=[0, 1, 2]), \
-           metrics.f1_score(labels, predictions, average='micro', labels=[0, 1, 2]), \
-           metrics.matthews_corrcoef(labels, predictions)
-
 
 def get_input_size(dataset, fset):
     return {"mesa":
@@ -277,20 +338,27 @@ class MyNet(pl.LightningModule):
         self.vae24 = Net4Input(input_size=get_input_size(self.dataset, "vae24"), 
                                output_dim=output_sizes["vae24"], dropout_rate=self.dropout_input_layers)
         self.cosinor = Net4Input(input_size=get_input_size(self.dataset, "cosinor"), 
-                                 output_dim=output_sizes["cosinor"], dropout_rate=self.dropout_input_layers)
+                                 output_dim=output_sizes["cosinor"], dropout_rate=self.dropout_input_layers)        
         self.bins = Net4Input(input_size=get_input_size(self.dataset, "bins"), 
                               output_dim=output_sizes["bins"], dropout_rate=self.dropout_input_layers)
-        self.hourly_bins = Net64Input(input_size=get_input_size(self.dataset, "hourly_bins"), 
-                                      output_dim=output_sizes["hourly_bins"], dropout_rate=self.dropout_input_layers)
-        self.hourly_stats = Net128Input(input_size=get_input_size(self.dataset, "hourly_stats"), 
-                                        output_dim=output_sizes["hourly_stats"], dropout_rate=self.dropout_input_layers)
-        self.hourly_bouts = Net128Input(input_size=get_input_size(self.dataset, "hourly_bouts"),
-                                        output_dim=output_sizes["hourly_bouts"], dropout_rate=self.dropout_input_layers)
+        
+#         self.hourly_bins = Net64Input(input_size=get_input_size(self.dataset, "hourly_bins"), 
+#                                       output_dim=output_sizes["hourly_bins"], dropout_rate=self.dropout_input_layers)
+#         self.hourly_stats = Net128Input(input_size=get_input_size(self.dataset, "hourly_stats"), 
+#                                         output_dim=output_sizes["hourly_stats"], dropout_rate=self.dropout_input_layers)
+#         self.hourly_bouts = Net128Input(input_size=get_input_size(self.dataset, "hourly_bouts"),
+#                                         output_dim=output_sizes["hourly_bouts"], dropout_rate=self.dropout_input_layers)
 
-        # self.sleep_qualities = NetSleepQualities(output_dim=self.internal_outputs)
-        # self.activitiy_pa2d  = NetActGrid((2,3,24), output_dim=self.internal_outputs)
-        # self.activitiy_grid  = NetActGrid((1,3,12), output_dim=self.internal_outputs)
-        # self.time            = NetTimeFeatures(output_dim=self.internal_outputs)
+        ###############
+        ###############
+        self.hourly_bins = LSTMLayer(input_size=get_input_size(self.dataset, "hourly_bins"), hidden_dim=get_input_size(self.dataset, "hourly_bins")//2,
+                                      output_dim=output_sizes["hourly_bins"], dropout_rate=self.dropout_input_layers)
+        self.hourly_stats = LSTMLayer(input_size=get_input_size(self.dataset, "hourly_stats"), hidden_dim=get_input_size(self.dataset, "hourly_stats")//2,
+                                        output_dim=output_sizes["hourly_stats"], dropout_rate=self.dropout_input_layers)
+        self.hourly_bouts = LSTMLayer(input_size=get_input_size(self.dataset, "hourly_bouts"), hidden_dim=get_input_size(self.dataset, "hourly_bouts")//2,
+                                       output_dim=output_sizes["hourly_bouts"], dropout_rate=self.dropout_input_layers,
+                                     break_point=get_input_size(self.dataset, "hourly_bouts"))
+
         
         print("Internal Layers: ", sum(output_sizes.values()))
         self.drop = nn.Dropout(self.dropout_inner_layets)
@@ -338,17 +406,6 @@ class MyNet(pl.LightningModule):
         # Save the results every epoch
         self.saved_results = []
         
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.xavier_normal_(m.weight)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.xavier_normal_(m.weight)
-                nn.init.constant_(m.bias, 0)
-
     def forward(self, x_):
         x = torch.cat((self.bouts(x_["bouts"]),
                        self.demographics(x_["demo"]),
@@ -545,21 +602,22 @@ class MyNet(pl.LightningModule):
 
 
 # +
-#batch_size = 32
-#DATASET = "hchs"
+# batch_size = 64
+# DATASET = "hchs"
 
-#with open("%s_to_NN.pkl" % (DATASET), "rb") as f:
-#    X, Y = pickle.load(f)
+# with open("%s_to_NN.pkl" % (DATASET), "rb") as f:
+#     X, Y = pickle.load(f)
 
-#train = DataLoader(myXYDataset(X["train"], Y["train"]), batch_size=batch_size, shuffle=True, drop_last=True, num_workers=8)
-#val   = DataLoader(myXYDataset(X["val"],   Y["val"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
-#test  = DataLoader(myXYDataset(X["test"],  Y["test"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
+# train = DataLoader(myXYDataset(X["train"], Y["train"]), batch_size=batch_size, shuffle=True, drop_last=True, num_workers=8)
+# val   = DataLoader(myXYDataset(X["val"],   Y["val"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
+# test  = DataLoader(myXYDataset(X["test"],  Y["test"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
 
 
 # +
 # # param = [["sleepEfficiency"], 16, 0.005, None, 10, 0.01, 64] # Config for SGD
 # # param = [["sleepEfficiency", "awakening", "totalSleepTime", "combined"], 16, 0.005, "dwa_default", 10, 0.01, batch_size] # Config for Adam
-# param = [["sleepEfficiency"], 128, 0.005, None, 10, 0.01, 0.1, 0.1]
+# # param = [["sleepEfficiency"], 128, 0.005, None, 10, 0.01, 0.1, 0.1]
+# param = [["sleepEfficiency"], 8, 0.003, None, 10, 0.01, 0.0, 0.05]
 # sleep_metrics, shared_output_size, learning_rate, loss_method, opt_step_size, weight_decay, dropout_input_layers, dropout_inner_layets = param
 
 # path_ckps = "./lightning_logs/test/"
@@ -576,7 +634,7 @@ class MyNet(pl.LightningModule):
 #                                     verbose=True,
 #                                     monitor='average_global', mode='max',
 #                                     # monitor='val_loss', mode='min',
-#                                     patience=1,
+#                                     patience=10,
 #                                     )
 
 # hparams = Namespace(batch_size=batch_size,
@@ -613,10 +671,54 @@ class MyNet(pl.LightningModule):
 # trainer.fit(model, train, val)
 # trainer.test(test_dataloaders=test)
 
+# # LSTM
+# # (Test) Total Loss: 0.8902
+# # (sleepEfficiency) Epoch: 13, ACC: 0.789, MacroF1: 0.679, MCC: 0.537, Loss: 0.8902
+# # Test Average Eval Metric: 0.5367
+# # (Test) Total Loss: 0.5439
+# # (sleepEfficiency) Epoch: 14, ACC: 0.797, MacroF1: 0.696, MCC: 0.540, Loss: 0.5439
+# # Test Average Eval Metric: 0.5404
+# # (Test) Total Loss: 0.5419
+# # (sleepEfficiency) Epoch: 12, ACC: 0.783, MacroF1: 0.599, MCC: 0.483, Loss: 0.5419
+# # Test Average Eval Metric: 0.4826
+# # (Test) Total Loss: 1.1178
+# # (sleepEfficiency) Epoch: 19, ACC: 0.800, MacroF1: 0.695, MCC: 0.544, Loss: 1.1178
+# # Test Average Eval Metric: 0.5438
+# # (Test) Total Loss: 0.8090
+# # (sleepEfficiency) Epoch: 18, ACC: 0.781, MacroF1: 0.666, MCC: 0.505, Loss: 0.8090
+# # Test Average Eval Metric: 0.5047
+# # (Test) Total Loss: 0.9865
+# # (sleepEfficiency) Epoch: 20, ACC: 0.777, MacroF1: 0.689, MCC: 0.516, Loss: 0.9865
+# # Test Average Eval Metric: 0.5164
+
+# #### LSTM version 2
+# # (Test) Total Loss: 1.0198
+# # (sleepEfficiency) Epoch: 18, ACC: 0.791, MacroF1: 0.631, MCC: 0.532, Loss: 1.0198
+# # Test Average Eval Metric: 0.5318
+# # (Test) Total Loss: 0.8892
+# # (sleepEfficiency) Epoch: 17, ACC: 0.798, MacroF1: 0.698, MCC: 0.543, Loss: 0.8892
+# # Test Average Eval Metric: 0.5433
+# # (Test) Total Loss: 0.6308
+# # (sleepEfficiency) Epoch: 16, ACC: 0.796, MacroF1: 0.708, MCC: 0.542, Loss: 0.6308
+# # Test Average Eval Metric: 0.5423    
+# (Test) Total Loss: 1.0888
+# (sleepEfficiency) Epoch: 22, ACC: 0.790, MacroF1: 0.663, MCC: 0.516, Loss: 1.0888
+# Test Average Eval Metric: 0.5163
+
+# ## Optimized Normal layers Test
+# # (Test) Total Loss: 0.4590
+# # (sleepEfficiency) Epoch: 12, ACC: 0.807, MacroF1: 0.700, MCC: 0.568, Loss: 0.4590
+# # Test Average Eval Metric: 0.5683
+# # (Test) Total Loss: 0.5118
+# # (sleepEfficiency) Epoch: 14, ACC: 0.816, MacroF1: 0.707, MCC: 0.579, Loss: 0.5118
+# # Test Average Eval Metric: 0.5785
+# # (Test) Total Loss: 0.5519
+# # (sleepEfficiency) Epoch: 16, ACC: 0.797, MacroF1: 0.683, MCC: 0.530, Loss: 0.5519
+# # Test Average Eval Metric: 0.5300
 
 
 # +
-# Run a lot of experiments
+# Runs a lot of experiments
 params = []
 
 # for sleep_metrics in [["sleepEfficiency", "awakening", "totalSleepTime", "combined"],
@@ -698,6 +800,10 @@ for batch_size in batch_sizes:
                   callbacks=[early_stop_callback, ckp],)
         trainer.fit(model, train, val)
         trainer.test(test_dataloaders=test)
+
+
+
+# -
 
 
 
