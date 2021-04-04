@@ -327,6 +327,7 @@
 <div class="section" id="sleep-annotations">
 <h2>Sleep Annotations 🛏<a class="headerlink" href="#sleep-annotations" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/diary.py">diary.py</a></p>
+<p>The <strong>Diary</strong> class can be used to add sleep annotations created by subjects or experts to the Wearable object. Once this is done, they can be used as ground truth to evaluate the HypnosPy sleep labels created using the heart-rate or angle-based algorithms.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">hypnospy</span> <span class="kn">import</span> <span class="n">Diary</span>
 <span class="n">w</span> <span class="o">=</span> <span class="n">Wearable</span><span class="p">(</span><span class="n">preprocessed_object</span><span class="p">)</span>
 <span class="n">w</span><span class="o">.</span><span class="n">add_diary</span><span class="p">(</span><span class="n">Diary</span><span class="p">()</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">diary_file</span><span class="p">))</span>

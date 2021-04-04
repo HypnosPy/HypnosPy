@@ -3,6 +3,8 @@
 ## Sleep Annotations 🛏
 [diary.py](https://github.com/HypnosPy/HypnosPy/blob/master/hypnospy/diary.py)
 
+The **Diary** class can be used to add sleep annotations created by subjects or experts to the Wearable object. Once this is done, they can be used as ground truth to evaluate the HypnosPy sleep labels created using the heart-rate or angle-based algorithms.
+
 ```python
 from hypnospy import Diary
 w = Wearable(preprocessed_object)
