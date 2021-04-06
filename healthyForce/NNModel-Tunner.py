@@ -35,7 +35,8 @@ from pytorch_lightning.loggers import LightningLoggerBase
 from pytorch_lightning.utilities import rank_zero_only, seed
 
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
-
+from ray import tune
+    
 from collections import OrderedDict
 from datetime import datetime
 
@@ -834,7 +835,7 @@ class MyTwoStepsNet(pl.LightningModule):
 
 # -
 
-def eval_n_times(NetClass, n, config):
+def eval_n_times(config, NetClass, n, gpus=1):
     
     dataset = "hchs"
     learning_rate = config["learning_rate"]
@@ -846,7 +847,7 @@ def eval_n_times(NetClass, n, config):
         structure = {"lstm": {"bidirectional": config["bidirectional"], "hidden_dim": config["hidden_dim"], "num_layers": config["num_layers"]}}
     monitor = config["monitor"]
     shared_output_size = config["shared_output_size"]
-    opt_step_size = 5
+    opt_step_size = config["opt_step_size"]
     weight_decay = config["weight_decay"]
     dropout_input_layers = config["dropout_input_layers"]
     dropout_inner_layers = config["dropout_inner_layers"]
@@ -870,11 +871,11 @@ def eval_n_times(NetClass, n, config):
         path_ckps = "./lightning_logs/test/"
 
         if monitor == "mcc":
-            early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='mcc', mode='max', patience=10)
+            early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='mcc', mode='max', patience=3)
             ckp = ModelCheckpoint(filename=path_ckps + "{epoch:03d}-{loss:.3f}-{mcc:.3f}", save_top_k=1, verbose=False, prefix="",
                                   monitor="mcc", mode="max")
         else:
-            early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='loss', mode='min', patience=10)
+            early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='loss', mode='min', patience=3)
             ckp = ModelCheckpoint(filename=path_ckps + "{epoch:03d}-{loss:.3f}-{mcc:.3f}", save_top_k=1, verbose=False, prefix="",
                                   monitor="loss", mode="min")
                                             
@@ -907,7 +908,7 @@ def eval_n_times(NetClass, n, config):
         model = NetClass(hparams) 
         model.double()
 
-        trainer = Trainer(gpus=0, min_epochs=2,
+        trainer = Trainer(gpus=gpus, min_epochs=2,
                           max_epochs=300,
                           callbacks=[early_stop_callback, ckp])
         trainer.fit(model, train, val)
@@ -917,15 +918,19 @@ def eval_n_times(NetClass, n, config):
     return pd.DataFrame(results)
 
 
-def hyper_tuner(NetClass, config, dataset):
+def hyper_tuner(config, NetClass, dataset):
     
     learning_rate = config["learning_rate"]
     batch_size = config["batch_size"]
     
-    structure = {"lstm": {"bidirectional": config["bidirectional"], "hidden_dim": config["hidden_dim"], "num_layers": config["num_layers"]}}
+    if "structure" in config and config["structure"] == "mpl":
+        structure = {"mpl": "mpl"}
+    else:
+        structure = {"lstm": {"bidirectional": config["bidirectional"], "hidden_dim": config["hidden_dim"], "num_layers": config["num_layers"]}}
+
     monitor = config["monitor"]
     shared_output_size = config["shared_output_size"]
-    opt_step_size = 5
+    opt_step_size = config["opt_step_size"]
     weight_decay = config["weight_decay"]
     dropout_input_layers = config["dropout_input_layers"]
     dropout_inner_layers = config["dropout_inner_layers"]
@@ -946,11 +951,11 @@ def hyper_tuner(NetClass, config, dataset):
     path_ckps = "./lightning_logs/test/"
 
     if monitor == "mcc":
-        early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='mcc', mode='max', patience=10)
+        early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='mcc', mode='max', patience=3)
         ckp = ModelCheckpoint(filename=path_ckps + "{epoch:03d}-{loss:.3f}-{mcc:.3f}", save_top_k=1, verbose=False, prefix="",
                               monitor="mcc", mode="max")
     else:
-        early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='loss', mode='min', patience=10)
+        early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='loss', mode='min', patience=3)
         ckp = ModelCheckpoint(filename=path_ckps + "{epoch:03d}-{loss:.3f}-{mcc:.3f}", save_top_k=1, verbose=False, prefix="",
                               monitor="loss", mode="min")
 
@@ -990,28 +995,43 @@ def hyper_tuner(NetClass, config, dataset):
                       callbacks=[early_stop_callback, ckp, tune_cb])
     trainer.fit(model, train, val)
 
+
+def run_tuning_procedure(config, expname, ntrials, ncpus, ngpus, NetClass, dataset="hchs"):
+
+    trainable = tune.with_parameters(hyper_tuner, NetClass=NetClass, dataset=dataset)
+
+    analysis = tune.run(trainable,
+                        resources_per_trial={"cpu": ncpus, "gpu": ngpus},
+                        metric="loss",
+                        mode="min",
+                        config=config,
+                        num_samples=ntrials,
+                        name=expname)
+
+    print("Best Parameters:", analysis.best_config)
+
+    analysis.best_result_df.to_csv("best_parameters_exp%s_trials%d.csv" % (expname, ntrials))
+    analysis.results_df.to_csv("all_results_exp%s_trials%d.csv" % (expname, ntrials))
+    print("Best 5 results")
+    print(analysis.results_df.sort_values(by="mcc", ascending=False).head(5))
+
+
+
 # +
-# Test:
-# config = {     
-#     "learning_rate": 0.001,
-#     "batch_size": 64,
-#     "bidirectional": False,
-#     "hidden_dim": 128,
-#     "num_layers": 1,
-#     "monitor": "mcc",
-#     "shared_output_size": 32,
-#     "opt_step_size": 5,
-#     "weight_decay": 0.001,
-#     "dropout_input_layers": 0.01,
-#     "dropout_inner_layers": 0.01,
-#     "sleep_metrics": 'sleepEfficiency'
-# }
+default_mpl = {
+    "structure": "mpl",
+    "learning_rate": tune.loguniform(1e-6, 1e-1),
+    "batch_size": tune.choice([32, 64, 128, 256]),
+    "monitor": tune.choice(["loss", "mcc"]),
+    "shared_output_size": tune.randint(2, 256),
+    "opt_step_size": tune.randint(1, 20),
+    "weight_decay": tune.loguniform(1e-5, 1e-2),
+    "dropout_input_layers": tune.uniform(0, 1),
+    "dropout_inner_layers": tune.uniform(0, 1),
+}
 
-# hyper_tuner(config, "hchs")
-
-
-# +
-config = {
+default_lstm = {
+    "structure": "lstm",
     "learning_rate": tune.loguniform(1e-6, 1e-1),
     "batch_size": tune.choice([32, 64, 128, 256]),
     "bidirectional": tune.choice([True, False]),
@@ -1025,24 +1045,37 @@ config = {
     "dropout_inner_layers": tune.uniform(0, 1),
 }
 
-trainable = tune.with_parameters(hyper_tuner, NetClass=MyTwoStepsNet, dataset="hchs")
+# +
+ncpus=12
+ngpus=1
+ntrials=2
+exp_idx = 0 # sys.argv[1]
 
-analysis = tune.run(trainable,
-                    resources_per_trial={"cpu": 16, "gpu": 1},
-                    metric="loss",
-                    mode="min",
-                    config=config,
-                    num_samples=10000,
-                    name="tune_hchs")
+experiment_list = [
+    [MyNet,         default_mpl,  "MyNetMPL"], 
+    [MyTwoStepsNet, default_mpl,  "MyTwoStepsNetMPL"],
+    [MyNet,         default_lstm, "MyNetLSTM"],
+    [MyTwoStepsNet, default_lstm, "MyTwoStepsNetLSTM"],
+]
 
-print("Best Parameters:", analysis.best_config)
+NetClass = experiment_list[exp_idx][0]
+config = experiment_list[exp_idx][1]
+exp_name = experiment_list[exp_idx][2]
 
-analysis.best_result_df.to_csv("best_parameters_twosteps_lstm_%s.csv" % analysis.best_trial)
+run_tuning_procedure(config, exp_name, ntrials=ntrials, ncpus=ncpus, ngpus=ngpus, NetClass=NetClass, dataset="hchs")
 
 # -
 
+# # Experiments with best parameters
+
+# config_lstm = {'learning_rate': 0.001532635835186596, 'batch_size': 128, 'bidirectional': True, 'num_layers': 2, 'monitor': 'mcc', 'shared_output_size': 64, 'opt_step_size': 5
+# , 'weight_decay': 0.0002774925005331883, 'dropout_input_layers': 0.9030694535320151, 'dropout_inner_layers': 0.6805005401772247, 'hidden_dim': 128}
+# results2 = eval_n_times(config_lstm, MyNet, 10, gpus=1)
+
+
+# +
 # config = {'learning_rate': 0.002033717318575583, 'batch_size': 128, 'bidirectional': False, 'num_layers': 2, 'monitor': 'mcc', 'shared_output_size': 8, 'opt_step_size': 10, 'weight_decay': 0.00044602388560120504, 'dropout_input_layers': 0.7777008089936246, 'dropout_inner_layers': 0.4858974282110715, 'hidden_dim': 1024}
-eval_n_times(10, config)
+# eval_n_times(10, config)
 
 # +
 # config = {'learning_rate': 0.002, 'batch_size': 128, 'bidirectional': False, 'num_layers': 2, 
@@ -1065,8 +1098,6 @@ eval_n_times(10, config)
 # results3 
 
 # +
-# from ray import tune
-
 # config = {
 #     "learning_rate": tune.loguniform(1e-4, 1e-1),
 #     "batch_size": tune.choice([32, 64, 128]),
