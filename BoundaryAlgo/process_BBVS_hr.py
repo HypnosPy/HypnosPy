@@ -21,19 +21,12 @@ def load_experiment(data_path, diary_path, start_hour):
 
     # Iterates over a set of files in a directory.
     # Unfortunately, we have to do it manually with RawProcessing because we are modifying the annotations
+    print("Running %s" % data_path)
     for file in glob(data_path):
-        pp = RawProcessing(file,
-                           # HR information
-                           col_for_hr="mean_hr",
-                           # Activity information
-                           cols_for_activity=["stdMET_highIC_Branch"],
-                           is_act_count=False,
-                           device_location="dw",
-                           # Datetime information
-                           col_for_datetime="REALTIME",
-                           strftime="%d-%b-%Y %H:%M:%S",
-                           # Participant information
-                           col_for_pid="id")
+        print("FILE", file)
+        pp = RawProcessing(file, cols_for_activity=["stdMET_highIC_Branch"], is_act_count=False,
+                           col_for_datetime="REALTIME", strftime="%d-%b-%Y %H:%M:%S", col_for_pid="id",
+                           col_for_hr="mean_hr", device_location="dw")
         pp.data["hyp_act_x"] = pp.data["hyp_act_x"] - 1.0  # adjust for the BBVA dataset
 
         w = Wearable(pp)  # Creates a wearable from a pp object
@@ -54,7 +47,7 @@ def load_experiment(data_path, diary_path, start_hour):
 def one_loop(hparam):
 
     exp_id, data_path, diary_path, start_hour, end_hour, hr_quantile, hr_merge_blocks, hr_min_window_length, \
-    hr_volarity, vanhees_quantile,  output_path = hparam
+    hr_volarity, start_night, end_night, output_path = hparam
 
     print("Q:", hr_quantile, "L:", hr_min_window_length, "G", hr_merge_blocks)
 
@@ -63,6 +56,8 @@ def one_loop(hparam):
 
     va = Validator(exp)
     va.remove_wearables_without_diary()
+
+    va.flag_epoch_null_cols(["pitch_mean_ndw", "roll_mean_ndw", "pitch_mean_dw", "roll_mean_dw", "pitch_mean_thigh", "roll_mean_thigh"])
 
     va.flag_epoch_physical_activity_less_than(min_activity_threshold=-1000)  # Maybe this needs to be changed or removed
     va.flag_epoch_null_cols(col_list=["hyp_act_x"])
@@ -95,7 +90,7 @@ def one_loop(hparam):
                                 hr_volarity_threshold=hr_volarity,
                                 hr_volatility_window_in_minutes=10,
                                 hr_rolling_win_in_minutes=5,
-                                hr_sleep_search_window=(21, 11),
+                                hr_sleep_search_window=(start_night, end_night),
                                 hr_min_window_length_in_minutes=hr_min_window_length,
                                 hr_merge_blocks_gap_time_in_min=hr_merge_blocks,
                                 hr_sleep_only_in_sleep_search_window=True,
@@ -106,27 +101,29 @@ def one_loop(hparam):
                                 output_col="hyp_sleep_period_vanheesndw",
                                 angle_cols=["pitch_mean_ndw", "roll_mean_ndw"],
                                 angle_start_hour=start_hour,
-                                angle_quantile=vanhees_quantile,
-                                angle_minimum_len_in_minutes=hr_min_window_length,
-                                angle_merge_tolerance_in_minutes=hr_merge_blocks,
+                                angle_quantile=0.1,
+                                angle_minimum_len_in_minutes=30,
+                                angle_merge_tolerance_in_minutes=60,
+                                angle_only_largest_sleep_period=True,  # This was missing
                                 )
 
     sbd.detect_sleep_boundaries(strategy="adapted_van_hees",
                                 output_col="hyp_sleep_period_vanheesdw",
                                 angle_cols=["pitch_mean_dw", "roll_mean_dw"],
                                 angle_start_hour=start_hour,
-                                angle_quantile=vanhees_quantile,
-                                angle_minimum_len_in_minutes=hr_min_window_length,
-                                angle_merge_tolerance_in_minutes=hr_merge_blocks,
+                                angle_quantile=0.1,
+                                angle_minimum_len_in_minutes=30,
+                                angle_merge_tolerance_in_minutes=60,
+                                angle_only_largest_sleep_period=True,  # This was missing
                                 )
 
     sbd.detect_sleep_boundaries(strategy="adapted_van_hees",
                                 output_col="hyp_sleep_period_vanheesthigh",
                                 angle_cols=["pitch_mean_thigh", "roll_mean_thigh"],
                                 angle_start_hour=start_hour,
-                                angle_quantile=vanhees_quantile,
-                                angle_minimum_len_in_minutes=hr_min_window_length,
-                                angle_merge_tolerance_in_minutes=hr_merge_blocks,
+                                angle_quantile=0.1,
+                                angle_minimum_len_in_minutes=30,
+                                angle_merge_tolerance_in_minutes=60,
                                 angle_only_largest_sleep_period=True,
                                 )
 
@@ -219,9 +216,9 @@ def one_loop(hparam):
         # v = Viewer(w)
         # v.view_signals(["sleep",  "diary"],
         #                sleep_cols=["hyp_sleep_period_hrfullday", "hyp_sleep_period_hrnight",
-        #                            "hyp_sleep_period_vanheesndw"],
+        #                            "hyp_sleep_period_vanheesndw", "hyp_sleep_period_vanheesdw",
+        #                            "hyp_sleep_period_vanheesthigh"],
         #                colors=["green", "black", "blue", "orange", "yellow", "pink", "purple"],
-        #
         #                #alphas={'sleep': 0.3}
         #                )
 
@@ -239,20 +236,20 @@ def one_loop(hparam):
 if __name__ == "__main__":
 
     diary_path = "../data/diaries/BBVS_new_diary.csv"  # <- TODO: CHANGE HERE
-    data_path = "../data/small_collection_bvs/checked/BVS*.csv"  # <- TODO: CHANGE HERE
+    data_path = "../data/small_collection_bvs/problem/BVS*.csv"  # <- TODO: CHANGE HERE
 
     hr_volarity = 5
     exp_id = 0
 
-    quantiles = np.arange(0.1, 0.96, 0.025)
-    window_lengths = np.arange(10, 121, 5)
-    time_merge_blocks = [30] # [-1, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390, 420]
+    quantiles = [0.325, 0.800]  # np.arange(0.1, 0.96, 0.025)
+    window_lengths = [20]  # np.arange(10, 121, 5)
+    time_merge_blocks = [90, 420]  # [-1, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390, 420]
 
     start_hour = 15
     end_hour = 15
-    vanhees_quantile = 0.10
+    start_night = 23
+    end_night = 7
 
-    print("HELLO")
     hparam_list = []
     exp_id = 0
     for hr_quantile in quantiles:
@@ -260,19 +257,22 @@ if __name__ == "__main__":
             for hr_min_window_length in window_lengths:
 
                 exp_id += 1
-                hparam_list.append([exp_id, data_path, diary_path, start_hour, end_hour,
-                                    hr_quantile, hr_merge_blocks, hr_min_window_length, hr_volarity, vanhees_quantile])
+                hparam_list.append([exp_id, data_path, diary_path, start_hour, end_hour, hr_quantile, hr_merge_blocks,
+                                    hr_min_window_length, hr_volarity, start_night, end_night])
 
+    print("Parameters: %d" % (len(hparam_list)))
     with tempfile.TemporaryDirectory() as output_path:
 
         futures = [one_loop.remote(hparam_list[i] + [output_path]) for i in range(len(hparam_list[:]))]
         print(ray.get(futures))
-        # one_loop(hparam_list[0] + [output_path])
+        #one_loop(hparam_list[0] + [output_path])
 
         # Cleaning up: Merge all experiments and
         dfs = glob(output_path + "/*")
         bigdf = pd.concat([pd.read_csv(f) for f in dfs])
-        bigdf.to_csv("results_jan21_BBVS.csv.gz", index=False)
+        output_filename = "results_apr21_BBVS.csv.gz"
+        bigdf.to_csv(output_filename, index=False)
+        print("File: %s created!" % (output_filename))
 
     print("DONE!")
 
