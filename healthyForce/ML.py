@@ -26,6 +26,25 @@ from sklearn.metrics import f1_score, make_scorer
 
 from ML_misc import *
 from pycaret.classification import *
+import multiprocessing as mp
+
+import os
+import numpy as np
+
+def get_env_var(varname,default):
+    if os.environ.get(varname) != None:
+        var = int(os.environ.get(varname))
+        print(varname,':', var)
+    else:
+        var = default
+        print(varname,':', var,'(Default)')
+    return var 
+
+SLURM_JOB_ID            = get_env_var('SLURM_JOB_ID', 0)
+SLURM_ARRAY_TASK_ID     = get_env_var('SLURM_ARRAY_TASK_ID', 0)
+SLURM_ARRAY_TASK_COUNT  = get_env_var('SLURM_ARRAY_TASK_COUNT', 1)
+SLURM_JOB_CPUS_PER_NODE = get_env_var('SLURM_JOB_CPUS_PER_NODE', mp.cpu_count())
+
 
 # +
 # %%
@@ -47,8 +66,8 @@ overwritting = bool(eval(sys.argv[4]))
 
 fset = sys.argv[5]
 fset = fset if fset == "all" else int(fset)
-reverse = bool(eval(sys.argv[6]))
-print("Reverse experiment order:", reverse)
+
+
 
 print("Using GPU:", use_gpu)
 print("Overwritting results:", overwritting)
@@ -83,6 +102,7 @@ else:
         ["vae24"],                                                                                              # 16
         ["bins", "hourly_bins", "stats", "hourly_stats", "bouts", "hourly_bouts", "time", "cosinor", "demo",
                 "ae_bouts", "ae24", "vae24"],                                                                   # 17
+        ["bins", "hourly_bins", "stats", "hourly_stats", "bouts", "hourly_bouts", "time", "cosinor", "ae_bouts", "ae24", "vae24"],  # 18 removed demo
         # Up to here, select tset 0 - 13
         # Second Batch:
         # 11
@@ -115,8 +135,10 @@ for model_str in my_models:
 # ====================================================================================
 
 # %%
-order = -1 if reverse else 1
-for param in tqdm(parameters[::order]):
+
+selected_parameters = list(np.array_split(parameters, SLURM_ARRAY_TASK_COUNT)[SLURM_ARRAY_TASK_ID])
+
+for param in tqdm(selected_parameters):
 
     dataset, model_str, target, feature_subset, predict_d_plus, n_prev_days, include_past_ys = param
 
@@ -226,7 +248,7 @@ for param in tqdm(parameters[::order]):
     print("Saved results to: %s" % experiment_filename)
 
     # Save test results
-    predict_model(tunned_model)
+    predict_model(model)
 
     dfresult = pull()
     dfresult["dataset"] = dataset
