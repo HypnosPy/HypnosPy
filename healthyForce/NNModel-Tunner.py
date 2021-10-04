@@ -150,70 +150,80 @@ def run_tuning_procedure(config, expname, ntrials, ncpus, ngpus, NetClass, datas
 
 
 # +
-default_mpl = {
-    "structure": "mpl",
-    "learning_rate": tune.loguniform(1e-6, 1e-1),
-    "batch_size": tune.choice([32, 64, 128, 256]),
-    "monitor": tune.choice(["loss", "mcc"]),
-    "shared_output_size": tune.randint(2, 256),
-    "opt_step_size": tune.randint(1, 20),
-    "weight_decay": tune.loguniform(1e-5, 1e-2),
-    "dropout_input_layers": tune.uniform(0, 1),
-    "dropout_inner_layers": tune.uniform(0, 1),
-}
+if __name__ == "__main__":
 
-default_lstm = {
-    "structure": "lstm",
-    "learning_rate": tune.loguniform(1e-6, 1e-1),
-    "batch_size": tune.choice([32, 64, 128, 256]),
-    "bidirectional": tune.choice([True, False]),
-    "num_layers": tune.choice([1, 2]),
-    "hidden_dim": tune.choice([1024, 512, 256, 128, 64, 32]),
-    "monitor": tune.choice(["loss", "mcc"]),
-    "shared_output_size": tune.randint(2, 256),
-    "opt_step_size": tune.randint(1, 20),
-    "weight_decay": tune.loguniform(1e-5, 1e-2),
-    "dropout_input_layers": tune.uniform(0, 1),
-    "dropout_inner_layers": tune.uniform(0, 1),
-}
+    default_mpl = {
+        "structure": "mpl",
+        "learning_rate": tune.loguniform(1e-6, 1e-1),
+        "batch_size": tune.choice([32, 64, 128, 256]),
+        "monitor": tune.choice(["loss", "mcc"]),
+        "shared_output_size": tune.randint(2, 256),
+        "opt_step_size": tune.randint(1, 20),
+        "weight_decay": tune.loguniform(1e-5, 1e-2),
+        "dropout_input_layers": tune.uniform(0, 1),
+        "dropout_inner_layers": tune.uniform(0, 1),
+    }
 
-default_cnnlstm = {
-    "structure": "cnnlstm",
-    "learning_rate": tune.loguniform(1e-6, 1e-1),
-    "batch_size": tune.choice([32, 64, 128, 256]),
-    "bidirectional": tune.choice([True, False]),
-    "num_layers": tune.choice([1, 2]),
-    "hidden_dim": tune.choice([1024, 512, 256, 128, 64, 32]),
-    "monitor": tune.choice(["loss", "mcc"]),
-    "shared_output_size": tune.randint(2, 256),
-    "opt_step_size": tune.randint(1, 20),
-    "weight_decay": tune.loguniform(1e-5, 1e-2),
-    "dropout_input_layers": tune.uniform(0, 1),
-    "dropout_inner_layers": tune.uniform(0, 1),
-}
+    default_lstm = {
+        "structure": "lstm",
+        "learning_rate": tune.loguniform(1e-6, 1e-1),
+        "batch_size": tune.choice([32, 64, 128, 256]),
+        "bidirectional": tune.choice([True, False]),
+        "num_layers": tune.choice([1, 2]),
+        "hidden_dim": tune.choice([1024, 512, 256, 128, 64, 32]),
+        "monitor": tune.choice(["loss", "mcc"]),
+        "shared_output_size": tune.randint(2, 256),
+        "opt_step_size": tune.randint(1, 20),
+        "weight_decay": tune.loguniform(1e-5, 1e-2),
+        "dropout_input_layers": tune.uniform(0, 1),
+        "dropout_inner_layers": tune.uniform(0, 1),
+    }
 
-# +
-ncpus=48
-ngpus=1
-ntrials=100
-exp_idx = sys.argv[1]
+    default_cnnlstm = {
+        "structure": "cnnlstm",
+        "learning_rate": tune.loguniform(1e-6, 1e-1),
+        "batch_size": tune.choice([32, 64, 128, 256]),
+        "bidirectional": tune.choice([True, False]),
+        "num_layers": tune.choice([1, 2]),
+        "hidden_dim": tune.choice([1024, 512, 256, 128, 64, 32]),
+        "monitor": tune.choice(["loss", "mcc"]),
+        "shared_output_size": tune.randint(2, 256),
+        "opt_step_size": tune.randint(1, 20),
+        "weight_decay": tune.loguniform(1e-5, 1e-2),
+        "dropout_input_layers": tune.uniform(0, 1),
+        "dropout_inner_layers": tune.uniform(0, 1),
+    }
 
-experiment_list = [
-    [MyNet,         default_cnnlstm,  "MyNetCNNLSTM"],
-    [MyTwoStepsNet, default_cnnlstm,  "MyTwoStepsNetCNNLSTM"],
-    [MyNet,         default_mpl,  "MyNetMPL"],
-    [MyTwoStepsNet, default_mpl,  "MyTwoStepsNetMPL"],
-    [MyNet,         default_lstm, "MyNetLSTM"],
-    [MyTwoStepsNet, default_lstm, "MyTwoStepsNetLSTM"],
-]
+    # +
+    ncpus=12
+    ngpus=1
+    ntrials=1000
+    dataset = "hchs"
+    exp_idx = sys.argv[1]
+    sm = sys.argv[2]
 
-NetClass = experiment_list[exp_idx][0]
-config = experiment_list[exp_idx][1]
-exp_name = experiment_list[exp_idx][2]
-config["sleep_metrics"] = ["sleepEfficiency"] #  ['sleepEfficiency', 'awakening', 'totalSleepTime', 'combined']
+    experiment_list = [
+        [MyNet,         default_cnnlstm,  "MyNetCNNLSTM"],
+        [MyTwoStepsNet, default_cnnlstm,  "MyTwoStepsNetCNNLSTM"],
+        [MyNet,         default_mpl,  "MyNetMPL"],
+        [MyTwoStepsNet, default_mpl,  "MyTwoStepsNetMPL"],
+        [MyNet,         default_lstm, "MyNetLSTM"],
+        [MyTwoStepsNet, default_lstm, "MyTwoStepsNetLSTM"],
+    ]
 
-run_tuning_procedure(config, exp_name, ntrials=ntrials, ncpus=ncpus,
-                     ngpus=ngpus, NetClass=NetClass, dataset="hchs")
+    NetClass = experiment_list[exp_idx][0]
+    config = experiment_list[exp_idx][1]
+    exp_name = experiment_list[exp_idx][2]
+    exp_name = exp_name + {'combined': "_COM", 'awakening': "_AWE", 'totalSleepTime': "_TST", "sleepEfficiency": "EFF",
+                           "all": "_ALL"}[sm]
+
+    config["sleep_metrics"] = {'combined': ['combined'], 'sleepEfficiency': ['sleepEfficiency'],
+                               'awakening': ['awakening'], 'totalSleepTime': ['totalSleepTime'],
+                               'all': ['sleepEfficiency', 'awakening', 'totalSleepTime', 'combined']}
+
+    run_tuning_procedure(config, exp_name, ntrials=ntrials, ncpus=ncpus,
+                         ngpus=ngpus, NetClass=NetClass, dataset=dataset)
+
 #eval_n_times(config, NetClass, 1, gpus=0, patience=1)
 
 # -

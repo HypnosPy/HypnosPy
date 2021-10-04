@@ -739,19 +739,19 @@ class MyTwoStepsNet(pl.LightningModule):
         elif list(self.structure.keys())[0] == "cnnlstm":
 
             self.hourly_bins = nn.Sequential(
-                nn.Conv1d(1, 1, kernel_size=5, stride=1, padding="same"), nn.BatchNorm1d(1), nn.ReLU(inplace=True),
+                CNNLayer(kernel_size=5),
                 LSTMLayer(input_size=get_input_size(self.dataset, "hourly_bins"),
                           hidden_dim=get_input_size(self.dataset, "hourly_bins") // 2,
                           output_dim=output_sizes["hourly_bins"], dropout_rate=self.dropout_input_layers)
             )
             self.hourly_stats = nn.Sequential(
-                nn.Conv1d(1, 1, kernel_size=11, stride=1, padding="same"), nn.BatchNorm1d(1), nn.ReLU(inplace=True),
+                CNNLayer(kernel_size=11),
                 LSTMLayer(input_size=get_input_size(self.dataset, "hourly_stats"),
                           hidden_dim=get_input_size(self.dataset, "hourly_stats") // 2,
                           output_dim=output_sizes["hourly_stats"], dropout_rate=self.dropout_input_layers)
             )
             self.hourly_bouts = nn.Sequential(
-                nn.Conv1d(1, 1, kernel_size=11, stride=1, padding="same"), nn.BatchNorm1d(1), nn.ReLU(inplace=True),
+                CNNLayer(kernel_size=11),
                 LSTMLayer(input_size=get_input_size(self.dataset, "hourly_bouts"),
                           hidden_dim=get_input_size(self.dataset, "hourly_bouts") // 2,
                           output_dim=output_sizes["hourly_bouts"], dropout_rate=self.dropout_input_layers,
