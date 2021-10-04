@@ -363,6 +363,9 @@ class LSTMLayer(pl.LightningModule):
 
         print("BREAK POINT:", break_point)
 
+        if num_layers == 1:
+            dropout_rate = 0.0
+
         self.lstm = nn.LSTM(break_point, hidden_dim, num_layers=num_layers, dropout=dropout_rate,
                             batch_first=True, bidirectional=bidirectional)
         self.linlayers = nn.ModuleList()

@@ -43,6 +43,9 @@ from datetime import datetime
 from MTLModels import MTLRandom, MTLEqual, MTLBandit, MTLDWA, MTLUncertanty
 from NNModel import eval_n_times, MyNet, MyTwoStepsNet, get_data, myXYDataset, calculate_classification_metrics
 
+import os
+
+os.environ["SLURM_JOB_NAME"] = "bash"
 
 def hyper_tuner(config, NetClass, dataset, ngpus):
     
