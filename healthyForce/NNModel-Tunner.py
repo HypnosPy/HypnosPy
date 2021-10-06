@@ -141,8 +141,8 @@ def run_tuning_procedure(config, expname, ntrials, ncpus, ngpus, NetClass, datas
     print("Best Parameters:", analysis.best_config)
 
 
-    analysis.results_df["sleep_metrics"] = config["sleep_metrics"]
-    analysis.best_result_df["sleep_metrics"] = config["sleep_metrics"]
+    analysis.results_df["sleep_metrics"] = '_'.join(config["sleep_metrics"])
+    analysis.best_result_df["sleep_metrics"] = '_'.join(config["sleep_metrics"])
     analysis.results_df["expname"] = expname
     analysis.best_result_df["expname"] = expname
 
@@ -222,7 +222,7 @@ if __name__ == "__main__":
 
     config["sleep_metrics"] = {'combined': ['combined'], 'sleepEfficiency': ['sleepEfficiency'],
                                'awakening': ['awakening'], 'totalSleepTime': ['totalSleepTime'],
-                               'all': ['sleepEfficiency', 'awakening', 'totalSleepTime', 'combined']}
+                               'all': ['sleepEfficiency', 'awakening', 'totalSleepTime', 'combined']}[sm]
 
     run_tuning_procedure(config, exp_name, ntrials=ntrials, ncpus=ncpus,
                          ngpus=ngpus, NetClass=NetClass, dataset=dataset)
