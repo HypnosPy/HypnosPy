@@ -49,20 +49,20 @@ def get_data(DATASET="hchs"):
 
 def eval_n_times(config, NetClass, n, gpus=1, patience=3):
     dataset = "hchs"
-    learning_rate = config["learning_rate"]
-    batch_size = config["batch_size"]
+    learning_rate = float(config["learning_rate"])
+    batch_size = int(config["batch_size"])
 
     if "structure" in config and config["structure"] == "mpl":
         structure = {"mpl": "mpl"}
     else:
-        structure = {"lstm": {"bidirectional": config["bidirectional"], "hidden_dim": config["hidden_dim"],
-                              "num_layers": config["num_layers"]}}
+        structure = {"lstm": {"bidirectional": bool(config["bidirectional"]), "hidden_dim": int(config["hidden_dim"]),
+                              "num_layers": int(config["num_layers"])}}
     monitor = config["monitor"]
-    shared_output_size = config["shared_output_size"]
-    opt_step_size = config["opt_step_size"]
-    weight_decay = config["weight_decay"]
-    dropout_input_layers = config["dropout_input_layers"]
-    dropout_inner_layers = config["dropout_inner_layers"]
+    shared_output_size = int(config["shared_output_size"])
+    opt_step_size = int(config["opt_step_size"])
+    weight_decay = float(config["weight_decay"])
+    dropout_input_layers = float(config["dropout_input_layers"])
+    dropout_inner_layers = float(config["dropout_inner_layers"])
 
     if "sleep_metrics" in config:
         sleep_metrics = config['sleep_metrics']

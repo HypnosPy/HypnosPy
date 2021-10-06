@@ -151,6 +151,7 @@ def run_tuning_procedure(config, expname, ntrials, ncpus, ngpus, NetClass, datas
     print("Best 5 results")
     print(analysis.results_df.sort_values(by="mcc", ascending=False).head(5))
 
+    return analysis.best_result_df
 
 # +
 if __name__ == "__main__":
@@ -224,8 +225,21 @@ if __name__ == "__main__":
                                'awakening': ['awakening'], 'totalSleepTime': ['totalSleepTime'],
                                'all': ['sleepEfficiency', 'awakening', 'totalSleepTime', 'combined']}[sm]
 
-    run_tuning_procedure(config, exp_name, ntrials=ntrials, ncpus=ncpus,
+    best_df = run_tuning_procedure(config, exp_name, ntrials=ntrials, ncpus=ncpus,
                          ngpus=ngpus, NetClass=NetClass, dataset=dataset)
+
+    keys = [k for k in best_df.keys() if "config." in k]
+    best_parameters = {}
+    for k in keys:
+        best_parameters[k.split("config.")[1]] = best_df[k].iloc[0]
+
+    print("Final evaluation:")
+    results_MyNet_MP = eval_n_times(best_parameters, NetClass, n=3, gpus=0, patience=5)
+    results_MyNet_MP["sleep_metrics"] = '_'.join(config["sleep_metrics"])
+    results_MyNet_MP["expname"] = exp_name
+
+    print(results_MyNet_MP)
+    results_MyNet_MP.to_csv("final_%s.csv" % exp_name)
 
 #eval_n_times(config, NetClass, 1, gpus=0, patience=1)
 
