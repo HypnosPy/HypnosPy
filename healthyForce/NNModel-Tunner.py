@@ -52,6 +52,7 @@ def get_env_var(varname, default):
     return int(os.environ.get(varname)) if os.environ.get(varname) is not None else default
 
 def chunks(l, n):
+    n = len(l) // n
     return [l[i:i+n] for i in range(0, len(l), max(1, n))]
 
 def hyper_tuner(config, NetClass, dataset, ngpus):
