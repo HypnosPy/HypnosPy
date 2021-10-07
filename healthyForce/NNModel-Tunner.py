@@ -36,7 +36,7 @@ from pytorch_lightning.utilities import rank_zero_only, seed
 
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
 from ray import tune
-    
+
 from collections import OrderedDict
 from datetime import datetime
 
@@ -47,11 +47,17 @@ import os
 
 os.environ["SLURM_JOB_NAME"] = "bash"
 
+
+def get_env_var(varname, default):
+    return int(os.environ.get(varname)) if os.environ.get(varname) is not None else default
+
+def chunks(l, n):
+    return [l[i:i+n] for i in range(0, len(l), max(1, n))]
+
 def hyper_tuner(config, NetClass, dataset, ngpus):
-    
     learning_rate = config["learning_rate"]
     batch_size = config["batch_size"]
-    
+
     if "structure" in config and config["structure"] == "mpl":
         structure = {"mpl": "mpl"}
     elif "structure" in config and config["structure"] == "lstm":
@@ -59,7 +65,7 @@ def hyper_tuner(config, NetClass, dataset, ngpus):
                               "num_layers": config["num_layers"]}}
     else:
         structure = {"cnnlstm": {"bidirectional": config["bidirectional"], "hidden_dim": config["hidden_dim"],
-                              "num_layers": config["num_layers"]}}
+                                 "num_layers": config["num_layers"]}}
 
     monitor = config["monitor"]
     shared_output_size = config["shared_output_size"]
@@ -67,14 +73,16 @@ def hyper_tuner(config, NetClass, dataset, ngpus):
     weight_decay = config["weight_decay"]
     dropout_input_layers = config["dropout_input_layers"]
     dropout_inner_layers = config["dropout_inner_layers"]
-    
+
     sleep_metrics = config['sleep_metrics']
     loss_method = 'equal'
-    
+
     X, Y = get_data(dataset)
-    
-    train = DataLoader(myXYDataset(X["train"], Y["train"]), batch_size=batch_size, shuffle=True, drop_last=True, num_workers=8)
-    val   = DataLoader(myXYDataset(X["val"],   Y["val"]), batch_size=batch_size, shuffle=False, drop_last=True, num_workers=8)
+
+    train = DataLoader(myXYDataset(X["train"], Y["train"]), batch_size=batch_size, shuffle=True, drop_last=True,
+                       num_workers=8)
+    val = DataLoader(myXYDataset(X["val"], Y["val"]), batch_size=batch_size, shuffle=False, drop_last=True,
+                     num_workers=8)
 
     seed.seed_everything(42)
 
@@ -82,13 +90,14 @@ def hyper_tuner(config, NetClass, dataset, ngpus):
 
     if monitor == "mcc":
         early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='mcc', mode='max', patience=5)
-        ckp = ModelCheckpoint(filename=path_ckps + "{epoch:03d}-{loss:.3f}-{mcc:.3f}", save_top_k=1, verbose=False, prefix="",
+        ckp = ModelCheckpoint(filename=path_ckps + "{epoch:03d}-{loss:.3f}-{mcc:.3f}", save_top_k=1, verbose=False,
+                              prefix="",
                               monitor="mcc", mode="max")
     else:
         early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='loss', mode='min', patience=5)
-        ckp = ModelCheckpoint(filename=path_ckps + "{epoch:03d}-{loss:.3f}-{mcc:.3f}", save_top_k=1, verbose=False, prefix="",
+        ckp = ModelCheckpoint(filename=path_ckps + "{epoch:03d}-{loss:.3f}-{mcc:.3f}", save_top_k=1, verbose=False,
+                              prefix="",
                               monitor="loss", mode="min")
-
 
     hparams = Namespace(batch_size=batch_size,
                         shared_output_size=shared_output_size,
@@ -113,21 +122,20 @@ def hyper_tuner(config, NetClass, dataset, ngpus):
                         output_strategy="linear",  # Options: attention, linear
                         dataset=dataset,
                         monitor=monitor,
-                       )
+                        )
 
     model = NetClass(hparams)
     model.double()
-    
+
     tune_metrics = {"loss": "loss", "mcc": "mcc", "acc": "acc", "macroF1": "macroF1"}
     tune_cb = TuneReportCallback(tune_metrics, on="validation_end")
-    
+
     trainer = Trainer(gpus=ngpus, min_epochs=2, max_epochs=100,
                       callbacks=[early_stop_callback, ckp, tune_cb])
     trainer.fit(model, train, val)
 
 
 def run_tuning_procedure(config, expname, ntrials, ncpus, ngpus, NetClass, dataset="hchs"):
-
     trainable = tune.with_parameters(hyper_tuner, NetClass=NetClass, dataset=dataset, ngpus=ngpus)
 
     analysis = tune.run(trainable,
@@ -139,7 +147,6 @@ def run_tuning_procedure(config, expname, ntrials, ncpus, ngpus, NetClass, datas
                         name=expname)
 
     print("Best Parameters:", analysis.best_config)
-
 
     analysis.results_df["sleep_metrics"] = '_'.join(config["sleep_metrics"])
     analysis.best_result_df["sleep_metrics"] = '_'.join(config["sleep_metrics"])
@@ -153,8 +160,13 @@ def run_tuning_procedure(config, expname, ntrials, ncpus, ngpus, NetClass, datas
 
     return analysis.best_result_df
 
+
 # +
 if __name__ == "__main__":
+
+    SLURM_JOB_ID = get_env_var('SLURM_JOB_ID', 0)
+    SLURM_ARRAY_TASK_ID = get_env_var('SLURM_ARRAY_TASK_ID', 0)
+    SLURM_ARRAY_TASK_COUNT = get_env_var('SLURM_ARRAY_TASK_COUNT', 1)
 
     default_mpl = {
         "structure": "mpl",
@@ -199,50 +211,63 @@ if __name__ == "__main__":
     }
 
     # +
-    ncpus=12
-    ngpus=1
-    ntrials=1000
-    dataset = "hchs"
-    exp_idx = int(sys.argv[1])
-    sm = sys.argv[2]
+    ncpus = 12
+    ngpus = 1
+    ntrials = 1000
+
+    # exp_idx = 0 # int(sys.argv[1])
+    # sm = "sleepEfficiency" # sys.argv[2]
+    # dataset = "mesa" # sys.argv[3]
 
     experiment_list = [
-        [MyNet,         default_cnnlstm,  "MyNetCNNLSTM"],
-        [MyTwoStepsNet, default_cnnlstm,  "MyTwoStepsNetCNNLSTM"],
-        [MyNet,         default_mpl,  "MyNetMPL"],
-        [MyTwoStepsNet, default_mpl,  "MyTwoStepsNetMPL"],
-        [MyNet,         default_lstm, "MyNetLSTM"],
+        [MyNet, default_cnnlstm, "MyNetCNNLSTM"],
+        [MyTwoStepsNet, default_cnnlstm, "MyTwoStepsNetCNNLSTM"],
+        [MyNet, default_mpl, "MyNetMPL"],
+        [MyTwoStepsNet, default_mpl, "MyTwoStepsNetMPL"],
+        [MyNet, default_lstm, "MyNetLSTM"],
         [MyTwoStepsNet, default_lstm, "MyTwoStepsNetLSTM"],
     ]
 
-    NetClass = experiment_list[exp_idx][0]
-    config = experiment_list[exp_idx][1]
-    exp_name = experiment_list[exp_idx][2]
-    exp_name = exp_name + {'combined': "_COM", 'awakening': "_AWE", 'totalSleepTime': "_TST", "sleepEfficiency": "EFF",
-                           "all": "_ALL"}[sm]
-    exp_name = exp_name + "_" + dataset
+    combinations = []
+    for dataset in ["mesa", "hchs"]:
+        for sm in ["sleepEfficiency", "awakening", "totalSleepTime", "combined", "all"]:
+            for exp_idx in range(6):
+                combinations.append([dataset, sm, exp_idx])
 
-    config["sleep_metrics"] = {'combined': ['combined'], 'sleepEfficiency': ['sleepEfficiency'],
-                               'awakening': ['awakening'], 'totalSleepTime': ['totalSleepTime'],
-                               'all': ['sleepEfficiency', 'awakening', 'totalSleepTime', 'combined']}[sm]
+    selected_comb = chunks(combinations, SLURM_ARRAY_TASK_COUNT)[SLURM_ARRAY_TASK_ID]
 
-    best_df = run_tuning_procedure(config, exp_name, ntrials=ntrials, ncpus=ncpus,
-                         ngpus=ngpus, NetClass=NetClass, dataset=dataset)
+    for comb in selected_comb:
+        dataset, sm, exp_idx = comb
+        print(type(dataset), type(sm), type(exp_idx))
 
-    keys = [k for k in best_df.keys() if "config." in k]
-    best_parameters = {}
-    for k in keys:
-        best_parameters[k.split("config.")[1]] = best_df[k].iloc[0]
+        NetClass = experiment_list[exp_idx][0]
+        config = experiment_list[exp_idx][1]
+        exp_name = experiment_list[exp_idx][2]
+        exp_name = exp_name + {'combined': "_COM", 'awakening': "_AWE", 'totalSleepTime': "_TST", "sleepEfficiency": "EFF",
+                               "all": "_ALL"}[sm]
+        exp_name = exp_name + "_" + dataset
 
-    print("Final evaluation:")
-    results_MyNet_MP = eval_n_times(best_parameters, NetClass, n=10, gpus=0, patience=10)
-    results_MyNet_MP["sleep_metrics"] = sm
-    results_MyNet_MP["expname"] = exp_name
-    results_MyNet_MP["dataset"] = dataset
-    results_MyNet_MP["ntrials"] = ntrials
+        config["sleep_metrics"] = {'combined': ['combined'], 'sleepEfficiency': ['sleepEfficiency'],
+                                   'awakening': ['awakening'], 'totalSleepTime': ['totalSleepTime'],
+                                   'all': ['sleepEfficiency', 'awakening', 'totalSleepTime', 'combined']}[sm]
 
-    print(results_MyNet_MP)
-    results_MyNet_MP.to_csv("final_%s.csv" % exp_name)
+        best_df = run_tuning_procedure(config, exp_name, ntrials=ntrials, ncpus=ncpus,
+                                       ngpus=ngpus, NetClass=NetClass, dataset=dataset)
+
+        keys = [k for k in best_df.keys() if "config." in k]
+        best_parameters = {}
+        for k in keys:
+            best_parameters[k.split("config.")[1]] = best_df[k].iloc[0]
+
+        print("Final evaluation:")
+        results_MyNet_MP = eval_n_times(best_parameters, NetClass, n=10, gpus=0, patience=10)
+        results_MyNet_MP["sleep_metrics"] = sm
+        results_MyNet_MP["expname"] = exp_name
+        results_MyNet_MP["dataset"] = dataset
+        results_MyNet_MP["ntrials"] = ntrials
+
+        print(results_MyNet_MP)
+        results_MyNet_MP.to_csv("final_%s.csv" % exp_name)
 
 #eval_n_times(config, NetClass, 1, gpus=0, patience=1)
 
