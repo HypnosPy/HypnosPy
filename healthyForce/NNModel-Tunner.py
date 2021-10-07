@@ -243,8 +243,8 @@ if __name__ == "__main__":
         NetClass = experiment_list[exp_idx][0]
         config = experiment_list[exp_idx][1]
         exp_name = experiment_list[exp_idx][2]
-        exp_name = exp_name + {'combined': "_COM", 'awakening': "_AWE", 'totalSleepTime': "_TST", "sleepEfficiency": "EFF",
-                               "all": "_ALL"}[sm]
+        exp_name = exp_name + {'combined': "_COM", 'awakening': "_AWE", 'totalSleepTime': "_TST",
+                               "sleepEfficiency": "_EFF", "all": "_ALL"}[sm]
         exp_name = exp_name + "_" + dataset
 
         config["sleep_metrics"] = {'combined': ['combined'], 'sleepEfficiency': ['sleepEfficiency'],

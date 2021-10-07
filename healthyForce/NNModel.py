@@ -47,8 +47,8 @@ def get_data(DATASET="hchs"):
     return X, Y
 
 
-def eval_n_times(config, NetClass, n, gpus=1, patience=3):
-    dataset = "hchs"
+def eval_n_times(config, NetClass, n, gpus=1, patience=3, dataset = "hchs"):
+
     learning_rate = float(config["learning_rate"])
     batch_size = int(config["batch_size"])
 
@@ -342,7 +342,6 @@ class CNNLayer(pl.LightningModule):
         x = self.batch(x)
         x = self.relu(x)
         x = x.squeeze(1)  # Reshape it back to (B,L)
-
         return x
 
 
@@ -663,7 +662,7 @@ class MyNet(pl.LightningModule):
 def get_input_size(dataset, fset):
     return {"mesa":
                 {"bins": 4, "hourly_bins": 96, "stats": 8, "hourly_stats": 192, "bouts": 16,
-                 "hourly_bouts": 372, "time": 8, "cosinor": 3, "demo": 200, "ae_bouts": 8, "ae24": 4,
+                 "hourly_bouts": 372, "time": 8, "cosinor": 3, "demo": 201, "ae_bouts": 8, "ae24": 4,
                  "vae24": 4,
                  },
             "hchs":
