@@ -81,11 +81,11 @@ def hyper_tuner(config, NetClass, dataset, ngpus):
     path_ckps = "./lightning_logs/test/"
 
     if monitor == "mcc":
-        early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='mcc', mode='max', patience=3)
+        early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='mcc', mode='max', patience=5)
         ckp = ModelCheckpoint(filename=path_ckps + "{epoch:03d}-{loss:.3f}-{mcc:.3f}", save_top_k=1, verbose=False, prefix="",
                               monitor="mcc", mode="max")
     else:
-        early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='loss', mode='min', patience=3)
+        early_stop_callback = EarlyStopping(min_delta=0.00, verbose=False, monitor='loss', mode='min', patience=5)
         ckp = ModelCheckpoint(filename=path_ckps + "{epoch:03d}-{loss:.3f}-{mcc:.3f}", save_top_k=1, verbose=False, prefix="",
                               monitor="loss", mode="min")
 
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     ngpus=1
     ntrials=1000
     dataset = "hchs"
-    exp_idx = sys.argv[1]
+    exp_idx = int(sys.argv[1])
     sm = sys.argv[2]
 
     experiment_list = [
@@ -234,9 +234,11 @@ if __name__ == "__main__":
         best_parameters[k.split("config.")[1]] = best_df[k].iloc[0]
 
     print("Final evaluation:")
-    results_MyNet_MP = eval_n_times(best_parameters, NetClass, n=3, gpus=0, patience=5)
-    results_MyNet_MP["sleep_metrics"] = '_'.join(config["sleep_metrics"])
+    results_MyNet_MP = eval_n_times(best_parameters, NetClass, n=10, gpus=0, patience=10)
+    results_MyNet_MP["sleep_metrics"] = sm
     results_MyNet_MP["expname"] = exp_name
+    results_MyNet_MP["dataset"] = dataset
+    results_MyNet_MP["ntrials"] = ntrials
 
     print(results_MyNet_MP)
     results_MyNet_MP.to_csv("final_%s.csv" % exp_name)
