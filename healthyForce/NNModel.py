@@ -437,8 +437,10 @@ class MyNet(pl.LightningModule):
                              "hourly_bins", "hourly_stats", "hourly_bouts"
                              ]
 
+        self.input_size = 1232 if self.dataset == "hchs" else 908
+
         if list(self.structure.keys())[0] == "lstm":
-            self.net = LSTMLayer(input_size=1232, break_point=1232,
+            self.net = LSTMLayer(input_size=self.input_size, break_point=self.input_size,
                                  dropout_rate=self.dropout_input_layers,
                                  hidden_dim=self.structure["lstm"]["hidden_dim"],
                                  bidirectional=self.structure["lstm"]["bidirectional"],
@@ -449,7 +451,7 @@ class MyNet(pl.LightningModule):
         elif list(self.structure.keys())[0] == "cnnlstm":
             self.net = nn.Sequential(
                 CNNLayer(kernel_size=11),
-                LSTMLayer(input_size=1232, break_point=1232,
+                LSTMLayer(input_size=self.input_size, break_point=self.input_size,
                           dropout_rate=self.dropout_input_layers,
                           hidden_dim=self.structure["cnnlstm"]["hidden_dim"],
                           bidirectional=self.structure["cnnlstm"]["bidirectional"],
@@ -460,7 +462,7 @@ class MyNet(pl.LightningModule):
 
         else:
             self.net = nn.Sequential(OrderedDict([
-                ('lin1', nn.Linear(1232, 512)),
+                ('lin1', nn.Linear(self.input_size, 512)),
                 ('act1', nn.ReLU(inplace=True)),
                 ('dropout', nn.Dropout(self.dropout_inner_layers)),
                 ('lin2', nn.Linear(512, 256)),
