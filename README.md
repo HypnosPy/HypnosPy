@@ -133,7 +133,7 @@ This project is released under a BSD 2-Clause Licence (see LICENCE file)
 * **Ignacio Perez-Pozuelo (Cambridge)** @ippozuelo *main developer*
 # Research that uses HypnosPy :rocket:
 
-* Perez-Pozuelo, I., Posa, M., Spathis, D., Westgate, K., Wareham, N., Mascolo, C., ... & Palotti, J. (2022). [Detecting sleep outside the clinic using wearable heart rate devices]([https://www.nature.com/articles/s41598-022-11792-7]).Scientific Reports, 12(1), 1-13.
+* Perez-Pozuelo, I., Posa, M., Spathis, D., Westgate, K., Wareham, N., Mascolo, C., ... & Palotti, J. (2022). [Detecting sleep outside the clinic using wearable heart rate devices] (https://www.nature.com/articles/s41598-022-11792-7). Scientific Reports, 12(1), 1-13.
 
 # Acknowledgements :pray:
 
